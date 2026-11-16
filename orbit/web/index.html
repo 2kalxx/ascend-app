@@ -10,8 +10,8 @@
 html,body{background:#000;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;height:100%;overflow:hidden;touch-action:manipulation}
 #game{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
 #top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0}
-.coins{display:flex;align-items:center;gap:10px;font-size:34px;font-weight:900;letter-spacing:.5px}
-.coin{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe08a,#f5a524 55%,#c97a0a);box-shadow:inset 0 0 0 3px #d98a12;display:grid;place-items:center;font-size:14px;color:#8a4b00;font-weight:900}
+.coins{display:flex;align-items:center;gap:6px;font-size:26px;font-weight:900;letter-spacing:.5px}
+.coin{width:26px;height:26px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe08a,#f5a524 55%,#c97a0a);box-shadow:inset 0 0 0 3px #d98a12;display:grid;place-items:center;font-size:14px;color:#8a4b00;font-weight:900}
 .coin.sm{width:18px;height:18px;font-size:9px;box-shadow:inset 0 0 0 2px #d98a12}
 .icon{width:40px;height:40px;border-radius:12px;background:#151515;border:1px solid #2a2a2a;display:grid;place-items:center;font-size:18px;position:relative}
 .icon.off{opacity:.4}.icon.off:after{content:"";position:absolute;width:26px;height:2.5px;background:#ff5a6a;transform:rotate(-45deg);border-radius:2px}
@@ -53,11 +53,27 @@ canvas{display:block;touch-action:none}
 .row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #222}
 .tg{padding:7px 14px;border-radius:10px;border:1px solid #333;background:#1c1c1f;color:#ddd;font:inherit;font-weight:700}
 .tg.on{background:#2a2410;border-color:#e8b33a;color:#ffd36a}
+.rubyB{display:flex;align-items:center;gap:5px;height:40px;padding:0 11px;border-radius:12px;background:#1d0d14;border:1px solid #6b1f3a;color:#ff7aa2;font:inherit;font-weight:900;font-size:15px}
+.rubyB.glow{box-shadow:0 0 14px rgba(255,60,120,.55);border-color:#ff4f8b}
+.tree{position:fixed;inset:0;background:#08080a;z-index:45;overflow-y:auto;padding:calc(14px + env(safe-area-inset-top)) 14px calc(24px + env(safe-area-inset-bottom))}
+.tree h2{font-size:22px}.tree .hd{display:flex;align-items:center;justify-content:space-between;position:sticky;top:-14px;background:#08080a;padding:6px 0 10px;z-index:2}
+.br{margin:16px 0 0;padding-left:14px;border-left:3px solid var(--c)}
+.br>h3{font-size:13px;letter-spacing:2px;color:var(--c);margin:0 0 8px -14px;padding-left:10px}
+.node{display:flex;gap:10px;align-items:center;background:#141418;border:1px solid #2a2a30;border-radius:14px;padding:10px;margin:0 0 8px;position:relative}
+.node:before{content:"";position:absolute;left:-15px;top:50%;width:14px;height:3px;background:var(--c)}
+.node.root:before{display:none}
+.node .ni{font-size:24px;width:34px;text-align:center}.node .nt{flex:1;min-width:0}
+.node .nn{font-weight:900;font-size:15px}.node .nn small{color:#888;font-weight:700;font-size:11px;margin-left:4px}
+.node .nd{font-size:12px;color:#aaa;margin-top:2px}.node .key{font-size:10px;color:#ffd36a;font-weight:900;letter-spacing:1px}
+.node .pips{display:flex;gap:3px;margin-top:5px}.node .pips i{width:12px;height:4px;border-radius:2px;background:#333}.node .pips i.on{background:var(--c)}
+.node button{min-width:62px;padding:9px 8px;border-radius:11px;border:0;font:inherit;font-weight:900;font-size:14px;background:#2a2a30;color:#777}
+.node button.ok{background:linear-gradient(#ff6b9a,#d91e5b);color:#fff}
+.node.lock{opacity:.4}.node.maxd{border-color:var(--c)}
 </style>
 </head>
 <body>
 <div id="game">
-  <div id="top"><button class="icon" id="menuB">☰</button><div class="coins"><div class="coin">◉</div><span id="coinT">0</span></div><div style="display:flex;gap:8px"><button class="icon" id="hapB">📳</button><button class="icon" id="sndB">🔊</button></div></div>
+  <div id="top"><div style="display:flex;gap:8px"><button class="icon" id="menuB">☰</button><button class="rubyB" id="treeB">💎 <span id="rubyT">0</span></button></div><div class="coins"><div class="coin">◉</div><span id="coinT">0</span></div><div style="display:flex;gap:8px"><button class="icon" id="hapB">📳</button><button class="icon" id="sndB">🔊</button></div></div>
   <div id="stage"></div><div id="pbar"><i></i></div>
   <div id="wrap"><div id="boost">⚡ BOOST</div><canvas id="cv"></canvas><div id="rate"></div></div>
   <div id="cards"></div>
@@ -66,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ORBIT_WEB_VERSION = 4; // bump on every web update (the Android app reads this)
+const ORBIT_WEB_VERSION = 5; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 function fmt(n){ n=Math.floor(n); if(n<1000) return String(n); const u=["K","M","B","T","Qa","Qi"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+u[i]; }
 const mmss=t=>Math.floor(t/60)+":"+String(Math.floor(t%60)).padStart(2,"0");
@@ -79,8 +95,11 @@ const UP=[
  {id:"income",ic:"💰",name:"Income", start:1,max:30,base:8,  grow:1.5, show:l=>"+"+l},
  {id:"bomb",  ic:"💣",name:"Bomb",   start:0,max:10,base:40, grow:1.75,show:l=>l?bombEvery(l).toFixed(1)+"s":"OFF"},
  {id:"laser", ic:"🔦",name:"Laser",  start:0,max:10,base:70, grow:1.8, show:l=>l?"Lv "+l:"OFF"},
+ {id:"shards",ic:"✨",name:"Shards", start:0,max:10,base:35, grow:1.7, req:"shards",show:l=>l?(1+l)+"x":"OFF"},
+ {id:"zap",   ic:"⚡",name:"Zap",    start:0,max:10,base:50, grow:1.75,req:"storm", show:l=>l?(l*1.5).toFixed(1)+"/s":"OFF"},
 ];
-const costOf=(u,l)=>Math.ceil(u.base*Math.pow(u.grow,l-u.start));
+const costOf=(u,l)=>Math.ceil(u.base*Math.pow(u.grow,l-u.start)*(1-0.06*T("bargain")));
+const visUP=()=>UP.filter(u=>!u.req||T(u.req)>0);
 const ballRadius=l=>9+l*1.9;
 const ballSpeed=l=>170*(1+0.15*(l-1));
 const dpsOf=l=>12*Math.pow(1.28,l-1);
@@ -88,11 +107,39 @@ const bombEvery=l=>Math.max(1,6.2-0.55*l);
 const bombRadius=l=>30+8*l;
 const regrowDelay=()=>2;
 const laserDps=l=>dpsOf(1)*1.4*l;
+/* ================= Ascend tree (permanent, paid with rubies) ================= */
+const BR=[{id:"ball",name:"BALL",c:"#7fd8ff"},{id:"eco",name:"ECONOMY",c:"#ffd36a"},{id:"boom",name:"EXPLOSIVES",c:"#ff8a3d"},{id:"beam",name:"LASER & STORM",c:"#ff4f6b"}];
+const TREE=[
+ {id:"root",br:null,ic:"✨",name:"Ascend",max:1,cost:()=>1,d:()=>"+10% coins in every level. Opens all branches."},
+ {id:"heavy",br:"ball",req:"root",ic:"🏋️",name:"Heavy Ball",max:5,cost:l=>1+l,d:()=>"+15% ball damage per level"},
+ {id:"bigstart",br:"ball",req:"heavy",ic:"⚪",name:"Big Start",max:5,cost:l=>2+l,d:()=>"Start every level with +1 Size per level"},
+ {id:"fire",br:"ball",req:"heavy",ic:"🔥",name:"Fire Trail",max:3,cost:l=>5+2*l,key:1,d:()=>"Ball leaves a burning trail that damages blocks and stops them regrowing"},
+ {id:"shards",br:"ball",req:"bigstart",ic:"✨",name:"Shards",max:1,cost:()=>7,key:1,d:()=>"New upgrade card: wall bounces fire piercing shards into the blocks"},
+ {id:"homing",br:"ball",req:"bigstart",ic:"🧲",name:"Homing Ball",max:1,cost:()=>10,key:1,d:()=>"Ball curves toward the nearest blocks – great for the last stragglers"},
+ {id:"rich",br:"eco",req:"root",ic:"💰",name:"Rich Start",max:5,cost:l=>1+l,d:()=>"Start every level with +25 coins per level"},
+ {id:"golden",br:"eco",req:"root",ic:"🪙",name:"Golden Touch",max:5,cost:l=>2+l,d:()=>"+15% coins per level"},
+ {id:"bargain",br:"eco",req:"golden",ic:"🏷️",name:"Bargain",max:5,cost:l=>2+2*l,d:()=>"Upgrades cost 6% less per level"},
+ {id:"hunter",br:"eco",req:"bargain",ic:"💎",name:"Ruby Hunter",max:3,cost:l=>6+3*l,d:()=>"+1 extra ruby per level the first time you clear a level"},
+ {id:"auto",br:"eco",req:"rich",ic:"🤖",name:"Auto-Buyer",max:1,cost:()=>9,key:1,d:()=>"Automatically buys the cheapest upgrade (switch on/off in ☰)"},
+ {id:"bombkit",br:"boom",req:"root",ic:"💣",name:"Bomb Kit",max:3,cost:l=>2+l,d:()=>"Start every level with Bomb +1 per level"},
+ {id:"bigboom",br:"boom",req:"bombkit",ic:"💥",name:"Big Boom",max:5,cost:l=>2+l,d:()=>"+12% bomb blast size per level"},
+ {id:"chain",br:"boom",req:"bigboom",ic:"🧨",name:"Chain Reaction",max:5,cost:l=>4+2*l,key:1,d:()=>"Every destroyed block has a 3% chance per level to explode"},
+ {id:"detonator",br:"boom",req:"bombkit",ic:"👆",name:"Detonator",max:1,cost:()=>9,key:1,d:()=>"Tapping the ring drops a bomb where you tap (4s cooldown) instead of boost"},
+ {id:"laserkit",br:"beam",req:"root",ic:"🔦",name:"Laser Kit",max:3,cost:l=>3+l,d:()=>"Start every level with Laser +1 per level"},
+ {id:"overclock",br:"beam",req:"root",ic:"⚡",name:"Overclock",max:3,cost:l=>2+l,d:()=>"Tap boost lasts +1s per level"},
+ {id:"frost",br:"beam",req:"laserkit",ic:"❄️",name:"Frost",max:3,cost:l=>3+2*l,d:()=>"Regrown blocks come back 15% weaker per level (timer stays 2s)"},
+ {id:"twin",br:"beam",req:"laserkit",ic:"✖️",name:"Twin Laser",max:1,cost:()=>10,key:1,d:()=>"A second laser beam sweeps across the first"},
+ {id:"storm",br:"beam",req:"overclock",ic:"🌩️",name:"Storm",max:1,cost:()=>8,key:1,d:()=>"New upgrade card: Zap – lightning destroys random blocks"}
+];
+const T=id=>(S&&S.tree&&S.tree[id])||0;
+const treeSpent=()=>TREE.reduce((a,n)=>{ let c=0; for(let l=0;l<T(n.id);l++) c+=n.cost(l); return a+c; },0);
+const coinMult=()=>(1+0.1*T("root"))*(1+0.15*T("golden"));
+const startLv=u=>u.start+(u.id==="size"?T("bigstart"):u.id==="bomb"?T("bombkit"):u.id==="laser"?T("laserkit"):0);
 /* ================= persistent data: settings + best times only ================= */
 const LS="orbit_state_v2";
 let S=null, run=null;
-function fresh(){ return {sound:true,haptic:true,unlocked:1,best:{},stars:{},hint:true,cur:null}; }
-function load(){ try{ const s=JSON.parse(localStorage.getItem(LS)); if(s&&s.best) return Object.assign(fresh(),s); }catch(e){}
+function fresh(){ return {sound:true,haptic:true,unlocked:1,best:{},stars:{},hint:true,cur:null,rubies:0,tree:{},auto:true}; }
+function load(){ try{ const s=JSON.parse(localStorage.getItem(LS)); if(s&&s.best){ const o=Object.assign(fresh(),s); if(s.rubies==null) o.rubies=Object.values(o.stars).reduce((a,b)=>a+b,0); return o; } }catch(e){}
   const f=fresh(); try{ const old=JSON.parse(localStorage.getItem("orbit_state_v1")); if(old){ f.sound=old.sound!==false; f.haptic=old.haptic!==false; f.unlocked=Math.max(1,old.stage||1); } }catch(e){} return f; }
 let saveT=0; function save(force){ const now=Date.now(); if(!force&&now-saveT<2500) return; saveT=now; if(run) S.cur=packRun(); try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 
@@ -106,7 +153,7 @@ function inPattern(p,x,y,i,j){ const d=Math.hypot(x,y)/R, a=Math.atan2(y,x);
     case "dots": return Math.hypot((i%8)-3.5,(j%8)-3.5)<3.2; case "waves": return Math.sin(x/22+Math.sin(y/30)*2)>-0.5;
     case "hollow": return d>0.35; case "diamond": return Math.abs(x)+Math.abs(y)<R*0.95||d>0.88; case "stripes": return Math.floor((x+y+400)/26)%2===0||d>0.9;
     default: return true; } }
-const levelHP=lv=>Math.round(8*Math.pow(1.16,lv-1));
+const levelHP=lv=>Math.round(8*Math.pow(1.16,Math.min(lv,31)-1)*Math.pow(1.07,Math.max(0,lv-31)));
 const PAL=[[[210,255,60],[40,230,120]],[[90,220,255],[150,90,255]],[[255,190,60],[255,80,120]],[[120,255,220],[40,140,255]],[[255,120,220],[255,220,90]],[[180,255,120],[255,240,90]]];
 function cellColor(lv,d,f){ const [a,b]=PAL[(lv-1)%PAL.length], t=Math.min(1,d), k=0.4+0.6*f;
   return `rgb(${Math.round((a[0]+(b[0]-a[0])*(1-t))*k)},${Math.round((a[1]+(b[1]-a[1])*(1-t))*k)},${Math.round((a[2]+(b[2]-a[2])*(1-t))*k)})`; }
@@ -119,13 +166,14 @@ function buildCells(lv){
 }
 function packRun(){ return {level:run.level,coins:run.coins,lv:run.lv,time:run.time,gt,a:cells.map(c=>c?(c.alive?Math.ceil(c.hp):-Math.round((gt-c.touch)*10)/10-0.01):null)}; }
 function startLevel(lv,resume){
-  run={level:lv,coins:0,lv:Object.fromEntries(UP.map(u=>[u.id,u.start])),time:0};
+  cleared=false; document.querySelectorAll(".pop").forEach(x=>x.remove());
+  run={level:lv,coins:25*T("rich"),lv:Object.fromEntries(UP.map(u=>[u.id,startLv(u)])),time:0};
   buildCells(lv); gt=0;
   if(resume&&resume.level===lv&&Array.isArray(resume.a)&&resume.a.length===cells.length){
     run.coins=resume.coins||0; run.lv=Object.assign(run.lv,resume.lv||{}); run.time=resume.time||0; gt=resume.gt||0; aliveCount=0;
     cells.forEach((c,k)=>{ if(!c) return; const v=resume.a[k]; if(v>0){ c.hp=Math.min(c.max,v); c.alive=true; aliveCount++; } else { c.alive=false; c.hp=0; c.touch=gt+(v||0); } });
   }
-  balls=[]; syncBalls(); laserA=0; bombT=0; drawLayer(); S.cur=packRun(); save(true); uiCards(true);
+  balls=[]; syncBalls(); laserA=0; bombT=0; fires=[]; shards=[]; zaps=[]; chainQ=[]; zapT=0; detCD=0; drawLayer(); S.cur=packRun(); save(true); uiCards(true);
 }
 /* ================= rendering ================= */
 const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
@@ -141,10 +189,10 @@ function drawCell(c){ if(!lctx) return; const [x,y,w]=cellRect(c); lctx.clearRec
 function drawLayer(){ if(!lctx) return; lctx.clearRect(0,0,layer.width,layer.height); cells.forEach(c=>{ if(c&&c.alive) drawCell(c); }); }
 
 /* ================= gameplay ================= */
-let balls=[], parts=[], rings=[], boostUntil=0, laserA=0, bombT=0, regrowT=0, cleared=false;
+let balls=[], parts=[], rings=[], boostUntil=0, laserA=0, bombT=0, regrowT=0, cleared=false, fires=[], shards=[], zaps=[], chainQ=[], zapT=0, detCD=0, fireT=0, homeT=0, autoT=0;
 function syncBalls(){ const n=1; while(balls.length<n){ const a=Math.random()*Math.PI*2; balls.push({x:Math.cos(a)*R*0.3,y:Math.sin(a)*R*0.3,a:Math.random()*Math.PI*2,trail:[]}); } balls.length=n; }
 function hitCell(k,dmg){ const c=cells[k]; if(!c) return 0; c.touch=gt; if(!c.alive) return 0;
-  const chip=Math.min(dmg,c.hp)/c.max*run.lv.income*0.5; c.hp-=dmg; if(c.hp<=0){ c.alive=false; c.hp=0; aliveCount--; drawCell(c); if(parts.length<220) parts.push({x:c.x,y:c.y,vx:(Math.random()-.5)*120,vy:(Math.random()-.5)*120,t:0.45,col:cellColor(run.level,c.d,1)}); return run.lv.income+chip; }
+  const chip=Math.min(dmg,c.hp)/c.max*run.lv.income*0.5; c.hp-=dmg; if(c.hp<=0){ c.alive=false; c.hp=0; aliveCount--; drawCell(c); if(T("chain")&&chainQ.length<40&&Math.random()<0.03*T("chain")) chainQ.push([c.x,c.y]); if(parts.length<220) parts.push({x:c.x,y:c.y,vx:(Math.random()-.5)*120,vy:(Math.random()-.5)*120,t:0.45,col:cellColor(run.level,c.d,1)}); return run.lv.income+chip; }
   if(Math.random()<0.2) drawCell(c); return chip; }
 function areaHit(x,y,rad,dmg){ let g=0; const i0=Math.max(0,Math.floor((x-rad+R)/CELL)), i1=Math.min(GRID-1,Math.floor((x+rad+R)/CELL)), j0=Math.max(0,Math.floor((y-rad+R)/CELL)), j1=Math.min(GRID-1,Math.floor((y+rad+R)/CELL));
   for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const k=j*GRID+i, c=cells[k]; if(!c) continue; if(Math.hypot(c.x-x,c.y-y)>rad+CELL*0.35) continue; g+=hitCell(k,dmg); } return g; }
@@ -152,25 +200,39 @@ let earnedWindow=0, windowStart=0, rateNow=0;
 function step(dt,sim){
   if(cleared) return;
   gt+=dt; run.time+=dt;
-  const L=run.lv, r=ballRadius(L.size), sp=ballSpeed(L.speed)*(gt<boostUntil?2:1), dps=dpsOf(L.power);
+  const L=run.lv, r=ballRadius(L.size), sp=ballSpeed(L.speed)*(gt<boostUntil?2:1), dps=dpsOf(L.power)*(1+0.15*T("heavy"));
   let gained=0;
+  if(T("homing")){ homeT-=dt; for(const b of balls){ if(homeT<=0||!b.tg||!b.tg.alive){ let best=null,bd=1e9; for(let q=0;q<60;q++){ const c=cells[(Math.random()*cells.length)|0]; if(c&&c.alive){ const d=Math.hypot(c.x-b.x,c.y-b.y); if(d<bd){ bd=d; best=c; } } } b.tg=best; }
+      if(b.tg){ const want=Math.atan2(b.tg.y-b.y,b.tg.x-b.x); let da=want-b.a; da=Math.atan2(Math.sin(da),Math.cos(da)); b.a+=Math.max(-2.6*dt,Math.min(2.6*dt,da)); } } if(homeT<=0) homeT=0.35; }
   for(const b of balls){
     const n=Math.ceil(sp*dt/(r*0.5)), h=dt/n;
     for(let k=0;k<n;k++){ b.x+=Math.cos(b.a)*sp*h; b.y+=Math.sin(b.a)*sp*h; const d=Math.hypot(b.x,b.y), lim=R-r;
-      if(d>lim){ const nx=b.x/d, ny=b.y/d; let vx=Math.cos(b.a), vy=Math.sin(b.a); const dot=vx*nx+vy*ny; vx-=2*dot*nx; vy-=2*dot*ny; b.a=Math.atan2(vy,vx)+(Math.random()-0.5)*0.4; b.x=nx*lim; b.y=ny*lim; if(!sim&&S.sound) tick(220,0.02); } }
+      if(d>lim){ const nx=b.x/d, ny=b.y/d; let vx=Math.cos(b.a), vy=Math.sin(b.a); const dot=vx*nx+vy*ny; vx-=2*dot*nx; vy-=2*dot*ny; b.a=Math.atan2(vy,vx)+(Math.random()-0.5)*0.4; b.x=nx*lim; b.y=ny*lim; if(L.shards>0&&shards.length<60){ const n=1+L.shards; for(let q=0;q<n;q++){ const a=Math.atan2(-ny,-nx)+(q-(n-1)/2)*0.22; shards.push({x:b.x,y:b.y,a,t:0.7}); } } if(!sim&&S.sound) tick(220,0.02); } }
     if(!sim){ b.trail.push([b.x,b.y]); if(b.trail.length>8) b.trail.shift(); }
     gained+=areaHit(b.x,b.y,r,dps*dt);
+    if(T("fire")){ fireT+=dt; if(fireT>0.06){ fireT=0; fires.push({x:b.x,y:b.y,t:0.6+0.5*T("fire"),r:r*0.7}); } }
   }
+  // fire trail
+  if(fires.length){ for(const f of fires){ f.t-=dt; gained+=areaHit(f.x,f.y,f.r,dps*0.35*T("fire")*dt); } fires=fires.filter(f=>f.t>0); }
+  // shards
+  if(shards.length){ for(const z of shards){ const st=420*dt, k=Math.ceil(st/(CELL*0.8)); for(let q=0;q<k;q++){ z.x+=Math.cos(z.a)*st/k; z.y+=Math.sin(z.a)*st/k; if(Math.hypot(z.x,z.y)>R){ z.t=0; break; } gained+=areaHit(z.x,z.y,3,dps*0.6); } z.t-=dt; } shards=shards.filter(z=>z.t>0); }
+  // zap
+  if(L.zap>0){ zapT+=dt*L.zap*1.5; while(zapT>=1){ zapT-=1; for(let q=0;q<40;q++){ const c=cells[(Math.random()*cells.length)|0]; if(c&&c.alive){ gained+=areaHit(c.x,c.y,12,dps*8); if(!sim) zaps.push({x:c.x,y:c.y,t:0.25}); break; } } } }
+  // chain reaction explosions
+  if(chainQ.length){ const q=chainQ.splice(0,8); for(const [x,y] of q){ gained+=areaHit(x,y,15,dps*4); if(!sim) rings.push({x,y,r:0,max:15,t:0.35}); } }
+  if(detCD>0) detCD-=dt;
+  // auto-buyer
+  if(T("auto")&&S.auto){ autoT+=dt; if(autoT>0.5){ autoT=0; const c=cheapestUp(); if(c&&run.coins>=costOf(c,run.lv[c.id])) buy(c.id,true); } }
   // bomb: a ball explodes every few seconds
-  if(L.bomb>0){ bombT+=dt; if(bombT>=bombEvery(L.bomb)){ bombT=0; const b=balls[Math.floor(Math.random()*balls.length)]; gained+=areaHit(b.x,b.y,bombRadius(L.bomb),1e9); if(!sim){ rings.push({x:b.x,y:b.y,r:0,max:bombRadius(L.bomb),t:0.35}); if(S.sound) tick(90,0.08); } } }
+  if(L.bomb>0){ bombT+=dt; if(bombT>=bombEvery(L.bomb)){ bombT=0; const b=balls[Math.floor(Math.random()*balls.length)], br=bombRadius(L.bomb)*(1+0.12*T("bigboom")); gained+=areaHit(b.x,b.y,br,dps*5); if(!sim){ rings.push({x:b.x,y:b.y,r:0,max:br,t:0.35}); if(S.sound) tick(90,0.08); } } }
   // laser: rotating beam from the centre
   if(L.laser>0){ laserA+=dt*(1.2+0.25*L.laser); const ca=Math.cos(laserA), sa=Math.sin(laserA), w=4+1.5*L.laser;
-    for(let t=-R;t<R;t+=CELL*0.9){ gained+=areaHit(ca*t,sa*t,w,laserDps(L.laser)*dt); } }
+    for(let t=-R;t<R;t+=CELL*0.9){ gained+=areaHit(ca*t,sa*t,w,laserDps(L.laser)*dt); if(T("twin")) gained+=areaHit(-sa*t,ca*t,w,laserDps(L.laser)*dt); } }
   // regrowth: blocks come back if nothing touched them for a while
   regrowT+=dt; if(regrowT>0.1){ regrowT=0; const delay=regrowDelay();
-    for(const c of cells){ if(c&&!c.alive&&gt-c.touch>delay){ c.alive=true; c.hp=c.max*0.4; aliveCount++; drawCell(c); } } }
-  if(gained){ run.coins+=gained; earnedWindow+=gained; if(!sim&&S.sound&&Math.random()<0.3) tick(520+Math.random()*300,0.03); }
-  if(!sim){ for(const p of parts){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.t-=dt; } parts=parts.filter(p=>p.t>0); for(const g of rings){ g.t-=dt; g.r=g.max*(1-g.t/0.35); } rings=rings.filter(g=>g.t>0);
+    for(const c of cells){ if(c&&!c.alive&&gt-c.touch>delay){ c.alive=true; c.hp=c.max*0.4*(1-0.15*T("frost")); aliveCount++; drawCell(c); } } }
+  if(gained){ gained*=coinMult(); run.coins+=gained; earnedWindow+=gained; if(!sim&&S.sound&&Math.random()<0.3) tick(520+Math.random()*300,0.03); }
+  if(!sim){ for(const p of parts){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.t-=dt; } parts=parts.filter(p=>p.t>0); for(const g of rings){ g.t-=dt; g.r=g.max*(1-g.t/0.35); } rings=rings.filter(g=>g.t>0); for(const z of zaps) z.t-=dt; zaps=zaps.filter(z=>z.t>0);
     if(gt-windowStart>3){ rateNow=earnedWindow/(gt-windowStart); earnedWindow=0; windowStart=gt; } }
   if(aliveCount<=0) levelClear(sim);
 }
@@ -178,7 +240,10 @@ function render(){
   ctx.clearRect(0,0,cv.width,cv.height);
   ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,(R+6)*scale,0,Math.PI*2); ctx.strokeStyle="rgba(170,255,170,.85)"; ctx.lineWidth=3*scale; ctx.shadowColor="rgba(140,255,140,.8)"; ctx.shadowBlur=22*scale; ctx.stroke(); ctx.restore();
   ctx.drawImage(layer,0,0);
-  if(run.lv.laser>0){ const w=(4+1.5*run.lv.laser)*scale; ctx.save(); ctx.strokeStyle="rgba(255,80,80,.85)"; ctx.lineWidth=w*0.6; ctx.shadowColor="#ff3b3b"; ctx.shadowBlur=16*scale; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(cx-Math.cos(laserA)*R*scale,cy-Math.sin(laserA)*R*scale); ctx.lineTo(cx+Math.cos(laserA)*R*scale,cy+Math.sin(laserA)*R*scale); ctx.stroke(); ctx.restore(); }
+  if(run.lv.laser>0){ const w=(4+1.5*run.lv.laser)*scale; ctx.save(); ctx.strokeStyle="rgba(255,80,80,.85)"; ctx.lineWidth=w*0.6; ctx.shadowColor="#ff3b3b"; ctx.shadowBlur=16*scale; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(cx-Math.cos(laserA)*R*scale,cy-Math.sin(laserA)*R*scale); ctx.lineTo(cx+Math.cos(laserA)*R*scale,cy+Math.sin(laserA)*R*scale); if(T("twin")){ ctx.moveTo(cx+Math.sin(laserA)*R*scale,cy-Math.cos(laserA)*R*scale); ctx.lineTo(cx-Math.sin(laserA)*R*scale,cy+Math.cos(laserA)*R*scale); } ctx.stroke(); ctx.restore(); }
+  for(const f of fires){ ctx.beginPath(); ctx.arc(cx+f.x*scale,cy+f.y*scale,f.r*scale*0.8,0,Math.PI*2); ctx.fillStyle=`rgba(255,${120+Math.round(f.t*80)},40,${Math.min(0.35,f.t*0.4)})`; ctx.fill(); }
+  ctx.fillStyle="#bff"; for(const z of shards){ ctx.beginPath(); ctx.arc(cx+z.x*scale,cy+z.y*scale,2.6*scale,0,Math.PI*2); ctx.fill(); }
+  for(const z of zaps){ ctx.save(); ctx.strokeStyle=`rgba(190,220,255,${z.t*4})`; ctx.lineWidth=2.5*scale; ctx.shadowColor="#9cf"; ctx.shadowBlur=12*scale; ctx.beginPath(); ctx.moveTo(cx+z.x*scale,cy+(z.y-60)*scale); ctx.lineTo(cx+(z.x+8)*scale,cy+(z.y-30)*scale); ctx.lineTo(cx+(z.x-6)*scale,cy+(z.y-14)*scale); ctx.lineTo(cx+z.x*scale,cy+z.y*scale); ctx.stroke(); ctx.restore(); }
   for(const p of parts){ ctx.globalAlpha=Math.max(0,p.t*2); ctx.fillStyle=p.col; const s=CELL*scale*0.35; ctx.fillRect(cx+p.x*scale-s/2,cy+p.y*scale-s/2,s,s); } ctx.globalAlpha=1;
   for(const g of rings){ ctx.beginPath(); ctx.arc(cx+g.x*scale,cy+g.y*scale,g.r*scale,0,Math.PI*2); ctx.strokeStyle=`rgba(255,200,80,${g.t*2.5})`; ctx.lineWidth=4*scale; ctx.stroke(); }
   const r=ballRadius(run.lv.size)*scale, boosted=gt<boostUntil;
@@ -195,39 +260,44 @@ function buzz(){ if(S.haptic===false) return; try{ if(NATIVE&&NATIVE.buzz) NATIV
 const $=id=>document.getElementById(id);
 function syncIcons(){ $("sndB").textContent=S.sound?"🔊":"🔇"; $("hapB").classList.toggle("off",S.haptic===false); }
 function par(lv){ return 30+12*(lv-1); }
-function uiTop(){ $("coinT").textContent=fmt(run.coins);
+function uiTop(){ $("coinT").textContent=fmt(run.coins); $("rubyT").textContent=S.rubies; $("treeB").classList.toggle("glow",TREE.some(n=>canBuyNode(n)));
   const b=S.best[run.level]; $("stage").innerHTML=`LEVEL <b>${run.level}</b> · ⏱ <b>${mmss(run.time)}</b>${b?` <span class="best">· best ${mmss(b)}</span>`:""}`;
   $("pbar").firstChild.style.width=Math.round((1-aliveCount/Math.max(1,totalCells))*100)+"%";
   $("rate").textContent=rateNow>0?"+"+fmt(rateNow)+" / sec · blocks regrow after "+regrowDelay().toFixed(1)+"s":"Blocks regrow after "+regrowDelay().toFixed(1)+"s – clear them all at once!";
-  $("boost").style.opacity=gt<boostUntil?1:0; }
+  if(T("detonator")){ $("boost").textContent=detCD>0?"💣 "+detCD.toFixed(1)+"s":"💣 TAP TO BOMB"; $("boost").style.opacity=1; } else { $("boost").textContent="⚡ BOOST"; $("boost").style.opacity=gt<boostUntil?1:0; } }
 let cardsSig="";
 function uiCards(force){
-  const sig=UP.map(u=>u.id+run.lv[u.id]+(run.coins>=costOf(u,run.lv[u.id])?1:0)+Math.floor(Math.min(1,run.coins/costOf(u,run.lv[u.id]))*20)).join("|")+S.hint;
+  const sig=visUP().map(u=>u.id+run.lv[u.id]+(run.coins>=costOf(u,run.lv[u.id])?1:0)+Math.floor(Math.min(1,run.coins/costOf(u,run.lv[u.id]))*20)).join("|")+S.hint;
   if(!force&&sig===cardsSig) return; cardsSig=sig;
-  const cheapest=UP.filter(u=>run.lv[u.id]<u.max).sort((a,b)=>costOf(a,run.lv[a.id])-costOf(b,run.lv[b.id]))[0];
-  $("cards").innerHTML=UP.map(u=>{ const l=run.lv[u.id], max=l>=u.max, c=costOf(u,l), ok=!max&&run.coins>=c;
+  const cheapest=cheapestUp();
+  $("cards").innerHTML=visUP().map(u=>{ const l=run.lv[u.id], max=l>=u.max, c=costOf(u,l), ok=!max&&run.coins>=c;
     return `<button class="card ${max?"max":ok?"ok":""} ${l===0&&!ok?"new":""}" data-u="${u.id}"><div class="t"><span class="ic">${u.ic}</span> ${u.name}</div><div class="l">LEVEL ${l}</div><div class="v" style="font-size:${String(u.show(l)).length>4?20:28}px">${u.show(l)}</div>
       <div class="b"><i style="width:${max?100:Math.min(100,Math.round(run.coins/c*100))}%"></i></div><div class="c">${max?"MAX":`<span class="coin sm">◉</span>${fmt(c)}`}</div>
       ${S.hint&&ok&&cheapest&&cheapest.id===u.id?`<span class="hand">👆</span>`:""}</button>`; }).join("");
   document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>buy(b.dataset.u));
 }
-function buy(id){ const u=UP.find(x=>x.id===id), l=run.lv[id]; if(l>=u.max) return; const c=costOf(u,l);
+function cheapestUp(){ return visUP().filter(u=>run.lv[u.id]<u.max).sort((a,b)=>costOf(a,run.lv[a.id])-costOf(b,run.lv[b.id]))[0]; }
+function buy(id,quiet){ const u=UP.find(x=>x.id===id), l=run.lv[id]; if(l>=u.max) return; const c=costOf(u,l);
   if(run.coins<c){ if(S.sound) tick(140,0.05); return; }
-  run.coins-=c; run.lv[id]++; S.hint=false; if(S.sound){ tick(660,0.04); setTimeout(()=>tick(990,0.05),70); }
-  buzz(); floatText((l===0?"Unlocked ":"+1 ")+u.name, innerWidth/2-50, innerHeight-200); save(true); uiCards(true); }
+  run.coins-=c; run.lv[id]++; S.hint=false; if(S.sound&&!quiet){ tick(660,0.04); setTimeout(()=>tick(990,0.05),70); }
+  if(!quiet){ buzz(); floatText((l===0?"Unlocked ":"+1 ")+u.name, innerWidth/2-50, innerHeight-200); } save(!quiet); uiCards(true); }
 function floatText(t,x,y){ const d=document.createElement("div"); d.className="float"; d.textContent=t; d.style.left=x+"px"; d.style.top=y+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),900); }
 function levelClear(sim){
   cleared=true; const lv=run.level, t=run.time, p=par(lv), stars=t<=p?3:t<=2*p?2:1;
-  const prevBest=S.best[lv], record=!prevBest||t<prevBest;
+  const prevBest=S.best[lv], record=!prevBest||t<prevBest, prevStars=S.stars[lv]||0, gain=Math.max(0,stars-prevStars)+(prevStars===0?T("hunter"):0); S.rubies+=gain;
   if(record) S.best[lv]=Math.round(t*10)/10; S.stars[lv]=Math.max(S.stars[lv]||0,stars); S.unlocked=Math.max(S.unlocked,lv+1); S.cur=null; run=null;
-  if(sim){ simResult={lv,t,stars}; startLevel(lv+1); cleared=false; return; }
+  if(sim){ simResult={lv,t,stars,gain}; startLevel(lv+1); cleared=false; return; }
   save(true); buzz(); if(S.sound){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tick(f,0.06),i*90)); }
   popup(`<div style="font-size:44px;letter-spacing:4px">${"⭐".repeat(stars)}<span style="opacity:.25">${"⭐".repeat(3-stars)}</span></div><h1>Level ${lv} cleared!</h1>
     <p style="color:#bbb">Time <b style="color:#fff">${mmss(t)}</b>${record&&prevBest?` · <b style="color:#3ddc84">new best!</b>`:prevBest?` · best ${mmss(prevBest)}`:""}<br><span style="font-size:12px">⭐⭐⭐ under ${mmss(p)} · ⭐⭐ under ${mmss(2*p)}</span></p>
-    <button class="btn" id="nx">Level ${lv+1} →</button><button class="btn g" id="again">Replay level ${lv}</button>`,{nx:()=>{ cleared=false; startLevel(lv+1); },again:()=>{ cleared=false; startLevel(lv); }});
+    <p style="margin-top:10px;font-size:20px;font-weight:900;color:#ff7aa2">${gain?`+${gain} 💎`:`<span style="font-size:13px;color:#888;font-weight:700">No new rubies – beat your stars (${"⭐".repeat(prevStars)}) to earn more</span>`}</p>
+    ${gain&&TREE.some(n=>canBuyNode(n))?`<button class="btn" style="background:linear-gradient(#ff6b9a,#d91e5b);color:#fff" id="tr">💎 Open Ascend tree</button>`:""}
+    <button class="btn" id="nx">Level ${lv+1} →</button><button class="btn g" id="again">Replay level ${lv}</button>`,{tr:()=>{ cleared=false; startLevel(lv+1); openTree(); },nx:()=>{ cleared=false; startLevel(lv+1); },again:()=>{ cleared=false; startLevel(lv); }});
 }
 function popup(html,acts){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; Object.entries(acts||{}).forEach(([id,fn])=>{ const b=L.querySelector("#"+id); if(b) b.onclick=()=>{ L.innerHTML=""; fn(); }; }); const ok=L.querySelector("#ok"); if(ok) ok.onclick=()=>{ L.innerHTML=""; }; }
-cv.addEventListener("pointerdown",e=>{ boostUntil=gt+1.5; floatText("⚡",e.clientX-8,e.clientY-20); if(S.sound) tick(880,0.02); });
+cv.addEventListener("pointerdown",e=>{ if(T("detonator")&&run){ if(detCD>0) return; const rc=cv.getBoundingClientRect(), k=cv.width/rc.width, x=((e.clientX-rc.left)*k-cx)/scale, y=((e.clientY-rc.top)*k-cy)/scale; if(Math.hypot(x,y)>R) return;
+    const br=bombRadius(Math.max(1,run.lv.bomb))*(1+0.12*T("bigboom")); const g=areaHit(x,y,br,dpsOf(run.lv.power)*(1+0.15*T("heavy"))*6)*coinMult(); run.coins+=g; rings.push({x,y,r:0,max:br,t:0.35}); detCD=4; buzz(); if(S.sound) tick(90,0.08); return; }
+  boostUntil=gt+1.5+T("overclock"); floatText("⚡",e.clientX-8,e.clientY-20); if(S.sound) tick(880,0.02); });
 $("sndB").onclick=()=>{ S.sound=!S.sound; syncIcons(); save(true); };
 $("hapB").onclick=()=>{ S.haptic=S.haptic===false; syncIcons(); save(true); if(S.haptic) buzz(); floatText(S.haptic?"📳 Vibration on":"Vibration off",innerWidth/2-60,90); };
 $("menuB").onclick=openMenu;
@@ -238,18 +308,38 @@ function openMenu(){
     <p style="color:#888;font-size:12px;margin:4px 0 8px">Every level starts fresh: 0 coins, basic upgrades. Tap a level to (re)play it.</p>
     <div class="lvgrid">${grid}</div>
     <div class="row"><span>Sound</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
-    <div class="row"><span>Vibration</span><button class="tg ${S.haptic!==false?"on":""}" id="th">${S.haptic!==false?"On":"Off"}</button></div>
+    ${T("auto")?`<div class="row"><span>🤖 Auto-Buyer</span><button class="tg ${S.auto?"on":""}" id="ta">${S.auto?"On":"Off"}</button></div>`:""}<div class="row"><span>Vibration</span><button class="tg ${S.haptic!==false?"on":""}" id="th">${S.haptic!==false?"On":"Off"}</button></div>
     <div class="row"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ORBIT_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
     ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
     <button class="btn g" id="rst">Restart this level</button><button class="btn" id="cl">Close</button></div></div>`;
   L.querySelector("#cl").onclick=()=>{ L.innerHTML=""; };
   L.querySelector("#ts").onclick=()=>{ S.sound=!S.sound; syncIcons(); save(true); openMenu(); };
+  const ta=L.querySelector("#ta"); ta&&(ta.onclick=()=>{ S.auto=!S.auto; save(true); openMenu(); });
   L.querySelector("#th").onclick=()=>{ S.haptic=S.haptic===false; syncIcons(); save(true); if(S.haptic) buzz(); openMenu(); };
   L.querySelectorAll("[data-lv]").forEach(b=>b.onclick=()=>{ const lv=+b.dataset.lv; L.innerHTML=""; cleared=false; startLevel(lv); floatText("Level "+lv+" – fresh start!",innerWidth/2-70,120); });
   const up=L.querySelector("#upd"); up&&(up.onclick=()=>{ try{ NATIVE.checkUpdates(); }catch(e){} });
   const ins=L.querySelector("#inst"); ins&&(ins.onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} });
   L.querySelector("#rst").onclick=()=>{ const lv=run?run.level:1; L.innerHTML=""; cleared=false; startLevel(lv); };
 }
+function canBuyNode(n){ const l=T(n.id); return l<n.max&&(!n.req||T(n.req)>0)&&S.rubies>=n.cost(l); }
+function nodeHtml(n){ const l=T(n.id), lock=n.req&&!T(n.req), max=l>=n.max, c=max?0:n.cost(l), ok=!lock&&!max&&S.rubies>=c, req=n.req&&TREE.find(x=>x.id===n.req);
+  return `<div class="node ${n.br?"":"root"} ${lock?"lock":""} ${max?"maxd":""}"><div class="ni">${n.ic}</div><div class="nt">${n.key?`<div class="key">★ PLAY STYLE</div>`:""}<div class="nn">${n.name}<small>${l}/${n.max}</small></div>
+    <div class="nd">${lock?"🔒 Needs "+req.name:n.d(l)}</div>${n.max>1?`<div class="pips">${Array.from({length:n.max},(_,i)=>`<i class="${i<l?"on":""}"></i>`).join("")}</div>`:""}</div>
+    <button class="${ok?"ok":""}" data-n="${n.id}" ${ok?"":"disabled"}>${max?"MAX":c+" 💎"}</button></div>`; }
+function openTree(){
+  const L=$("layer");
+  L.innerHTML=`<div class="tree"><div class="hd"><h2>Ascend tree</h2><span style="color:#ff7aa2;font-weight:900;font-size:20px">💎 ${S.rubies}</span></div>
+    <p style="color:#888;font-size:12px">Permanent upgrades for every level. Rubies: 1 per star the first time you get it (⭐=1, ⭐⭐=2, ⭐⭐⭐=3).</p>
+    <div style="--c:#e8e8ff;margin-top:12px">${nodeHtml(TREE[0])}</div>
+    ${BR.map(b=>`<div class="br" style="--c:${b.c}"><h3>${b.name}</h3>${TREE.filter(n=>n.br===b.id).map(nodeHtml).join("")}</div>`).join("")}
+    <button class="btn g" id="resp">↺ Reset tree (refund ${treeSpent()} 💎)</button><button class="btn" id="tcl">Back to game</button></div>`;
+  L.querySelectorAll("[data-n]").forEach(b=>b.onclick=()=>{ const n=TREE.find(x=>x.id===b.dataset.n); if(!canBuyNode(n)) return; S.rubies-=n.cost(T(n.id)); S.tree[n.id]=T(n.id)+1; applyTree(); save(true); buzz(); if(S.sound){ tick(700,0.04); setTimeout(()=>tick(1050,0.05),70); } const sc=L.querySelector(".tree").scrollTop; openTree(); L.querySelector(".tree").scrollTop=sc; });
+  L.querySelector("#tcl").onclick=()=>{ L.innerHTML=""; uiCards(true); };
+  L.querySelector("#resp").onclick=()=>{ if(!treeSpent()) return; S.rubies+=treeSpent(); S.tree={}; applyTree(); save(true); openTree(); };
+}
+// tree changes apply right away to the running level (start bonuses only raise, never lower)
+function applyTree(){ if(!run) return; for(const u of UP){ run.lv[u.id]=Math.max(Math.min(run.lv[u.id],u.max),u.req&&!T(u.req)?0:Math.min(u.max,startLv(u))); if(u.req&&!T(u.req)) run.lv[u.id]=0; } uiCards(true); }
+$("treeB").onclick=openTree;
 let apkUpdate=null;
 window.ascendApkUpdate=v=>{ apkUpdate=v; floatText("📦 Update ready – see ☰",innerWidth/2-90,90); };
 window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
@@ -259,15 +349,15 @@ resize();
 if(S.cur&&S.cur.level) startLevel(S.cur.level,S.cur); else startLevel(Math.min(S.unlocked,S.unlocked));
 window.addEventListener("resize",resize);
 let lastT=performance.now(), uiT=0;
-function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; if(run&&!document.querySelector(".pop,.menu")) step(dt); if(run){ render(); uiT+=dt; if(uiT>0.12){ uiT=0; uiTop(); uiCards(); save(); } } requestAnimationFrame(frame); }
+function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; if(run&&!document.querySelector(".pop,.menu,.tree")) step(dt); if(run){ render(); uiT+=dt; if(uiT>0.12){ uiT=0; uiTop(); uiCards(); save(); } } requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 document.addEventListener("visibilitychange",()=>{ if(document.hidden) save(true); else lastT=performance.now(); });
 window.addEventListener("pagehide",()=>save(true));
-try{ const seen=+localStorage.getItem("orbit_seen_ver")||0; if(seen&&seen<ORBIT_WEB_VERSION) setTimeout(()=>popup(`<div style="font-size:44px">✨</div><h1>New: Levels!</h1><p style="color:#bbb">Every level now starts fresh with one ball and new upgrades (💣 Bomb, 🔦 Laser). Careful: blocks grow back if no ball touches them for 2 seconds!</p><button class="btn" id="ok">Let's go</button>`),400); localStorage.setItem("orbit_seen_ver",String(ORBIT_WEB_VERSION)); }catch(e){}
+try{ const seen=+localStorage.getItem("orbit_seen_ver")||0; if(seen&&seen<ORBIT_WEB_VERSION) setTimeout(()=>popup(`<div style="font-size:44px">✨</div><h1>New: Rubies & Ascend tree!</h1><p style="color:#bbb">Clear levels to earn 💎 rubies (1 per star). Spend them in the Ascend tree (💎 button, top left) on permanent upgrades and new play styles: Fire Trail, Homing Ball, Detonator, Twin Laser, Shards, Zap, Auto-Buyer and more. You already got rubies for the stars you have.</p><button class="btn" id="ok">Let's go</button>`),400); localStorage.setItem("orbit_seen_ver",String(ORBIT_WEB_VERSION)); }catch(e){}
 /* test hooks */
 let simResult=null;
-window.__oc={get run(){return run;},get S(){return S;},get alive(){return aliveCount;},buy,startLevel,
-  sim(seconds,autobuy){ simResult=null; const dt=1/30; for(let t=0;t<seconds;t+=dt){ step(dt,true); if(autobuy){ const c=UP.filter(u=>run.lv[u.id]<u.max).sort((a,b)=>costOf(a,run.lv[a.id])-costOf(b,run.lv[b.id]))[0]; if(c&&run.coins>=costOf(c,run.lv[c.id])){ run.coins-=costOf(c,run.lv[c.id]); run.lv[c.id]++; } } if(simResult) return simResult; } return {notCleared:true,alive:aliveCount,total:totalCells,lv:JSON.stringify(run.lv)}; }};
+window.__oc={TREE,openTree,applyTree,get run(){return run;},get S(){return S;},get alive(){return aliveCount;},buy,startLevel,
+  sim(seconds,autobuy){ simResult=null; const dt=1/30; for(let t=0;t<seconds;t+=dt){ step(dt,true); if(autobuy){ const c=cheapestUp(); if(c&&run.coins>=costOf(c,run.lv[c.id])){ run.coins-=costOf(c,run.lv[c.id]); run.lv[c.id]++; } } if(simResult) return simResult; } return {notCleared:true,alive:aliveCount,total:totalCells,lv:JSON.stringify(run.lv)}; }};
 })();
 </script>
 </body>

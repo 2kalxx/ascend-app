@@ -1,7 +1,7 @@
 {
-  "web": 4,
+  "web": 5,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/OrbitCrush.apk",
-  "notes": "Fixed 2s regrow, no regrow upgrade"
+  "notes": "Rubies + Ascend skill tree"
 }
