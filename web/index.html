@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d0f17">
+<title>Ascend – 66-Day Reset</title>
+<style>
+:root{
+  --bg:#0d0f17;--card:#161a26;--card2:#1d2232;--line:#2a3045;--txt:#eef0f7;--mut:#8b93ad;
+  --acc:#7c6cff;--acc2:#a78bfa;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;
+  --mind:#60a5fa;--body:#34d399;--discipline:#f59e0b;--social:#f472b6;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(76px + env(safe-area-inset-bottom)) env(safe-area-inset-left);min-height:100vh}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,textarea,select{font:inherit;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:10px;padding:10px 12px;width:100%;outline:none}
+input:focus,textarea:focus,select:focus{border-color:var(--acc)}
+.wrap{max-width:560px;margin:0 auto;padding:16px}
+h1{font-size:22px;font-weight:700}
+h2{font-size:16px;font-weight:650;margin:22px 0 10px}
+.mut{color:var(--mut)}
+.small{font-size:13px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:16px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.btn{background:var(--acc);color:#fff;border-radius:12px;padding:11px 16px;font-weight:600}
+.btn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.btn.danger{background:transparent;color:var(--bad);border:1px solid #5a2a33}
+.btn.full{width:100%}
+.btn:active{transform:scale(.98)}
+.chip{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-size:12px}
+/* header */
+.hero{background:linear-gradient(135deg,#2a2160,#1a1d33 60%);border:1px solid #33306a}
+.lvl{font-size:13px;color:var(--acc2);font-weight:600;letter-spacing:.3px}
+.bar{height:10px;background:#0b0d14;border-radius:99px;overflow:hidden}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--acc),var(--acc2));border-radius:99px;transition:width .4s}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:14px}
+.stat{background:rgba(0,0,0,.25);border-radius:12px;padding:10px;text-align:center}
+.stat b{display:block;font-size:20px}
+.stat span{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.5px}
+/* quests */
+.quest{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:8px;width:100%;text-align:left;transition:.15s}
+.quest .em{font-size:22px;width:30px;text-align:center}
+.quest .nm{flex:1;min-width:0}
+.quest .nm b{display:block;font-weight:600}
+.quest .ck{width:26px;height:26px;border-radius:50%;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.quest.done{background:#14251f;border-color:#1f4d3c}
+.quest.done .ck{background:var(--ok);border-color:var(--ok);color:#06281c}
+.quest.done .nm b{text-decoration:line-through;color:#a7f3d0}
+.xp{font-size:12px;color:var(--warn);font-weight:600}
+.daynav{display:flex;align-items:center;justify-content:space-between;margin:20px 0 10px}
+.daynav button{width:36px;height:36px;border-radius:10px;background:var(--card2);border:1px solid var(--line)}
+.daynav button:disabled{opacity:.3}
+/* grid */
+.grid66{display:grid;grid-template-columns:repeat(11,1fr);gap:5px}
+.cell{aspect-ratio:1;border-radius:6px;background:var(--card2);display:grid;place-items:center;font-size:10px;color:var(--mut)}
+.cell.today{outline:2px solid var(--acc2)}
+.cell.future{opacity:.35}
+/* attrs */
+.attr{margin-bottom:12px}
+.attr .bar{height:8px}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+/* nav */
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(13,15,23,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:10}
+nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--mut);padding:4px 12px}
+nav button .i{font-size:20px}
+nav button.on{color:var(--acc2)}
+/* misc */
+.hlist .item{display:flex;align-items:center;gap:10px;padding:12px 0;border-bottom:1px solid var(--line)}
+.hlist .item:last-child{border:0}
+.moods{display:flex;gap:6px}
+.moods button{flex:1;font-size:24px;padding:8px 0;border-radius:12px;background:var(--card2);border:1px solid var(--line)}
+.moods button.on{border-color:var(--acc);background:#2a2560}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;z-index:20}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:20px 20px 0 0;width:100%;max-width:560px;padding:20px 16px calc(20px + env(safe-area-inset-bottom));max-height:90vh;overflow:auto}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;color:var(--mut);margin-bottom:5px}
+.seg{display:flex;gap:6px;flex-wrap:wrap}
+.seg button{padding:8px 12px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:13px}
+.seg button.on{border-color:var(--acc);background:#2a2560}
+.toast{position:fixed;left:50%;top:calc(16px + env(safe-area-inset-top));transform:translateX(-50%);background:#2a2560;border:1px solid var(--acc);padding:10px 16px;border-radius:12px;font-weight:600;z-index:30;animation:pop .25s}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-8px)}}
+.preset{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;margin-bottom:6px;background:var(--card2);width:100%;text-align:left}
+.preset.on{border-color:var(--acc);background:#221f4a}
+.preset .ck{margin-left:auto;width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-size:12px}
+.preset.on .ck{background:var(--acc);border-color:var(--acc)}
+.sync{font-size:11px;color:var(--mut);text-align:center;margin-top:24px}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<nav id="nav"></nav>
+<div id="layer"></div>
+
+<script>
+(function(){
+"use strict";
+/* ---------- constants ---------- */
+const ASCEND_WEB_VERSION = 3; // bump on every web update (read by the Android app too)
+const PROGRAM_DAYS = 66;
+const LS_KEY = "ascend_state_v1";
+const CATS = {
+  mind:{label:"Mind",color:"var(--mind)",icon:"🧠"},
+  body:{label:"Body",color:"var(--body)",icon:"💪"},
+  discipline:{label:"Discipline",color:"var(--discipline)",icon:"⚔️"},
+  social:{label:"Social",color:"var(--social)",icon:"🤝"}
+};
+const DIFF = {10:"Easy",20:"Medium",30:"Hard"};
+const PRESETS = [
+  ["💧","Drink 2L of water","body",10],["🏃","Exercise 30 min","body",30],["🚶","Walk 8,000 steps","body",20],
+  ["🛏️","Sleep before 23:00","body",20],["🥗","Eat clean today","body",20],["🧊","Cold shower","discipline",20],
+  ["⏰","Wake up before 7:00","discipline",20],["📵","Max 1h social media","discipline",30],["🚭","No smoking / vaping","discipline",30],
+  ["🍬","No sugar / junk food","discipline",20],["🧹","Make bed & tidy 10 min","discipline",10],["📖","Read 20 pages","mind",20],
+  ["🧘","Meditate 10 min","mind",10],["✍️","Journal","mind",10],["📚","Study / learn 45 min","mind",30],
+  ["🇪🇸","Practice a language 15 min","mind",20],["📞","Reach out to a friend/family","social",10],["🙏","Write 3 things I'm grateful for","social",10]
+];
+const SIDE_POOL = [
+  ["b1","🚶","Take a 20-minute walk without your phone","body",15],["b2","🧎","Do 30 push-ups (split up is fine)","body",20],
+  ["b3","🧘","Stretch for 10 minutes","body",15],["b4","🪜","Take the stairs everywhere today","body",15],
+  ["b5","🍎","Eat 3 portions of fruit or veg","body",15],["b6","🚰","No soft drinks or energy drinks today","body",15],
+  ["b7","🏋️","Hold a 2-minute plank (total)","body",20],["b8","🌳","Spend 30 min outside","body",15],
+  ["d1","🧹","Clean one area you've been avoiding","discipline",20],["d2","📵","No phone for the first hour after waking","discipline",25],
+  ["d3","📴","Phone off 1 hour before bed","discipline",25],["d4","✅","Finish one task you've been putting off","discipline",25],
+  ["d5","🗂️","Plan tomorrow in writing","discipline",15],["d6","🧺","Do the laundry / dishes right away","discipline",15],
+  ["d7","🧊","End your shower 60 seconds cold","discipline",20],["d8","🎮","No gaming / streaming before 18:00","discipline",25],
+  ["d9","💰","Spend nothing that isn't necessary","discipline",20],["d10","🛏️","In bed by 22:30","discipline",20],
+  ["m1","📖","Read 10 pages of a book","mind",15],["m2","🎧","Listen to an educational podcast","mind",15],
+  ["m3","✍️","Write down 3 goals for this month","mind",15],["m4","🧠","Learn one new fact and explain it to someone","mind",15],
+  ["m5","📝","Review your notes from class / work for 20 min","mind",20],["m6","🇪🇸","Learn 10 new words in a language","mind",15],
+  ["m7","🤔","10 minutes of quiet thinking – no input","mind",15],["m8","📚","Study 25 minutes without distraction","mind",20],
+  ["s1","💬","Compliment someone honestly","social",10],["s2","📞","Call (not text) a friend or family member","social",15],
+  ["s3","🤝","Help someone without being asked","social",15],["s4","🙏","Thank someone for something specific","social",10],
+  ["s5","👋","Start a conversation with someone new","social",20],["s6","🍽️","Eat a meal without screens, with someone","social",15],
+  ["s7","💌","Send a message to someone you haven't talked to in a while","social",15],["s8","😊","Smile at and greet 5 people","social",10]
+];
+const RANKS = [[1,"Rookie"],[3,"Apprentice"],[6,"Challenger"],[10,"Warrior"],[15,"Elite"],[21,"Champion"],[28,"Master"],[36,"Legend"],[45,"Ascended"]];
+const MOODS = ["😞","😕","😐","🙂","😄"];
+const EMOJIS = ["✅","💧","🏃","🚶","🛏️","🥗","🧊","⏰","📵","🚭","🍬","🧹","📖","🧘","✍️","📚","💻","🎸","🙏","📞","💰","🌅","🏋️","🚴","🎯","🔥"];
+
+/* ---------- date helpers (local time) ---------- */
+const pad = n => String(n).padStart(2,"0");
+const keyOf = d => d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const parseKey = k => { const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d); };
+const addDays = (k,n) => { const d=parseKey(k); d.setDate(d.getDate()+n); return keyOf(d); };
+const diffDays = (a,b) => Math.round((parseKey(b)-parseKey(a))/864e5);
+const todayKey = () => keyOf(new Date());
+const fmtDay = k => parseKey(k).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+const uid = () => Math.random().toString(36).slice(2,10);
+const esc = s => String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ---------- state + persistence ---------- */
+let state = null;
+let view = "today";
+let viewDay = todayKey();
+let syncMode = "local"; // local | cloud | cloud-error
+let remoteRef = null, writing = false, pending = false, writeTimer = null;
+
+function lsGet(){ try{ const s=localStorage.getItem(LS_KEY); return s?JSON.parse(s):null; }catch(e){ return null; } }
+function lsSet(){ try{ localStorage.setItem(LS_KEY, JSON.stringify(state)); }catch(e){} }
+
+/* fill in fields added in later versions so old data keeps working */
+function migrate(s){
+  if(!s) return s;
+  s.side = s.side || {on:true,count:2,custom:[],off:[]};
+  s.side.custom = s.side.custom||[]; s.side.off = s.side.off||[];
+  if(![1,2,3].includes(s.side.count)) s.side.count=2;
+  s.rem = s.rem || {m:{on:false,t:"08:00"}, e:{on:false,t:"20:00"}};
+  return s;
+}
+const NATIVE = (typeof window.AscendNative!=="undefined") ? window.AscendNative : null;
+function nativeSync(){
+  if(!NATIVE || !state) return;
+  try{
+    const t=todayKey(), hs=habitsFor(t), d=(state.log[t]||{}).d||{};
+    NATIVE.report(t, hs.filter(h=>d[h.id]!=null).length, hs.length, streak(), state.name||"");
+    NATIVE.setReminders(JSON.stringify(state.rem));
+  }catch(e){}
+}
+function save(){
+  state.updatedAt = Date.now();
+  lsSet();
+  nativeSync();
+  if(remoteRef){ clearTimeout(writeTimer); writeTimer=setTimeout(flush,700); }
+}
+async function flush(){
+  if(!remoteRef) return;
+  if(writing){ pending=true; return; }
+  writing=true;
+  try{ await remoteRef.set({json: JSON.stringify(state), updatedAt: state.updatedAt}); syncMode="cloud"; }
+  catch(e){ syncMode="cloud-error"; }
+  writing=false; renderSync();
+  if(pending){ pending=false; flush(); }
+}
+
+async function connectCloud(){
+  try{
+    if(!window.claude || !window.claude.use) return;
+    const [db,user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    if(!db || !user) return;
+    const id = await user.id();
+    if(!id) return;
+    const ref = db.doc("data/users/"+id+"/state");
+    const snap = await Promise.race([ref.get(), new Promise((_,rej)=>setTimeout(()=>rej(new Error("timeout")),10000))]);
+    let remote = null;
+    if(snap.exists){ try{ remote = JSON.parse(snap.data().json); }catch(e){} }
+    remoteRef = ref; syncMode="cloud";
+    if(remote && (!state || (remote.updatedAt||0) > (state.updatedAt||0))){
+      state = migrate(remote); lsSet(); render();
+    } else if(state){ flush(); }
+    renderSync();
+  }catch(e){ syncMode = remoteRef ? "cloud-error" : "local"; renderSync(); }
+}
+
+/* ---------- derived values ---------- */
+function habitsFor(k){
+  const wd = parseKey(k).getDay();
+  return state.habits.filter(h => !h.archived && (!h.days || h.days.length===0 || h.days.includes(wd)) && (!h.since || h.since<=k));
+}
+function dayLog(k){ return state.log[k] || {d:{}}; }
+function dayRatio(k){
+  const hs = habitsFor(k); if(!hs.length) return 0;
+  const d = dayLog(k).d||{}; return hs.filter(h=>d[h.id]!=null).length / hs.length;
+}
+function isPerfect(k){ return habitsFor(k).length>0 && dayRatio(k)===1; }
+function dayXP(k){
+  const lg = state.log[k]||{}, d = lg.d||{}, s = lg.s||{}; let x=0;
+  for(const id in d) x += d[id];
+  for(const id in s) x += s[id];
+  if(isPerfect(k)) x += 50;
+  return x;
+}
+/* ---------- side quests (daily rotation) ---------- */
+function sidePool(){
+  const off = state.side.off||[];
+  return SIDE_POOL.filter(p=>!off.includes(p[0])).map(p=>({id:p[0],emoji:p[1],name:p[2],cat:p[3],xp:p[4]}))
+    .concat(state.side.custom||[]);
+}
+function seeded(str){ let h=2166136261; for(let i=0;i<str.length;i++){ h^=str.charCodeAt(i); h=Math.imul(h,16777619); } return ()=>{ h^=h<<13; h^=h>>>17; h^=h<<5; return ((h>>>0)%100000)/100000; }; }
+function pickSide(k, roll, exclude){
+  const pool = sidePool().filter(p=>!(exclude||[]).includes(p.id));
+  const rnd = seeded(k+"#"+roll), out=[], used=new Set();
+  // avoid repeating yesterday's picks when possible
+  const y = (state.log[addDays(k,-1)]||{}).sq||[]; const yIds=y.map(q=>q.id);
+  let cand = pool.filter(p=>!yIds.includes(p.id)); if(cand.length < state.side.count) cand = pool;
+  while(out.length < Math.min(state.side.count, cand.length)){
+    const p = cand[Math.floor(rnd()*cand.length)];
+    if(!used.has(p.id)){ used.add(p.id); out.push(Object.assign({},p)); }
+  }
+  return out;
+}
+/* Only today's side quests get created; they are stored so they never change afterwards. */
+function ensureSide(k){
+  if(!state.side.on || k!==todayKey()) return;
+  const lg = state.log[k] || (state.log[k]={d:{}});
+  if(!lg.sq){ lg.sq = pickSide(k, 0); save(); }
+}
+function totalXP(){ let x=0; for(const k in state.log) x+=dayXP(k); return x; }
+function levelInfo(xp){
+  let lvl=1, need=100, rest=xp;
+  while(rest>=need){ rest-=need; lvl++; need=100+ (lvl-1)*25; }
+  let rank=RANKS[0][1]; for(const [l,r] of RANKS) if(lvl>=l) rank=r;
+  return {lvl, rest, need, rank};
+}
+const DAY_OK = 0.7; // a day "counts" for the streak at >=70% of quests
+function streak(){
+  let k=todayKey(), s=0;
+  if(dayRatio(k) < DAY_OK) k = addDays(k,-1); // today still in progress
+  while(diffDays(state.start,k)>=0 && dayRatio(k)>=DAY_OK){ s++; k=addDays(k,-1); }
+  return s;
+}
+function bestStreak(){
+  let best=0,cur=0,k=state.start; const t=todayKey();
+  while(diffDays(k,t)>=0){ if(dayRatio(k)>=DAY_OK){cur++;best=Math.max(best,cur);} else if(k!==t) cur=0; k=addDays(k,1); }
+  return best;
+}
+function habitStreak(h){
+  let k=todayKey(), s=0, guard=0;
+  const done = kk => ((state.log[kk]||{}).d||{})[h.id]!=null;
+  const sched = kk => habitsFor(kk).some(x=>x.id===h.id);
+  if(sched(k) && !done(k)) k=addDays(k,-1);
+  while(guard++<1000 && diffDays(state.start,k)>=0){
+    if(!sched(k)){ k=addDays(k,-1); continue; }
+    if(done(k)){ s++; k=addDays(k,-1); } else break;
+  }
+  return s;
+}
+function habitRate(h){
+  let sch=0,dn=0,k=state.start; const t=todayKey();
+  while(diffDays(k,t)>=0){ if(habitsFor(k).some(x=>x.id===h.id)){ sch++; if(((state.log[k]||{}).d||{})[h.id]!=null) dn++; } k=addDays(k,1); }
+  return sch? Math.round(dn/sch*100) : 0;
+}
+function attrXP(){
+  const a={mind:0,body:0,discipline:0,social:0};
+  const byId={}; state.habits.forEach(h=>byId[h.id]=h);
+  for(const k in state.log){
+    const lg=state.log[k], d=lg.d||{}, s=lg.s||{};
+    for(const id in d){ const h=byId[id]; if(h&&a[h.cat]!=null) a[h.cat]+=d[id]; }
+    (lg.sq||[]).forEach(q=>{ if(s[q.id]!=null && a[q.cat]!=null) a[q.cat]+=s[q.id]; });
+  }
+  return a;
+}
+function programDay(){ return Math.min(PROGRAM_DAYS, diffDays(state.start,todayKey())+1); }
+
+/* ---------- UI helpers ---------- */
+const $app = document.getElementById("app");
+const $nav = document.getElementById("nav");
+const $layer = document.getElementById("layer");
+function toast(msg){
+  const t=document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>t.remove(),1800);
+}
+function closeSheet(){ $layer.innerHTML=""; }
+function sheet(html, bind){
+  $layer.innerHTML = '<div class="modal"><div class="sheet">'+html+'</div></div>';
+  const m=$layer.querySelector(".modal");
+  m.addEventListener("click",e=>{ if(e.target===m) closeSheet(); });
+  bind && bind($layer.querySelector(".sheet"));
+}
+function confirmSheet(text, okLabel, onOk){
+  sheet('<p style="margin-bottom:16px">'+esc(text)+'</p><div class="row"><button class="btn ghost full" data-x>Cancel</button><button class="btn danger full" data-ok>'+esc(okLabel)+'</button></div>', s=>{
+    s.querySelector("[data-x]").onclick=closeSheet;
+    s.querySelector("[data-ok]").onclick=()=>{ closeSheet(); onOk(); };
+  });
+}
+
+/* ---------- onboarding ---------- */
+let obPick = new Set([0,6,11,12,1]);
+let obName = "";
+function renderOnboarding(){
+  $nav.style.display="none";
+  $app.innerHTML = `
+    <div style="text-align:center;margin:28px 0 22px">
+      <div style="font-size:44px">🔥</div>
+      <h1 style="font-size:26px;margin-top:6px">Ascend</h1>
+      <p class="mut">Your 66-day reset. Daily quests, XP, levels, streaks – no paywall.</p>
+    </div>
+    <div class="field"><label>What should I call you?</label><input id="obn" maxlength="30" placeholder="Your name" value="${esc(obName)}"></div>
+    <h2>Pick your daily quests <span class="mut small">(you can change them anytime)</span></h2>
+    <div id="obl">${PRESETS.map((p,i)=>`
+      <button class="preset ${obPick.has(i)?"on":""}" data-i="${i}">
+        <span style="font-size:20px">${p[0]}</span>
+        <span><b style="font-weight:600">${esc(p[1])}</b><br><span class="small mut">${CATS[p[2]].label} · ${DIFF[p[3]]} · +${p[3]} XP</span></span>
+        <span class="ck">${obPick.has(i)?"✓":""}</span>
+      </button>`).join("")}</div>
+    <button class="btn full" id="obgo" style="margin:16px 0 30px">Start my 66 days →</button>`;
+  $app.querySelector("#obn").oninput=e=>obName=e.target.value;
+  $app.querySelectorAll(".preset").forEach(b=>b.onclick=()=>{ const i=+b.dataset.i; obPick.has(i)?obPick.delete(i):obPick.add(i); renderOnboarding(); });
+  $app.querySelector("#obgo").onclick=()=>{
+    if(!obPick.size){ toast("Pick at least one quest"); return; }
+    const t=todayKey();
+    state = { v:1, name:obName.trim(), start:t, createdAt:Date.now(), updatedAt:Date.now(),
+      habits:[...obPick].sort((a,b)=>a-b).map(i=>({id:uid(),emoji:PRESETS[i][0],name:PRESETS[i][1],cat:PRESETS[i][2],xp:PRESETS[i][3],days:[],since:t})),
+      log:{} };
+    migrate(state); save(); view="today"; viewDay=t; render(); toast("Day 1 – let's go! 🔥");
+  };
+}
+
+/* ---------- views ---------- */
+function renderToday(){
+  const xp=totalXP(), L=levelInfo(xp), pd=programDay(), t=todayKey();
+  const hs=habitsFor(viewDay), lg=dayLog(viewDay), d=lg.d||{};
+  const doneN=hs.filter(h=>d[h.id]!=null).length;
+  const finished = diffDays(state.start,t) >= PROGRAM_DAYS;
+  const hello = state.name ? "Hey "+esc(state.name) : "Today";
+  return `
+  <div class="card hero">
+    <div class="row between">
+      <div><div class="lvl">LEVEL ${L.lvl} · ${L.rank.toUpperCase()}</div><h1>${hello}</h1></div>
+      <div style="text-align:right"><div class="small mut">${finished?"Program complete":"Day"}</div><div style="font-size:22px;font-weight:700">${finished?"🏆":pd+"<span class='mut' style='font-size:14px'>/"+PROGRAM_DAYS+"</span>"}</div></div>
+    </div>
+    <div class="row between small" style="margin:12px 0 6px"><span class="mut">XP to next level</span><span>${L.rest} / ${L.need}</span></div>
+    <div class="bar"><i style="width:${Math.round(L.rest/L.need*100)}%"></i></div>
+    <div class="stats">
+      <div class="stat"><b>🔥 ${streak()}</b><span>Streak</span></div>
+      <div class="stat"><b>${xp}</b><span>Total XP</span></div>
+      <div class="stat"><b>${Math.round(Math.min(pd,PROGRAM_DAYS)/PROGRAM_DAYS*100)}%</b><span>Program</span></div>
+    </div>
+  </div>
+  <div class="daynav">
+    <button id="prev" ${diffDays(state.start,viewDay)<=0?"disabled":""}>‹</button>
+    <div style="text-align:center"><b>${viewDay===t?"Today":esc(fmtDay(viewDay))}</b><div class="small mut">${doneN}/${hs.length} quests · +${dayXP(viewDay)} XP</div></div>
+    <button id="next" ${viewDay>=t?"disabled":""}>›</button>
+  </div>
+  ${hs.length? hs.map(h=>{ const on=d[h.id]!=null; return `
+    <button class="quest ${on?"done":""}" data-h="${h.id}">
+      <span class="em">${esc(h.emoji)}</span>
+      <span class="nm"><b>${esc(h.name)}</b><span class="small" style="color:${CATS[h.cat].color}">${CATS[h.cat].label}</span> <span class="xp">+${h.xp} XP</span></span>
+      <span class="ck">${on?"✓":""}</span>
+    </button>`;}).join("") : `<div class="card mut" style="text-align:center">No quests scheduled for this day. Add some under <b>Quests</b>.</div>`}
+  ${hs.length? `<div class="small mut" style="text-align:center;margin-top:4px">${isPerfect(viewDay)?"🌟 Perfect day! +50 bonus XP":"Complete all quests for a +50 XP perfect-day bonus"}</div>`:""}
+  ${renderSide()}
+  <h2>Journal</h2>
+  <div class="card">
+    <div class="moods" style="margin-bottom:10px">${MOODS.map((m,i)=>`<button data-m="${i}" class="${lg.mood===i?"on":""}">${m}</button>`).join("")}</div>
+    <textarea id="note" rows="3" placeholder="How did today go? What did you learn?">${esc(lg.note||"")}</textarea>
+  </div>`;
+}
+function renderSide(){
+  const lg = state.log[viewDay]||{}, sq = lg.sq||[], s = lg.s||{};
+  if(!sq.length) return "";
+  const canReroll = viewDay===todayKey() && !(lg.rr>0) && !sq.some(q=>s[q.id]!=null);
+  return `
+  <div class="row between" style="margin:22px 0 10px">
+    <h2 style="margin:0">🎲 Side quests</h2>
+    ${canReroll?`<button class="chip" id="reroll">🔄 Reroll</button>`:`<span class="small mut">${viewDay===todayKey()?"New ones tomorrow":""}</span>`}
+  </div>
+  ${sq.map(q=>{ const on=s[q.id]!=null; return `
+    <button class="quest side ${on?"done":""}" data-s="${esc(q.id)}" style="border-style:dashed">
+      <span class="em">${esc(q.emoji)}</span>
+      <span class="nm"><b>${esc(q.name)}</b><span class="small" style="color:${(CATS[q.cat]||CATS.mind).color}">${(CATS[q.cat]||CATS.mind).label}</span> <span class="xp">+${q.xp} XP bonus</span></span>
+      <span class="ck">${on?"✓":""}</span>
+    </button>`;}).join("")}
+  <div class="small mut" style="text-align:center;margin-top:4px">Optional – bonus XP, they don't affect your streak.</div>`;
+}
+function bindToday(){
+  const rr=$app.querySelector("#reroll");
+  rr&&(rr.onclick=()=>{
+    const lg=state.log[viewDay]; if(!lg||!lg.sq) return;
+    lg.rr=1; lg.sq=pickSide(viewDay,1,lg.sq.map(q=>q.id)); if(!lg.sq.length) lg.sq=pickSide(viewDay,1);
+    save(); render(); toast("🎲 New side quests");
+  });
+  $app.querySelectorAll("[data-s]").forEach(b=>b.onclick=()=>{
+    const lg=state.log[viewDay]; if(!lg||!lg.sq) return;
+    const q=lg.sq.find(x=>x.id===b.dataset.s); if(!q) return;
+    const before=levelInfo(totalXP()).lvl;
+    lg.s=lg.s||{};
+    if(lg.s[q.id]!=null) delete lg.s[q.id]; else lg.s[q.id]=q.xp;
+    save(); render();
+    const after=levelInfo(totalXP());
+    if(after.lvl>before) toast("⬆️ Level up! You're level "+after.lvl);
+    else if(lg.s[q.id]!=null) toast("🎲 +"+q.xp+" bonus XP");
+  });
+  const p=$app.querySelector("#prev"), n=$app.querySelector("#next");
+  p&&(p.onclick=()=>{ viewDay=addDays(viewDay,-1); render(); });
+  n&&(n.onclick=()=>{ viewDay=addDays(viewDay,1); render(); });
+  $app.querySelectorAll(".quest[data-h]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.h, h=state.habits.find(x=>x.id===id); if(!h) return;
+    const before=levelInfo(totalXP()).lvl, wasPerfect=isPerfect(viewDay);
+    const lg = state.log[viewDay] || (state.log[viewDay]={d:{}}); lg.d=lg.d||{};
+    if(lg.d[id]!=null) delete lg.d[id]; else lg.d[id]=h.xp;
+    save(); render();
+    const after=levelInfo(totalXP());
+    if(after.lvl>before) toast("⬆️ Level up! You're level "+after.lvl);
+    else if(!wasPerfect && isPerfect(viewDay)) toast("🌟 Perfect day! +50 XP");
+    else if(lg.d[id]!=null) toast("+"+h.xp+" XP");
+  });
+  $app.querySelectorAll("[data-m]").forEach(b=>b.onclick=()=>{
+    const lg = state.log[viewDay] || (state.log[viewDay]={d:{}});
+    const m=+b.dataset.m; lg.mood = lg.mood===m? undefined : m; save(); render();
+  });
+  const note=$app.querySelector("#note"); let nt=null;
+  note.oninput=()=>{ clearTimeout(nt); nt=setTimeout(()=>{
+    const lg = state.log[viewDay] || (state.log[viewDay]={d:{}}); lg.note=note.value; save();
+  },500); };
+}
+
+function renderProgress(){
+  const t=todayKey(), a=attrXP(), maxA=Math.max(50,...Object.values(a));
+  let cells="";
+  for(let i=0;i<PROGRAM_DAYS;i++){
+    const k=addDays(state.start,i), fut=k>t, r=fut?0:dayRatio(k);
+    const bg = fut? "" : r===0? "" : r===1? "background:var(--ok);color:#06281c" : r>=DAY_OK? "background:#1f8a63;color:#d1fae5" : "background:#3b3470;color:#ddd";
+    cells+=`<div class="cell ${k===t?"today":""} ${fut?"future":""}" style="${bg}" title="${esc(fmtDay(k))}">${i+1}</div>`;
+  }
+  let perfect=0, active=0; for(const k in state.log){ if(isPerfect(k)) perfect++; if(Object.keys(state.log[k].d||{}).length) active++; }
+  const hs=state.habits.filter(h=>!h.archived);
+  return `
+  <h1 style="margin:6px 0 4px">Progress</h1>
+  <p class="mut small">Started ${esc(fmtDay(state.start))}</p>
+  <div class="stats" style="margin-top:12px">
+    <div class="stat card"><b>${bestStreak()}</b><span>Best streak</span></div>
+    <div class="stat card"><b>${perfect}</b><span>Perfect days</span></div>
+    <div class="stat card"><b>${active}</b><span>Active days</span></div>
+  </div>
+  <h2>66-day map</h2>
+  <div class="card"><div class="grid66">${cells}</div>
+    <div class="row small mut" style="margin-top:10px;gap:14px;flex-wrap:wrap">
+      <span class="row" style="gap:5px"><i class="dot" style="background:var(--ok)"></i>Perfect</span>
+      <span class="row" style="gap:5px"><i class="dot" style="background:#1f8a63"></i>≥70%</span>
+      <span class="row" style="gap:5px"><i class="dot" style="background:#3b3470"></i>Partial</span>
+    </div></div>
+  <h2>Attributes</h2>
+  <div class="card">${Object.keys(CATS).map(c=>`
+    <div class="attr"><div class="row between small" style="margin-bottom:5px"><span>${CATS[c].icon} ${CATS[c].label}</span><span class="mut">${a[c]} XP · Lv ${levelInfo(a[c]).lvl}</span></div>
+    <div class="bar"><i style="width:${Math.round(a[c]/maxA*100)}%;background:${CATS[c].color}"></i></div></div>`).join("")}
+  </div>
+  <h2>Quest stats</h2>
+  <div class="card hlist">${hs.length? hs.map(h=>`
+    <div class="item"><span style="font-size:20px">${esc(h.emoji)}</span><span style="flex:1">${esc(h.name)}</span>
+    <span class="chip">🔥 ${habitStreak(h)}</span><span class="chip">${habitRate(h)}%</span></div>`).join("") : '<p class="mut">No quests yet.</p>'}
+  </div>
+  <h2>Recent journal</h2>
+  <div class="card hlist">${(()=>{ const ks=Object.keys(state.log).filter(k=>state.log[k].note||state.log[k].mood!=null).sort().reverse().slice(0,10);
+    return ks.length? ks.map(k=>`<div class="item" style="align-items:flex-start"><span style="font-size:20px">${state.log[k].mood!=null?MOODS[state.log[k].mood]:"📝"}</span><span style="flex:1"><b class="small">${esc(fmtDay(k))}</b><br><span class="small mut" style="white-space:pre-wrap">${esc(state.log[k].note||"")}</span></span></div>`).join("") : '<p class="mut">No entries yet.</p>'; })()}
+  </div>`;
+}
+
+function renderQuests(){
+  const act=state.habits.filter(h=>!h.archived), arc=state.habits.filter(h=>h.archived);
+  const dn=["Su","Mo","Tu","We","Th","Fr","Sa"];
+  const line=h=>`<div class="item"><span style="font-size:22px">${esc(h.emoji)}</span>
+    <span style="flex:1"><b style="font-weight:600">${esc(h.name)}</b><br><span class="small" style="color:${CATS[h.cat].color}">${CATS[h.cat].label}</span>
+    <span class="small mut"> · +${h.xp} XP · ${h.days&&h.days.length?h.days.map(x=>dn[x]).join(" "):"Daily"}</span></span>
+    <button class="btn ghost" style="padding:7px 12px" data-e="${h.id}">Edit</button></div>`;
+  return `
+  <div class="row between" style="margin:6px 0 14px"><h1>Quests</h1><button class="btn" id="add">+ New</button></div>
+  <div class="card hlist">${act.length?act.map(line).join(""):'<p class="mut">No active quests.</p>'}</div>
+  <h2>Add from ideas</h2>
+  <div>${PRESETS.filter(p=>!act.some(h=>h.name===p[1])).map((p)=>`<button class="preset" data-p="${esc(p[1])}"><span style="font-size:20px">${p[0]}</span><span>${esc(p[1])}<br><span class="small mut">${CATS[p[2]].label} · +${p[3]} XP</span></span><span class="ck">+</span></button>`).join("")}</div>
+  ${arc.length?`<h2>Archived</h2><div class="card hlist">${arc.map(line).join("")}</div>`:""}
+  <h2>🎲 Side quest rotation</h2>
+  <div class="card">
+    <div class="row between"><span>Daily random side quests</span><button class="btn ${state.side.on?"":"ghost"}" style="padding:7px 14px" id="sqon">${state.side.on?"On":"Off"}</button></div>
+    ${state.side.on?`
+    <div class="field" style="margin:14px 0 0"><label>Side quests per day</label><div class="seg">${[1,2,3].map(n=>`<button data-sc="${n}" class="${state.side.count===n?"on":""}">${n}</button>`).join("")}</div></div>
+    <p class="small mut" style="margin-top:10px">Changes apply from tomorrow. ${sidePool().length} quests in your rotation pool.</p>`:""}
+  </div>
+  ${state.side.on?`
+  <h2>My own side quests <button class="chip" id="sqadd" style="margin-left:6px">+ Add</button></h2>
+  <div class="card hlist">${(state.side.custom||[]).length? state.side.custom.map(q=>`
+    <div class="item"><span style="font-size:20px">${esc(q.emoji)}</span><span style="flex:1">${esc(q.name)}<br><span class="small mut">${CATS[q.cat].label} · +${q.xp} XP</span></span>
+    <button class="btn danger" style="padding:6px 10px" data-sqdel="${esc(q.id)}">✕</button></div>`).join("") : '<p class="small mut">Add your own ideas – they get mixed into the rotation.</p>'}
+  </div>
+  <h2>Built-in side quests</h2>
+  <div class="card hlist">${SIDE_POOL.map(p=>{ const off=(state.side.off||[]).includes(p[0]); return `
+    <div class="item" style="${off?"opacity:.45":""}"><span style="font-size:18px">${p[1]}</span><span style="flex:1" class="small">${esc(p[2])}</span>
+    <button class="chip" data-sqt="${p[0]}">${off?"Off":"On"}</button></div>`;}).join("")}
+  </div>`:""}`;
+}
+function bindQuests(){
+  $app.querySelector("#add").onclick=()=>editHabit(null);
+  $app.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>editHabit(state.habits.find(h=>h.id===b.dataset.e)));
+  $app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{
+    const p=PRESETS.find(x=>x[1]===b.dataset.p); if(!p) return;
+    state.habits.push({id:uid(),emoji:p[0],name:p[1],cat:p[2],xp:p[3],days:[],since:todayKey()}); save(); render(); toast("Quest added");
+  });
+  $app.querySelector("#sqon").onclick=()=>{ state.side.on=!state.side.on; save(); render(); };
+  $app.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{ state.side.count=+b.dataset.sc; save(); render(); });
+  $app.querySelectorAll("[data-sqt]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.sqt, off=state.side.off||(state.side.off=[]);
+    if(off.includes(id)) state.side.off=off.filter(x=>x!==id);
+    else { if(sidePool().length<=state.side.count){ toast("Keep at least "+state.side.count+" in the pool"); return; } off.push(id); }
+    save(); render();
+  });
+  $app.querySelectorAll("[data-sqdel]").forEach(b=>b.onclick=()=>{
+    if(sidePool().length<=state.side.count){ toast("Keep at least "+state.side.count+" in the pool"); return; }
+    state.side.custom=state.side.custom.filter(q=>q.id!==b.dataset.sqdel); save(); render();
+  });
+  const add=$app.querySelector("#sqadd"); add&&(add.onclick=()=>editSide());
+}
+function editSide(){
+  const f={id:"c"+uid(),emoji:"🎯",name:"",cat:"discipline",xp:15};
+  const draw=()=>sheet(`
+    <h2 style="margin-top:0">New side quest</h2>
+    <div class="field"><label>What's the challenge?</label><input id="sqn" maxlength="70" value="${esc(f.name)}" placeholder="e.g. Cook a meal from scratch"></div>
+    <div class="field"><label>Icon</label><div class="seg">${EMOJIS.map(e=>`<button data-em="${e}" class="${f.emoji===e?"on":""}">${e}</button>`).join("")}</div></div>
+    <div class="field"><label>Attribute</label><div class="seg">${Object.keys(CATS).map(c=>`<button data-c="${c}" class="${f.cat===c?"on":""}">${CATS[c].icon} ${CATS[c].label}</button>`).join("")}</div></div>
+    <div class="field"><label>Bonus XP</label><div class="seg">${[10,15,20,25].map(x=>`<button data-x="${x}" class="${f.xp===x?"on":""}">${x} XP</button>`).join("")}</div></div>
+    <button class="btn full" id="sqs">Add to rotation</button>`, s=>{
+      const n=s.querySelector("#sqn"); n.oninput=()=>f.name=n.value;
+      s.querySelectorAll("[data-em]").forEach(b=>b.onclick=()=>{f.emoji=b.dataset.em;draw();});
+      s.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{f.cat=b.dataset.c;draw();});
+      s.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{f.xp=+b.dataset.x;draw();});
+      s.querySelector("#sqs").onclick=()=>{
+        if(!f.name.trim()){ toast("Give it a name"); return; }
+        f.name=f.name.trim(); state.side.custom=(state.side.custom||[]).concat([f]); save(); closeSheet(); render(); toast("Added to rotation");
+      };
+    });
+  draw();
+}
+function editHabit(h){
+  const isNew=!h;
+  const f = h? JSON.parse(JSON.stringify(h)) : {id:uid(),emoji:"✅",name:"",cat:"discipline",xp:20,days:[],since:todayKey()};
+  const dn=["Su","Mo","Tu","We","Th","Fr","Sa"];
+  const draw=()=>{
+    sheet(`
+      <h2 style="margin-top:0">${isNew?"New quest":"Edit quest"}</h2>
+      <div class="field"><label>Name</label><input id="hn" maxlength="60" value="${esc(f.name)}" placeholder="e.g. No phone after 22:00"></div>
+      <div class="field"><label>Icon</label><div class="seg">${EMOJIS.map(e=>`<button data-em="${e}" class="${f.emoji===e?"on":""}">${e}</button>`).join("")}</div></div>
+      <div class="field"><label>Attribute</label><div class="seg">${Object.keys(CATS).map(c=>`<button data-c="${c}" class="${f.cat===c?"on":""}">${CATS[c].icon} ${CATS[c].label}</button>`).join("")}</div></div>
+      <div class="field"><label>Difficulty</label><div class="seg">${Object.keys(DIFF).map(x=>`<button data-x="${x}" class="${f.xp==x?"on":""}">${DIFF[x]} · ${x} XP</button>`).join("")}</div></div>
+      <div class="field"><label>Days (none selected = every day)</label><div class="seg">${[1,2,3,4,5,6,0].map(d=>`<button data-d="${d}" class="${f.days.includes(d)?"on":""}">${dn[d]}</button>`).join("")}</div></div>
+      <button class="btn full" id="hs" style="margin-top:6px">${isNew?"Add quest":"Save"}</button>
+      ${isNew?"":`<div class="row" style="margin-top:10px"><button class="btn ghost full" id="ha">${f.archived?"Restore":"Archive"}</button><button class="btn danger full" id="hd">Delete</button></div>`}
+    `, s=>{
+      const nm=s.querySelector("#hn"); nm.oninput=()=>f.name=nm.value;
+      s.querySelectorAll("[data-em]").forEach(b=>b.onclick=()=>{f.emoji=b.dataset.em;draw();});
+      s.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{f.cat=b.dataset.c;draw();});
+      s.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{f.xp=+b.dataset.x;draw();});
+      s.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{const d=+b.dataset.d; f.days=f.days.includes(d)?f.days.filter(x=>x!==d):[...f.days,d]; draw();});
+      s.querySelector("#hs").onclick=()=>{
+        if(!f.name.trim()){ toast("Give it a name"); return; }
+        f.name=f.name.trim();
+        if(isNew) state.habits.push(f); else Object.assign(h,f);
+        save(); closeSheet(); render(); toast(isNew?"Quest added":"Saved");
+      };
+      const ha=s.querySelector("#ha"); ha&&(ha.onclick=()=>{ h.archived=!h.archived; save(); closeSheet(); render(); });
+      const hd=s.querySelector("#hd"); hd&&(hd.onclick=()=>confirmSheet("Delete \""+h.name+"\"? Its earned XP stays in your history, but attribute stats for it are lost.","Delete",()=>{
+        state.habits=state.habits.filter(x=>x.id!==h.id); save(); render(); }));
+    });
+    const nm=$layer.querySelector("#hn"); if(nm && isNew && !f.name) nm.focus();
+  };
+  draw();
+}
+
+function renderSettings(){
+  return `
+  <h1 style="margin:6px 0 14px">Settings</h1>
+  <div class="card">
+    <div class="field"><label>Name</label><input id="sn" maxlength="30" value="${esc(state.name||"")}"></div>
+    <div class="field"><label>Program start date</label><input id="sd" type="date" value="${state.start}" max="${todayKey()}"></div>
+  </div>
+  ${NATIVE?`
+  <h2>🔔 Reminders</h2>
+  <div class="card">
+    <div class="row between"><span><b style="font-weight:600">Morning kick-off</b><br><span class="small mut">Daily nudge to start your quests</span></span>
+      <button class="btn ${state.rem.m.on?"":"ghost"}" style="padding:7px 14px" data-ron="m">${state.rem.m.on?"On":"Off"}</button></div>
+    ${state.rem.m.on?`<input type="time" data-rt="m" value="${esc(state.rem.m.t)}" style="margin-top:10px">`:""}
+    <div style="height:1px;background:var(--line);margin:14px 0"></div>
+    <div class="row between"><span><b style="font-weight:600">Evening streak check</b><br><span class="small mut">Only if quests are still open that day</span></span>
+      <button class="btn ${state.rem.e.on?"":"ghost"}" style="padding:7px 14px" data-ron="e">${state.rem.e.on?"On":"Off"}</button></div>
+    ${state.rem.e.on?`<input type="time" data-rt="e" value="${esc(state.rem.e.t)}" style="margin-top:10px">`:""}
+    <button class="btn ghost full small" id="rtest" style="margin-top:14px">Send a test notification</button>
+  </div>`:""}
+  <h2>Updates</h2>
+  <div class="card">
+    <div class="row between"><span class="small mut">App ${esc(NATIVE?(NATIVE.apkVersion?NATIVE.apkVersion():"?"):"web")} · content v${ASCEND_WEB_VERSION}</span>
+    ${NATIVE&&NATIVE.checkUpdates?'<button class="btn ghost" style="padding:7px 12px" id="upd">Check now</button>':''}</div>
+    <p class="small mut" style="margin-top:8px">${NATIVE?"New features install automatically when you open the app.":"This web version is always up to date."}</p>
+  </div>
+  <h2>Backup</h2>
+  <div class="card">
+    <p class="small mut" style="margin-bottom:10px">Copy your data to keep a backup, or paste a backup to restore it.</p>
+    <div class="row"><button class="btn ghost full" id="cp">Copy backup</button><button class="btn ghost full" id="rs">Restore…</button></div>
+  </div>
+  <h2>Start over</h2>
+  <div class="card">
+    <p class="small mut" style="margin-bottom:10px">New 66-day run from today. Keeps your quests, clears progress, XP and journal.</p>
+    <button class="btn ghost full" id="nr">Start a new 66 days</button>
+    <button class="btn danger full" id="wipe" style="margin-top:8px">Erase everything</button>
+  </div>
+  <p class="small mut" style="margin-top:20px;text-align:center">How it works: each quest gives XP (Easy 10 · Medium 20 · Hard 30). Finish all quests for +50. A day counts toward your streak at ≥70% done. 66 days is roughly how long a habit takes to stick.</p>`;
+}
+function bindSettings(){
+  const sn=$app.querySelector("#sn"); sn.onchange=()=>{ state.name=sn.value.trim(); save(); toast("Saved"); };
+  const sd=$app.querySelector("#sd"); sd.onchange=()=>{ if(sd.value && sd.value<=todayKey()){ state.start=sd.value; save(); toast("Start date updated"); } };
+  $app.querySelectorAll("[data-ron]").forEach(b=>b.onclick=()=>{
+    const r=state.rem[b.dataset.ron]; r.on=!r.on;
+    if(r.on && NATIVE){ try{ NATIVE.askPermission(); }catch(e){} }
+    save(); render(); if(r.on) toast("Reminder set for "+r.t);
+  });
+  $app.querySelectorAll("[data-rt]").forEach(i=>i.onchange=()=>{
+    if(!/^\d\d:\d\d$/.test(i.value)) return;
+    state.rem[i.dataset.rt].t=i.value; save(); toast("Reminder set for "+i.value);
+  });
+  const rt=$app.querySelector("#rtest"); rt&&(rt.onclick=()=>{ try{ NATIVE.askPermission(); NATIVE.test(); }catch(e){} });
+  const upd=$app.querySelector("#upd"); upd&&(upd.onclick=()=>{ try{ NATIVE.checkUpdates(); toast("Checking for updates…"); }catch(e){} });
+  $app.querySelector("#cp").onclick=async()=>{
+    const txt=JSON.stringify(state);
+    try{ await navigator.clipboard.writeText(txt); toast("Backup copied – paste it into a note"); }
+    catch(e){ sheet('<h2 style="margin-top:0">Your backup</h2><p class="small mut" style="margin-bottom:8px">Select all and copy this text:</p><textarea rows="8" readonly>'+esc(txt)+'</textarea><button class="btn full" style="margin-top:10px" data-x>Done</button>', s=>{ s.querySelector("[data-x]").onclick=closeSheet; const ta=s.querySelector("textarea"); ta.focus(); ta.select(); }); }
+  };
+  $app.querySelector("#rs").onclick=()=>sheet('<h2 style="margin-top:0">Restore backup</h2><textarea id="rt" rows="8" placeholder="Paste backup here"></textarea><button class="btn full" style="margin-top:10px" id="rok">Restore</button>', s=>{
+    s.querySelector("#rok").onclick=()=>{
+      try{ const d=JSON.parse(s.querySelector("#rt").value); if(!d||!Array.isArray(d.habits)||!d.log||!d.start) throw 0;
+        state=migrate(d); save(); closeSheet(); render(); toast("Restored ✓"); }
+      catch(e){ toast("That doesn't look like a valid backup"); }
+    };
+  });
+  $app.querySelector("#nr").onclick=()=>confirmSheet("Start a new 66-day run from today? Progress, XP and journal will be cleared (copy a backup first if you want to keep them).","Start over",()=>{
+    const t=todayKey(); state.start=t; state.log={}; state.habits.forEach(h=>h.since=t); save(); viewDay=t; view="today"; render(); toast("Fresh start 🔥");
+  });
+  $app.querySelector("#wipe").onclick=()=>confirmSheet("Erase all quests, progress and journal entries? This can't be undone.","Erase",()=>{
+    state=null; try{localStorage.removeItem(LS_KEY);}catch(e){}
+    if(remoteRef) remoteRef.delete().catch(()=>{});
+    obPick=new Set([0,6,11,12,1]); obName=""; render();
+  });
+}
+
+/* ---------- shell ---------- */
+const TABS=[["today","🎯","Today"],["progress","📈","Progress"],["quests","📋","Quests"],["settings","⚙️","Settings"]];
+function renderSync(){
+  const el=document.getElementById("sync"); if(!el) return;
+  el.textContent = syncMode==="cloud" ? "☁️ Synced to your Claude account" : syncMode==="cloud-error" ? "⚠️ Couldn't sync – saved on this device" : "💾 Saved on this device";
+}
+function render(){
+  if(!state){ renderOnboarding(); return; }
+  if(viewDay>todayKey()) viewDay=todayKey();
+  if(diffDays(state.start,viewDay)<0) viewDay=state.start;
+  ensureSide(todayKey());
+  $nav.style.display="flex";
+  $nav.innerHTML=TABS.map(([k,i,l])=>`<button data-v="${k}" class="${view===k?"on":""}"><span class="i">${i}</span>${l}</button>`).join("");
+  $nav.querySelectorAll("button").forEach(b=>b.onclick=()=>{ view=b.dataset.v; if(view==="today") viewDay=todayKey(); render(); window.scrollTo(0,0); });
+  const body = view==="today"?renderToday(): view==="progress"?renderProgress(): view==="quests"?renderQuests(): renderSettings();
+  $app.innerHTML = (view==="today"?apkBanner():"") + body + '<div class="sync" id="sync"></div>';
+  const ag=$app.querySelector("#apkgo"); ag&&(ag.onclick=()=>{ try{ NATIVE.installApk(); toast("Downloading update…"); }catch(e){} });
+  if(view==="today") bindToday(); else if(view==="quests") bindQuests(); else if(view==="settings") bindSettings();
+  renderSync();
+}
+
+/* ---------- update hooks (called by the Android app) ---------- */
+let apkUpdate = null;
+window.ascendApkUpdate = function(ver){ apkUpdate = ver; if(state) render(); };
+window.ascendToast = function(msg){ toast(msg); };
+function apkBanner(){
+  if(!apkUpdate || !NATIVE || !NATIVE.installApk) return "";
+  return `<div class="card" style="margin-top:14px;border-color:var(--acc);background:#221f4a"><div class="row between">
+    <span><b style="font-weight:600">📦 App update ready</b><br><span class="small mut">Tap install – your progress stays.</span></span>
+    <button class="btn" style="padding:8px 14px" id="apkgo">Install</button></div></div>`;
+}
+/* roll over to a new day if the app stays open past midnight */
+let lastDay=todayKey();
+function checkDay(){ const t=todayKey(); if(t!==lastDay){ if(viewDay===lastDay) viewDay=t; lastDay=t; if(state) render(); } }
+setInterval(checkDay,60000);
+window.addEventListener("focus",checkDay);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden) checkDay(); });
+
+state = migrate(lsGet());
+render();
+try{ const seen=+localStorage.getItem("ascend_seen_ver")||0;
+  if(state && seen && seen<ASCEND_WEB_VERSION) setTimeout(()=>toast("✨ Ascend updated to v"+ASCEND_WEB_VERSION),400);
+  localStorage.setItem("ascend_seen_ver",String(ASCEND_WEB_VERSION)); }catch(e){}
+nativeSync();
+connectCloud();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,4 @@
+.DS_Store
+android/out/
+android/assets/
+*.keystore

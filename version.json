@@ -1,0 +1,7 @@
+{
+  "web": 3,
+  "apk": 3,
+  "minApk": 3,
+  "apkPath": "apk/Ascend.apk",
+  "notes": "v1.2: automatic updates, side quest rotation, reminders"
+}
