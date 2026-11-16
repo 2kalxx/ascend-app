@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#2a2c31">
+<title>Zen Drop</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{background:#2a2c31;color:#f2f2f2;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;height:100%;overflow:hidden;touch-action:manipulation}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#top{display:flex;align-items:center;gap:6px;padding:8px 10px 0}
+.icon{width:36px;height:36px;border-radius:10px;background:#1d1e22;border:0;display:grid;place-items:center;font-size:16px;color:#fff;position:relative;flex:none}
+.icon.off{opacity:.4}.icon.off:after{content:"";position:absolute;width:22px;height:2.5px;background:#ff6b6b;transform:rotate(-45deg)}
+.icon .badge{position:absolute;top:-4px;right:-4px;background:#ffd400;color:#222;border-radius:9px;font-size:10px;font-weight:900;padding:1px 5px}
+.money{flex:1;line-height:1.05}.money b{font-size:21px;font-weight:900;color:#fff}.money small{display:block;font-size:11px;color:#9aa0aa;font-weight:700}
+#stageBar{display:flex;align-items:center;gap:8px;padding:6px 12px 2px}
+#stageBar .nm{font-size:12px;font-weight:900;color:#ffd400;letter-spacing:.5px;white-space:nowrap}
+#pbar{flex:1;height:9px;background:#1d1e22;border-radius:9px;overflow:hidden;position:relative}#pbar i{display:block;height:100%;width:0;background:#3fd6e8;transition:width .3s}
+#ptxt{font-size:10px;color:#9aa0aa;font-weight:800;min-width:76px;text-align:right}
+#nextB{display:none;padding:6px 10px;border-radius:9px;border:0;font:inherit;font-weight:900;font-size:12px;background:#ffd400;color:#222;animation:pulse 1.1s ease-in-out infinite}
+@keyframes pulse{50%{transform:scale(1.08)}}
+#wrap{flex:1;min-height:0;display:grid;place-items:center;position:relative}
+canvas{display:block;touch-action:none}
+#panel{height:37vh;background:#1d1e22;display:flex;flex-direction:column}
+#tabs{display:flex;align-items:center;gap:4px;padding:6px 8px 0}
+#tabs button.t{flex:1;padding:8px 0;border:0;border-radius:9px 9px 0 0;background:#26272c;color:#9aa0aa;font:inherit;font-weight:900;font-size:13px;letter-spacing:.5px}
+#tabs button.t.on{background:#2f3137;color:#ffd400}
+#modes{display:flex;gap:4px;margin-left:4px}#modes button{padding:5px 7px;border-radius:7px;border:0;background:#2f3137;color:#aaa;font:inherit;font-weight:900;font-size:11px}#modes button.on{background:#ffd400;color:#222}
+#list{flex:1;overflow-y:auto;background:#2f3137;padding:4px 8px 10px}
+.hd{display:flex;font-size:10px;color:#9aa0aa;font-weight:900;padding:6px 4px 2px;letter-spacing:.5px}.hd span:first-child{flex:1}.hd span{width:84px;text-align:center}
+.row{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid #26272c}
+.dot{width:26px;height:26px;border-radius:50%;flex:none}
+.rt{flex:1;min-width:0}.rt b{font-size:13px;display:block}.rt small{display:block;font-size:10.5px;color:#9aa0aa;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.buy{width:84px;padding:5px 2px;border-radius:7px;border:0;background:#3a3c43;color:#777;font:inherit;text-align:center;line-height:1.15;flex:none}
+.buy span{display:block;font-size:12.5px;font-weight:900}.buy em{display:block;font-style:normal;font-size:9.5px;font-weight:800}
+.buy.ok{background:#3fd6e8;color:#10343a}.buy.ok em{color:#185158}.buy.max{opacity:.45}
+.pop{position:fixed;left:50%;top:44%;transform:translate(-50%,-50%);background:#24262b;border:2px solid #ffd400;border-radius:16px;padding:20px 16px;text-align:center;z-index:30;width:min(340px,92vw);max-height:86vh;overflow-y:auto;animation:in .2s ease-out}
+@keyframes in{from{opacity:0;transform:translate(-50%,-46%)}}
+.pop h1{font-size:22px;margin:4px 0 6px}.pop p{color:#c5c9d0;font-size:13.5px;line-height:1.4}
+.btn{display:block;width:100%;margin-top:12px;padding:12px;border-radius:11px;border:0;font:inherit;font-weight:900;font-size:15px;background:#ffd400;color:#222}
+.btn.g{background:#3a3c43;color:#ddd}
+.perk{display:flex;gap:10px;align-items:center;text-align:left;width:100%;margin-top:9px;padding:11px;border-radius:11px;border:2px solid #3a3c43;background:#2f3137;color:#fff;font:inherit}
+.perk .pi{font-size:24px}.perk b{font-size:14px}.perk small{display:block;color:#aab;font-size:12px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.card{border-radius:10px;padding:8px 4px;background:#2f3137;border:2px solid #444;text-align:center;font-size:11px}
+.card .ci{font-size:26px}.card b{display:block;font-size:11.5px;margin:2px 0}.card small{color:#aab;display:block;font-size:10px;line-height:1.25}
+.card.c1{border-color:#9aa0aa}.card.c2{border-color:#3fa8ff}.card.c3{border-color:#c06bff}.card.none{opacity:.3}
+.card .st{color:#ffd400;font-size:10px;letter-spacing:-1px}
+.menu{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end}
+.menu .sh{background:#24262b;border-radius:18px 18px 0 0;width:100%;max-height:88vh;overflow-y:auto;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #33353b}
+.tg{padding:6px 13px;border-radius:9px;border:0;background:#3a3c43;color:#ccc;font:inherit;font-weight:800}.tg.on{background:#ffd400;color:#222}
+.lvls{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;margin:10px 0}
+.lvls button{aspect-ratio:1;border-radius:9px;border:0;background:#33353b;font:inherit;font-weight:900;font-size:14px;color:#ccc}
+.lvls button.done{background:#29505a;color:#3fd6e8}.lvls button.cur{background:#ffd400;color:#222}.lvls button:disabled{opacity:.3}
+.float{position:fixed;font-weight:900;color:#ffd400;pointer-events:none;font-size:15px;animation:fl 1s ease-out forwards;z-index:50;text-shadow:0 1px 4px #000}
+@keyframes fl{to{transform:translateY(-34px);opacity:0}}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top"><button class="icon" id="menuB">☰</button><div class="money"><b id="coinT">$0</b><small id="rateT">$0/s</small></div>
+    <button class="icon" id="cardB">🃏<span class="badge" id="cardN" style="display:none"></span></button><button class="icon" id="perkB">⭐</button><button class="icon" id="musB">🎵</button><button class="icon" id="sndB">🔔</button></div>
+  <div id="stageBar"><span class="nm" id="stName"></span><div id="pbar"><i></i></div><span id="ptxt"></span><button id="nextB">NEXT ▶</button></div>
+  <div id="wrap"><canvas id="cv"></canvas></div>
+  <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGE</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button></div></div><div id="list"></div></div>
+</div>
+<div id="layer"></div>
+<script>
+(function(){
+"use strict";
+const ZEN_WEB_VERSION = 1; // bump on every web update (the Android app reads this)
+const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
+const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","aa","ab","ac","ad","ae","af","ag","ah"];
+function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
+const $=id=>document.getElementById(id);
+const money=n=>"$"+fmt(n);
+
+/* ================= balls & economy ================= */
+const TYPES=[{name:"White",col:"#f4f4f4"},{name:"Cyan",col:"#3fd6e8"},{name:"Lime",col:"#a6e33b"},{name:"Orange",col:"#ff9f1c"},{name:"Purple",col:"#b86bff"},{name:"Red",col:"#ff4d5e"},{name:"Pink",col:"#ff7fd1"},{name:"Gold",col:"#ffd400"}];
+const GATE=[1,2,4,7,11,16,22,30];
+const RMAX=25;
+const spawnTime=(r)=>3.2/(1+0.22*(r-1)); // seconds between spawns
+const costRate=(k,r)=>8*Math.pow(7,k)*Math.pow(1.5,r-1)*perkCost("ballCost");
+const costVal=(k,v)=>10*Math.pow(7,k)*Math.pow(1.3,v-1)*perkCost("ballCost");
+const costUnlock=k=>60*Math.pow(9,k);
+const GOALS=[208,3.43e+03,1.16e+06,3.52e+09,4.4e+09,5.5e+09,7.52e+10,9.4e+10,2.2e+12,9.02e+12,1.13e+13,1.86e+14,2.33e+14,4.87e+15,6.09e+15,7.61e+15,1.45e+16,4.38e+16,7.14e+16,1.18e+17,2.16e+17,2.7e+17,3.6e+20,4.5e+20,5.63e+20,7.03e+20,8.79e+20,1.1e+21,1.37e+21,1.72e+21,3.1e+21,3.87e+21,1.79e+22,2.23e+22,2.79e+22,3.49e+22,8.47e+22,1.06e+23,1.32e+23,1.65e+23,2.07e+23,1.64e+24,2.05e+24,2.56e+24,4.11e+24,5.14e+24,6.82e+24,8.52e+24,1.26e+26,1.58e+26];
+const MAXLV=GOALS.length;
+let GOAL_SCALE=1;
+const COSTB=[150,208,3.43e+03,1.16e+06,3.52e+09,4.4e+09,5.5e+09,7.52e+10,9.4e+10,2.2e+12,9.02e+12,1.13e+13,1.86e+14,2.33e+14,4.87e+15,6.09e+15,7.61e+15,1.45e+16,4.38e+16,7.14e+16,1.18e+17,2.16e+17,2.7e+17,3.6e+20,4.5e+20,5.63e+20,7.03e+20,8.79e+20,1.1e+21,1.37e+21,1.72e+21,3.1e+21,3.87e+21,1.79e+22,2.23e+22,2.79e+22,3.49e+22,8.47e+22,1.06e+23,1.32e+23,1.65e+23,2.07e+23,1.64e+24,2.05e+24,2.56e+24,4.11e+24,5.14e+24,6.82e+24,8.52e+24,1.26e+26];
+const goalOf=L=>GOALS[Math.min(L,MAXLV)-1]*Math.pow(1.6,Math.max(0,L-MAXLV))*GOAL_SCALE;
+const costBase=L=>COSTB[Math.min(L,MAXLV)-1]*Math.pow(1.6,Math.max(0,L-MAXLV));
+/* stage upgrades: obstacles add % per hit, gates multiply */
+const OMAX=30, GMAX=10;
+const costObs=(L,l)=>costBase(L)*0.004*Math.pow(1.55,l)*perkCost("stageCost");
+const costGate=(L,l)=>costBase(L)*0.012*Math.pow(1.9,l)*perkCost("stageCost");
+
+/* perks: pick 1 of 3 after every cleared stage */
+const PERKS=[
+ {id:"rate",ic:"⏩",name:"Faster drops",d:"All balls spawn 15% faster"},
+ {id:"value",ic:"💰",name:"Rich balls",d:"All ball values ×1.3"},
+ {id:"ballCost",ic:"🏷️",name:"Ball discount",d:"Ball upgrades cost 12% less"},
+ {id:"stageCost",ic:"🧱",name:"Builder",d:"Stage upgrades cost 20% less"},
+ {id:"gates",ic:"🚪",name:"Wide gates",d:"Gate multipliers +0.25"},
+ {id:"hits",ic:"⚫",name:"Hard hits",d:"Obstacle bonus +2% per hit"},
+ {id:"offline",ic:"🌙",name:"Night shift",d:"Offline earnings +25%"},
+ {id:"tap",ic:"👆",name:"Double tap",d:"Tapping drops one more ball"}];
+const P=id=>(S.perks&&S.perks[id])||0;
+function perkCost(id){ return Math.pow(id==="ballCost"?0.88:0.8,P(id)); }
+
+/* cards: 1 card for every cleared stage, duplicates level them up */
+const CARDS=[
+ {id:"gm",r:1,ic:"🚪",name:"Gate Multipliers",d:l=>`Gates ×${(1+0.1*l).toFixed(1)}`},
+ {id:"sr",r:1,ic:"⏱️",name:"Spawn Rate",d:l=>`Spawns +${5*l}%`},
+ {id:"cr",r:1,ic:"🪙",name:"Coin Rain",d:l=>`All values +${10*l}%`},
+ {id:"hh",r:2,ic:"🔨",name:"Heavy Hitters",d:l=>`Hit bonus +${15*l}%`},
+ {id:"gw",r:2,ic:"🌀",name:"Gravity Well",d:l=>`Balls fall ${5*l}% slower (more hits)`},
+ {id:"wp",r:2,ic:"⚪",name:"White Power",d:l=>`White balls ×${1+l}`},
+ {id:"td",r:3,ic:"👯",name:"Twin Drop",d:l=>`${4*l}% chance to drop 2 balls`},
+ {id:"md",r:3,ic:"👑",name:"Midas",d:l=>`All values ×${(1+0.25*l).toFixed(2)}`},
+ {id:"ff",r:3,ic:"🔥",name:"Fever",d:l=>`Taps last ${l} s longer`}];
+const C=id=>(S.cards&&S.cards[id])||0; // level
+const cardNeed=l=>l; // copies needed to go from level l to l+1
+
+const valueMult=()=>Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"));
+const rateMult=()=>Math.pow(1.15,P("rate"))*(1+0.05*C("sr"));
+const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(k===0?1+C("wp"):1);
+const stageOf=L=>{ S.st[L]=S.st[L]||{o:1,g:0}; return S.st[L]; };
+const hitPct=()=>(0.04*stageOf(S.level).o+0.02*P("hits"))*(1+0.15*C("hh"))*(B?B.bf:1);
+const gateMult=()=>(1.5+0.35*stageOf(S.level).g+0.25*P("gates"))*(1+0.1*C("gm"));
+
+/* ================= state ================= */
+const LS="zen_state_v2";
+function fresh(){ return {coins:0,level:1,max:1,earned:0,done:false,rate:[1,0,0,0,0,0,0,0],val:[1,1,1,1,1,1,1,1],st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0}; }
+let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
+let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) return; saveT=n; S.last=n; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
+
+/* ================= stages ================= */
+const W=360, H=620, EXIT=H+10, G0=900;
+const NAMES=["Start","Dots","Path","Funnel","Roofs","Pyramid","Pillars","Rings","Zigzag","Spinners","Hourglass","Scatter","Stairs","Orbit","Comb","Diamonds","Twister","Lanes","Bubbles","Chevrons"];
+function rng(seed){ let a=seed>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+// average bounces per ball on each layout (measured) → bounce bonus is scaled so every stage pays about the same
+const AVGHITS={start:3.5,dots:4.2,path:10,funnel:2.9,cross:1.6,pyramid:2.8,pillars:2,rings:3.8,zigzag:3,spinners:2.2,hourglass:2.3,scatter:2.5,stairs:3.9,orbit:0.8,comb:2.1,diamonds:1.2,twister:3.7,lanes:2.5,bubbles:5.3,chevrons:9.1};
+const LAYS=["dots","path","funnel","cross","pyramid","pillars","rings","zigzag","spinners","hourglass","scatter","stairs","orbit","comb","diamonds","twister","lanes","bubbles","chevrons"];
+const stageName=L=>L===1?"Start":NAMES[1+((L-2)%(NAMES.length-1))]+(L>NAMES.length?" "+["II","III","IV","V"][Math.floor((L-2)/(NAMES.length-1))-1]:"");
+let B=null;
+function buildStage(L){
+  const r=rng(L*1013+7), b={L,lay:null,name:stageName(L),circ:[],segs:[],spins:[],movers:[],gates:[],spawn:[W/2-30,W/2+30]};
+  const lay=L===1?"start":LAYS[(L-2)%LAYS.length]; b.lay=lay; b.bf=4/AVGHITS[lay];
+  const C_=(x,y,rad,o)=>b.circ.push(Object.assign({x,y,r:rad,lit:0},o||{}));
+  const S_=(x1,y1,x2,y2)=>b.segs.push({x1,y1,x2,y2,w:7,lit:0});
+  const big=20+Math.min(10,Math.floor(L/5));
+  switch(lay){
+    case "start": for(let row=0;row<4;row++){ const n=row%2?3:4; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*92,150+row*105,26); } break;
+    case "dots": b.spawn=[40,W-40]; for(let row=0;row<6;row++){ const n=row%2?4:5; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*76,120+row*78,big*0.85); } break;
+    case "path": b.spawn=[30,90]; for(let i=0;i<5;i++){ const y=110+i*95; if(i%2===0) S_(10,y,W-70,y+45); else S_(W-10,y,70,y+45); C_(i%2?60:W-60,y+70,14); } break;
+    case "funnel": b.spawn=[30,W-30]; S_(10,110,W/2-34,210); S_(W-10,110,W/2+34,210); for(let row=0;row<3;row++) for(let i=0;i<4;i++) C_(60+i*80+(row%2)*40,290+row*90,big*0.8); break;
+    case "cross": b.spawn=[60,W-60]; for(const [cx,cy] of [[110,180],[250,180],[180,330],[100,470],[260,470]]){ S_(cx-40,cy+30,cx,cy-20); S_(cx,cy-20,cx+40,cy+30); } break;
+    case "pyramid": for(let row=0;row<6;row++){ const n=row+1; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*62,120+row*72,big*0.75); } break;
+    case "pillars": b.spawn=[30,W-30]; for(let i=0;i<5;i++){ const x=40+i*70; S_(x,140+(i%2)*70,x,260+(i%2)*70); C_(x+35,400+(i%2)*60,18); } break;
+    case "rings": for(const [cx,cy,rad] of [[W/2,220,90],[W/2,440,70]]) for(let a=0;a<Math.PI*2;a+=Math.PI/4) C_(cx+Math.cos(a+0.39)*rad,cy+Math.sin(a+0.39)*rad,big*0.6); C_(W/2,220,26); C_(W/2,440,22); break;
+    case "zigzag": b.spawn=[30,W-30]; for(let i=0;i<7;i++){ const y=110+i*70, x=i%2?90:W-90; S_(x-50,y+(i%2?0:28),x+50,y+(i%2?28:0)); C_(i%2?W-90:90,y+20,18); } break;
+    case "spinners": b.spawn=[40,W-40]; for(let i=0;i<5;i++) b.spins.push({x:i%2?250:110,y:130+i*95,len:52,a:r()*6,w:(i%2?-1:1)*(1.3+r()*0.6)}); break;
+    case "hourglass": b.spawn=[30,W-30]; S_(10,110,W/2-30,250); S_(W-10,110,W/2+30,250); C_(W/2,300,22); S_(W/2-50,350,50,450); S_(W/2+50,350,W-50,450); C_(W/2,520,24); break;
+    case "scatter": b.spawn=[30,W-30]; for(let i=0;i<14;i++) C_(40+r()*(W-80),110+r()*(H-200),10+r()*18); break;
+    case "stairs": b.spawn=[W-90,W-30]; for(let i=0;i<6;i++){ const x=W-80-i*44, y=110+i*80; S_(Math.max(40,x-46),y+14,x+40,y); } break;
+    case "orbit": for(let i=0;i<4;i++) b.movers.push({cx:W/2,cy:150+i*110,ax:110,ay:0,r:big*0.8,ph:i*1.6,sp:0.9+0.15*i,x:0,y:0,lit:0}); break;
+    case "comb": b.spawn=[30,W-30]; for(let i=0;i<8;i++) S_(30+i*43,200,30+i*43,260); for(let i=0;i<7;i++) S_(52+i*43,380,52+i*43,440); break;
+    case "diamonds": b.spawn=[30,W-30]; for(const [cx,cy] of [[100,180],[260,180],[180,320],[100,460],[260,460]]){ S_(cx,cy-36,cx+36,cy); S_(cx+36,cy,cx,cy+36); S_(cx,cy+36,cx-36,cy); S_(cx-36,cy,cx,cy-36); } break;
+    case "twister": for(let i=0;i<3;i++){ b.spins.push({x:W/2,y:170+i*160,len:80,a:i,w:i%2?-0.9:0.9}); C_(50,250+i*120,16); C_(W-50,250+i*120,16); } break;
+    case "lanes": b.spawn=[30,W-30]; for(let i=1;i<5;i++) S_(i*72,130,i*72,330); for(let i=0;i<4;i++) C_(72*i+108,420,20); for(let i=0;i<5;i++) C_(72*i+36,520,14); break;
+    case "bubbles": b.spawn=[30,W-30]; for(let i=0;i<10;i++) b.movers.push({cx:50+(i%5)*65,cy:150+Math.floor(i/5)*190,ax:0,ay:28,r:16+r()*12,ph:r()*6,sp:0.8+r()*0.8,x:0,y:0,lit:0}); for(let i=0;i<4;i++) C_(80+i*67,480,14); break;
+    case "chevrons": b.spawn=[30,W-30]; for(let i=0;i<4;i++){ const y=130+i*115; S_(30,y,W/2-30,y+40); S_(W-30,y,W/2+30,y+40); C_(W/2,y+70,14); } break;
+  }
+  b.circ=b.circ.filter(c=>c.x-c.r>=26&&c.x+c.r<=W-26);
+  for(const sg of b.segs) for(const e of ["1","2"]){ const x=sg["x"+e]; if(x>10&&x<36) sg["x"+e]=36; if(x<W-10&&x>W-36) sg["x"+e]=W-36; }
+  // gates: horizontal bands that multiply a ball's value once
+  const ng=L<3?1:L<10?2:3;
+  const ys=[]; for(let i=0;i<ng;i++) ys.push(H*(0.3+0.5*(i+0.5)/ng));
+  for(const y of ys){ const wdt=Math.max(90,200-L*2), x=30+r()*(W-60-wdt); b.gates.push({y,x1:x,x2:x+wdt}); }
+  return b;
+}
+
+/* ================= physics ================= */
+let balls=[], acc=[0,0,0,0,0,0,0,0], gt=0, earnWin=0, winStart=0, rateNow=0, chimeT=0, fever=0;
+const MAXB=150;
+const radius=k=>6.5+k*0.3;
+function pay(v){ S.coins+=v; S.total+=v; if(!S.done){ S.earned+=v; if(S.earned>=goalOf(S.level)){ S.done=true; onDone(); } } earnWin+=v; }
+function spawn(k,x){ if(balls.length>=MAXB){ pay(ballVal(k)*(1+hitPct()*4)*1.5); return; }
+  const sp=B.spawn; balls.push({k,x:x!=null?x:sp[0]+Math.random()*(sp[1]-sp[0]),y:-8,vx:(Math.random()-.5)*20,vy:30,r:radius(k),hits:0,gm:1,gl:0,slow:0,life:0}); }
+function collide(b,cx,cy,cr,e,ovx,ovy){ const dx=b.x-cx, dy=b.y-cy, d2=dx*dx+dy*dy, m=b.r+cr; if(d2>=m*m) return false; const d=Math.sqrt(d2)||0.01;
+  const nx=dx/d, ny=dy/d; b.x=cx+nx*m; b.y=cy+ny*m; const rvx=b.vx-(ovx||0), rvy=b.vy-(ovy||0), vn=rvx*nx+rvy*ny; if(vn<0){ b.vx-=(1+e)*vn*nx; b.vy-=(1+e)*vn*ny; b.vx+=(Math.random()-.5)*10; return vn<-60; } return false; }
+function segHit(b,s,e,svx,svy){ const dx=s.x2-s.x1, dy=s.y2-s.y1, t=Math.max(0,Math.min(1,((b.x-s.x1)*dx+(b.y-s.y1)*dy)/(dx*dx+dy*dy))); return collide(b,s.x1+dx*t,s.y1+dy*t,s.w/2,e,svx,svy); }
+const BG=18; let grid=new Map();
+function step(dt,sim){
+  gt+=dt; if(fever>0) fever-=dt;
+  const rm=rateMult()*(fever>0?2:1);
+  for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); } }
+  for(const s of B.spins) s.a+=s.w*dt;
+  for(const m of B.movers){ const ox=m.x, oy=m.y; m.x=m.cx+Math.sin(gt*m.sp+m.ph)*m.ax; m.y=m.cy+Math.sin(gt*m.sp*1.3+m.ph)*m.ay; m.vx=(m.x-ox)/dt; m.vy=(m.y-oy)/dt; }
+  const g=G0*(1-0.05*C("gw")), hp=hitPct();
+  // ball-ball grid
+  grid.clear(); for(const b of balls){ const k=((b.x/BG)|0)+","+((b.y/BG)|0); let a=grid.get(k); if(!a) grid.set(k,a=[]); a.push(b); }
+  for(const b of balls){ const cx=(b.x/BG)|0, cy=(b.y/BG)|0;
+    for(let gx=cx-1;gx<=cx+1;gx++) for(let gy=cy-1;gy<=cy+1;gy++){ const a=grid.get(gx+","+gy); if(!a) continue;
+      for(const o of a){ if(o===b||o.x<b.x||(o.x===b.x&&o.y<=b.y)) continue; const dx=o.x-b.x, dy=o.y-b.y, m=b.r+o.r, d2=dx*dx+dy*dy; if(d2>=m*m||d2===0) continue;
+        const d=Math.sqrt(d2), nx=dx/d, ny=dy/d, ov=(m-d)/2; b.x-=nx*ov; b.y-=ny*ov; o.x+=nx*ov; o.y+=ny*ov;
+        const vn=(o.vx-b.vx)*nx+(o.vy-b.vy)*ny; if(vn<0){ const j=-(1.3)*vn/2; b.vx-=j*nx; b.vy-=j*ny; o.vx+=j*nx; o.vy+=j*ny; } } } }
+  for(let i=balls.length-1;i>=0;i--){ const b=balls[i];
+    b.vy+=g*dt; b.x+=b.vx*dt; const py=b.y; b.y+=b.vy*dt; b.life+=dt;
+    if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx)*0.5; } if(b.x>W-b.r){ b.x=W-b.r; b.vx=-Math.abs(b.vx)*0.5; }
+    const sp=Math.hypot(b.vx,b.vy); if(sp>850){ b.vx*=850/sp; b.vy*=850/sp; }
+    for(const c of B.circ) if(collide(b,c.x,c.y,c.r,0.5)){ b.hits++; c.lit=1; if(!sim) tick(c); }
+    for(const m of B.movers) if(collide(b,m.x,m.y,m.r,0.5,m.vx,m.vy)){ b.hits++; m.lit=1; if(!sim) tick(m); }
+    for(const s of B.segs) if(segHit(b,s,0.25)){ b.hits++; s.lit=1; }
+    for(const s of B.spins){ const ca=Math.cos(s.a)*s.len, sa=Math.sin(s.a)*s.len, sg={x1:s.x-ca,y1:s.y-sa,x2:s.x+ca,y2:s.y+sa,w:8}; const dx=b.x-s.x, dy=b.y-s.y; if(segHit(b,sg,0.4,-dy*s.w,dx*s.w)) b.hits++; }
+    for(let gi=0;gi<B.gates.length;gi++){ const q=B.gates[gi]; if(!(b.gl>>gi&1)&&py<q.y&&b.y>=q.y&&b.x>=q.x1&&b.x<=q.x2){ b.gl|=1<<gi; b.gm*=gateMult(); q.lit=1; } }
+    if(sp<25) b.slow+=dt; else b.slow=0;
+    if(b.slow>2&&((b.slow*120)|0)%240===0){ b.vx+=(Math.random()<.5?-1:1)*140; b.vy=-90; }
+    if(b.slow>6) b.life=99;
+    if(b.y>EXIT||b.life>45){ const v=ballVal(b.k)*(1+hp*Math.min(b.hits,60))*b.gm; pay(v); if(!sim&&v>0&&Math.random()<0.25) pops.push({x:b.x,y:H-14,t:1,txt:money(v)}); balls.splice(i,1); }
+  }
+  if(!sim){ for(const c of B.circ) if(c.lit>0) c.lit-=dt*3; for(const m of B.movers) if(m.lit>0) m.lit-=dt*3; for(const s of B.segs) if(s.lit>0) s.lit-=dt*3; for(const q of B.gates) if(q.lit>0) q.lit-=dt*2;
+    for(const p of pops){ p.t-=dt; p.y-=dt*24; } pops=pops.filter(p=>p.t>0);
+    if(gt-winStart>4){ rateNow=earnWin/(gt-winStart); earnWin=0; winStart=gt; S.avg=rateNow; } chimeT=Math.max(0,chimeT-dt); }
+}
+let pops=[];
+
+/* ================= audio ================= */
+let AC=null;
+function tone(f,len,vol){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), g=AC.createGain(); o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(0.0001,AC.currentTime); g.gain.linearRampToValueAtTime(vol,AC.currentTime+0.008); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+len*5); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+len*5+0.05); }catch(e){} }
+const PENT=[392,440,523.25,587.33,659.25,783.99,880,1046.5];
+function tick(c){ if(!S.sound||chimeT>0) return; chimeT=0.06; tone(PENT[Math.max(0,Math.min(7,Math.floor((1-c.y/H)*8)))],0.06,0.02); }
+function buzz(ms){ if(S.haptic===false) return; try{ if(NATIVE&&NATIVE.buzz) NATIVE.buzz(); else if(navigator.vibrate) navigator.vibrate(ms||25); }catch(e){} }
+const MUSIC=(()=>{ let on=false, mg=null, lp=null, timer=null, nextT=0, step=0, bar=0, noiseBuf=null, crackle=null, prog=0;
+  const BPM=70, SPB=60/BPM/2; // 8th notes
+  const PROGS=[[[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]],   // Fmaj7 Em7 Dm7 Cmaj7
+               [[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]],   // Am7 Fmaj7 Cmaj7 G7
+               [[50,53,57,60],[55,59,62,65],[48,52,55,59],[57,60,64,67]]];  // Dm7 G7 Cmaj7 Am7
+  const PENTA=[72,74,76,79,81,84];
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  function noise(){ if(noiseBuf) return noiseBuf; const b=AC.createBuffer(1,AC.sampleRate,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return noiseBuf=b; }
+  function env(node,t,a,peak,dec){ node.gain.setValueAtTime(0.0001,t); node.gain.linearRampToValueAtTime(peak,t+a); node.gain.exponentialRampToValueAtTime(0.0001,t+a+dec); }
+  function keys(m,t,len,vol){ for(const det of [-4,4]){ const o=AC.createOscillator(), g=AC.createGain(); o.type="triangle"; o.frequency.value=hz(m); o.detune.value=det; env(g,t,0.02,vol,len); o.connect(g).connect(lp); o.start(t); o.stop(t+len+0.1); } }
+  function bass(m,t,len){ const o=AC.createOscillator(), g=AC.createGain(); o.type="sine"; o.frequency.value=hz(m-24); env(g,t,0.01,0.22,len); o.connect(g).connect(mg); o.start(t); o.stop(t+len+0.1); }
+  function kick(t){ const o=AC.createOscillator(), g=AC.createGain(); o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(42,t+0.12); env(g,t,0.003,0.5,0.25); o.connect(g).connect(mg); o.start(t); o.stop(t+0.35); }
+  function hiss(t,freq,q,vol,len){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); n.buffer=noise(); f.type="bandpass"; f.frequency.value=freq; f.Q.value=q; env(g,t,0.003,vol,len); n.connect(f).connect(g).connect(mg); n.start(t,Math.random()*0.5); n.stop(t+len+0.05); }
+  function schedule(){ while(nextT<AC.currentTime+0.35){ const t=nextT+(step%2?SPB*0.18:0); // swing
+      const P=PROGS[prog], ch=P[bar%4];
+      if(step===0){ ch.forEach((m,i)=>keys(m,t+i*0.025,SPB*7,0.045)); bass(ch[0],t,SPB*3); }
+      if(step===5) bass(ch[0]+(Math.random()<0.5?7:12),t,SPB*2);
+      if(step===0||step===5&&Math.random()<0.6||step===3&&Math.random()<0.25) kick(t);
+      if(step===2||step===6) hiss(t,1800,0.8,0.16,0.18);
+      if(step%2===0||Math.random()<0.3) hiss(t,8000,1.2,step%2?0.025:0.045,0.05);
+      if(step%2===0&&Math.random()<0.28) keys(PENTA[(Math.random()*PENTA.length)|0],t,SPB*3,0.035);
+      step++; if(step>=8){ step=0; bar++; if(bar%8===0) prog=(Math.random()*PROGS.length)|0; } nextT+=SPB; } }
+  function startCrackle(){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); const len=AC.sampleRate*2, b=AC.createBuffer(1,len,AC.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()<0.0007?(Math.random()*2-1):(Math.random()*2-1)*0.012; n.buffer=b; n.loop=true; f.type="highpass"; f.frequency.value=1500; g.gain.value=0.25; n.connect(f).connect(g).connect(mg); n.start(); crackle=n; }
+  return {
+    get on(){ return on; },
+    start(){ if(on) return; try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume();
+      mg=AC.createGain(); mg.gain.setValueAtTime(0.0001,AC.currentTime); mg.gain.linearRampToValueAtTime(0.8,AC.currentTime+1.5); mg.connect(AC.destination);
+      lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1400; lp.Q.value=0.6; lp.connect(mg);
+      nextT=AC.currentTime+0.1; step=0; startCrackle(); timer=setInterval(schedule,90); on=true; }catch(e){} },
+    stop(){ if(!on) return; on=false; clearInterval(timer); try{ const g=mg; g.gain.setTargetAtTime(0.0001,AC.currentTime,0.2); setTimeout(()=>{ try{ g.disconnect(); crackle&&crackle.stop(); }catch(e){} },900); }catch(e){} }
+  }; })();
+
+function syncMusic(){ if(S.music&&!document.hidden) MUSIC.start(); else MUSIC.stop(); }
+
+/* ================= render ================= */
+const cv=$("cv"), ctx=cv.getContext("2d"); let sc=1;
+function resize(){ const w=$("wrap").clientWidth, h=$("wrap").clientHeight; const s=Math.min(w/W,h/H); const dpr=Math.min(2.5,devicePixelRatio||1);
+  cv.style.width=Math.floor(W*s)+"px"; cv.style.height=Math.floor(H*s)+"px"; cv.width=Math.floor(W*s*dpr); cv.height=Math.floor(H*s*dpr); sc=cv.width/W; }
+function render(){
+  ctx.setTransform(sc,0,0,sc,0,0); ctx.fillStyle="#3a3c43"; ctx.fillRect(0,0,W,H);
+  // gates
+  ctx.font="900 11px system-ui"; ctx.textAlign="center"; const gmv=gateMult();
+  for(const q of B.gates){ ctx.fillStyle=`rgba(255,212,0,${0.16+0.3*Math.max(0,q.lit)})`; ctx.fillRect(q.x1,q.y-5,q.x2-q.x1,10); ctx.fillStyle="#ffd400"; ctx.fillRect(q.x1,q.y-1,q.x2-q.x1,2); ctx.fillText("×"+gmv.toFixed(2).replace(/\.?0+$/,""),(q.x1+q.x2)/2,q.y-8); }
+  ctx.fillStyle="#141518"; for(const c of B.circ){ ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill(); if(c.lit>0){ ctx.strokeStyle=`rgba(255,255,255,${c.lit*0.5})`; ctx.lineWidth=2; ctx.stroke(); } }
+  for(const m of B.movers){ ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,Math.PI*2); ctx.fillStyle="#141518"; ctx.fill(); }
+  ctx.strokeStyle="#141518"; ctx.lineCap="round"; for(const s of B.segs){ ctx.lineWidth=s.w; ctx.beginPath(); ctx.moveTo(s.x1,s.y1); ctx.lineTo(s.x2,s.y2); ctx.stroke(); }
+  ctx.lineWidth=8; for(const s of B.spins){ const ca=Math.cos(s.a)*s.len, sa=Math.sin(s.a)*s.len; ctx.beginPath(); ctx.moveTo(s.x-ca,s.y-sa); ctx.lineTo(s.x+ca,s.y+sa); ctx.stroke(); }
+  for(const b of balls){ ctx.beginPath(); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); ctx.fillStyle=TYPES[b.k].col; ctx.fill(); if(b.gm>1){ ctx.strokeStyle="#ffd400"; ctx.lineWidth=1.5; ctx.stroke(); } }
+  if(fever>0){ ctx.fillStyle="rgba(255,212,0,.12)"; ctx.fillRect(0,0,W,H); }
+  ctx.font="800 11px system-ui"; for(const p of pops){ ctx.globalAlpha=Math.max(0,p.t); ctx.fillStyle="#ffd400"; ctx.fillText(p.txt,p.x,p.y); } ctx.globalAlpha=1;
+}
+
+/* ================= UI ================= */
+function bulk(costFn,lvl,max){ const m=S.mode; let n=0,c=0,l=lvl; const lim=m==="max"?5000:+m;
+  while(n<lim&&l<max){ const x=costFn(l); if(m!=="1"&&c+x>S.coins&&n>0) break; if(m==="max"&&c+x>S.coins) break; c+=x; n++; l++; } if(n===0){ n=1; c=costFn(lvl); } return [n,c]; }
+function btn(id,lvl,max,costFn,label){ if(lvl>=max) return `<button class="buy max" disabled><span>MAX</span><em>${label||"Lv "+lvl}</em></button>`;
+  const [n,c]=bulk(costFn,lvl,max); return `<button class="buy ${S.coins>=c?"ok":""}" data-b="${id}"><span>${money(c)}</span><em>${label||"Lv "+lvl}${n>1?" +"+n:""}</em></button>`; }
+let listSig="";
+function uiList(force){
+  let h="";
+  if(S.tab==="balls"){ h+=`<div class="hd"><span>BALLS</span><span>VALUE</span><span>TIME</span></div>`;
+    for(let k=0;k<TYPES.length;k++){ const t=TYPES[k];
+      if(S.rate[k]>0){ h+=`<div class="row"><div class="dot" style="background:${t.col}"></div><div class="rt"><b>${money(ballVal(k))}</b><small>${(spawnTime(S.rate[k])/rateMult()).toFixed(2)} sec</small></div>${btn("v"+k,S.val[k],1e9,l=>costVal(k,l))}${btn("r"+k,S.rate[k],RMAX,l=>costRate(k,l))}</div>`; continue; }
+      if(S.max<GATE[k]){ h+=`<div class="row"><div class="dot" style="background:#26272c"></div><div class="rt"><b style="color:#777">${t.name} ball</b><small>🔒 Reach stage ${GATE[k]}</small></div></div>`; break; }
+      const c=costUnlock(k); h+=`<div class="row"><div class="dot" style="background:${t.col};opacity:.5"></div><div class="rt"><b>${t.name} ball</b><small>New ball · 6× value</small></div><button class="buy ${S.coins>=c?"ok":""}" data-b="u${k}" style="width:172px"><span>${money(c)}</span><em>UNLOCK</em></button></div>`; break; } }
+  else { const st=stageOf(S.level), L=S.level;
+    h+=`<div class="hd"><span>STAGE ${L} · ${B.name.toUpperCase()}</span></div>
+    <div class="row"><div class="dot" style="background:#141518"></div><div class="rt"><b>Obstacles +${(hitPct()*100).toFixed(0)}%</b><small>Every bounce adds this to the ball's value</small></div>${btn("o",st.o,OMAX,l=>costObs(L,l))}</div>
+    <div class="row"><div class="dot" style="background:#ffd400"></div><div class="rt"><b>Gates ×${gateMult().toFixed(2)}</b><small>Balls passing a yellow gate get multiplied</small></div>${btn("g",st.g,GMAX,l=>costGate(L,l))}</div>
+    <p style="font-size:11px;color:#9aa0aa;padding:10px 4px">Stage upgrades only count on this stage. Ball upgrades work everywhere.</p>`; }
+  if(!force&&h===listSig) return; listSig=h; $("list").innerHTML=h; }
+$("list").addEventListener("click",e=>{ const b=e.target.closest("[data-b]"); if(b) buy(b.dataset.b); });
+function buy(id,quiet){
+  const t=id[0], k=+id.slice(1); let n=0; const L=S.level, st=stageOf(L);
+  const run=(get,set,max,cf)=>{ const [cnt]=bulk(cf,get(),max); for(let i=0;i<cnt;i++){ const l=get(); if(l>=max) break; const c=cf(l); if(S.coins<c) break; S.coins-=c; set(l+1); n++; } };
+  if(t==="u"){ const c=costUnlock(k); if(S.coins>=c&&S.max>=GATE[k]&&!S.rate[k]){ S.coins-=c; S.rate[k]=1; n=1; } }
+  if(t==="r") run(()=>S.rate[k],v=>S.rate[k]=v,RMAX,l=>costRate(k,l));
+  if(t==="v") run(()=>S.val[k],v=>S.val[k]=v,1e9,l=>costVal(k,l));
+  if(t==="o") run(()=>st.o,v=>st.o=v,OMAX,l=>costObs(L,l));
+  if(t==="g") run(()=>st.g,v=>st.g=v,GMAX,l=>costGate(L,l));
+  if(!quiet){ if(n){ if(S.sound){ tone(660,0.04,0.035); setTimeout(()=>tone(990,0.05,0.035),60); } buzz(12); save(true); } else if(S.sound) tone(160,0.05,0.03); uiList(true); uiTop(); }
+  return n; }
+document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.t; document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
+document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
+function uiTop(){
+  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s";
+  $("stName").textContent="STAGE "+S.level;
+  const g=goalOf(S.level); $("pbar").firstChild.style.width=(Math.min(1,S.earned/g)*100).toFixed(1)+"%";
+  $("ptxt").textContent=S.done?"DONE!":money(S.earned)+" / "+money(g); $("nextB").style.display=S.done?"block":"none";
+  $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);
+  $("cardN").style.display=S.newCards?"block":"none"; $("cardN").textContent=S.newCards; $("perkB").style.boxShadow=S.pendPerk?"0 0 0 2px #ffd400":"none";
+}
+function popup(html,acts){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; L.querySelectorAll("button[id]").forEach(b=>b.onclick=()=>{ L.innerHTML=""; (acts&&acts[b.id]||(()=>{}))(); }); return L; }
+function floatText(t,x,y){ const d=document.createElement("div"); d.className="float"; d.textContent=t; d.style.left=x+"px"; d.style.top=y+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),1000); }
+let simMode=false;
+function drawCard(){ const roll=Math.random(), rar=roll<0.1?3:roll<0.4?2:1, pool=CARDS.filter(c=>c.r===rar), c=pool[Math.floor(Math.random()*pool.length)];
+  S.copies[c.id]=(S.copies[c.id]||0)+1; let up=false; while(S.copies[c.id]>=cardNeed(C(c.id)+1)&&C(c.id)<10){ S.copies[c.id]-=cardNeed(C(c.id)+1); S.cards[c.id]=C(c.id)+1; up=true; } return [c,up]; }
+function onDone(){
+  const first=S.level===S.max; if(first){ S.max++; S.pendPerk++; S.newCards++; }
+  const [card,up]=first?drawCard():[null,false];
+  if(simMode){ if(S.pendPerk){ const p=PERKS[Math.floor(Math.random()*4)]; S.perks[p.id]=P(p.id)+1; S.pendPerk--; } return; }
+  buzz(60); if(S.sound) [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.08,0.05),i*100)); save(true);
+  const nb=GATE.indexOf(S.level+1);
+  popup(`<div style="font-size:40px">✅</div><h1>Stage ${S.level} cleared!</h1>
+    ${card?`<p style="margin-top:6px">New card: <b style="color:${["","#ddd","#3fa8ff","#c06bff"][card.r]}">${card.ic} ${card.name}</b>${up?` · level ${C(card.id)}!`:""}</p>`:""}
+    ${nb>0?`<p style="margin-top:6px">🔓 ${TYPES[nb].name} ball can now be unlocked</p>`:""}
+    <button class="btn" id="go">${S.pendPerk?"Choose a perk ⭐":"Stage "+(S.level+1)+" ▶"}</button><button class="btn g" id="stay">Stay on this stage</button>`,{go:()=>{ if(S.pendPerk) choosePerk(true); else nextStage(); }}); }
+function choosePerk(thenNext){ if(!S.pendPerk){ if(thenNext) nextStage(); return; }
+  const pool=[...PERKS].sort(()=>Math.random()-.5).slice(0,3);
+  const L=popup(`<h1>Level Up! ⭐</h1><p>Choose a perk (permanent)</p>${pool.map(p=>`<button class="perk" data-p="${p.id}"><span class="pi">${p.ic}</span><span><b>${p.name}</b><small>${p.d} · you have ${P(p.id)}</small></span></button>`).join("")}`);
+  L.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ S.perks[b.dataset.p]=P(b.dataset.p)+1; S.pendPerk--; L.innerHTML=""; save(true); buzz(30); uiList(true); uiTop(); if(S.pendPerk) choosePerk(thenNext); else if(thenNext) nextStage(); }); }
+function nextStage(){ if(S.max<=S.level) return; goStage(S.level+1); }
+function goStage(L){ S.level=L; S.earned=L<S.max?goalOf(L):0; S.done=L<S.max; if(L>=S.max){ S.earned=S.cur&&S.cur.L===L?S.cur.e:0; } loadStage(); save(true); }
+function loadStage(){ B=buildStage(S.level); balls=[]; pops=[]; uiTop(); uiList(true); }
+$("nextB").onclick=()=>{ if(S.pendPerk) choosePerk(true); else nextStage(); };
+$("perkB").onclick=()=>{ if(S.pendPerk) return choosePerk(false);
+  popup(`<h1>Perks ⭐</h1><p>You get to choose one after every new stage.</p>${PERKS.map(p=>`<div class="perk"><span class="pi">${p.ic}</span><span><b>${p.name} ×${P(p.id)}</b><small>${p.d}</small></span></div>`).join("")}<button class="btn" id="ok">Close</button>`); };
+$("cardB").onclick=()=>{ S.newCards=0; uiTop(); save(true);
+  popup(`<h1>Cards 🃏</h1><p>You get a card for every new stage. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):["","Common","Rare","Epic"][c.r]}</small></div>`; }).join("")}</div><button class="btn" id="ok">Close</button>`); };
+$("musB").onclick=()=>{ S.music=!S.music; syncMusic(); uiTop(); save(true); };
+$("sndB").onclick=()=>{ S.sound=!S.sound; uiTop(); save(true); };
+let lastTap=0;
+cv.addEventListener("pointerdown",e=>{ const now=performance.now(); if(now-lastTap<150) return; lastTap=now; const rc=cv.getBoundingClientRect(), x=Math.max(12,Math.min(W-12,(e.clientX-rc.left)/rc.width*W));
+  let k=0; for(let i=0;i<TYPES.length;i++) if(S.rate[i]) k=i; for(let i=0;i<=P("tap");i++) spawn(k,x+i*10); if(C("ff")) fever=Math.max(fever,0.5*C("ff")); if(S.sound) tone(700,0.03,0.02); });
+$("menuB").onclick=openMenu;
+function openMenu(){ const L=$("layer"); let g=""; for(let i=1;i<=Math.max(MAXLV,S.max);i++) g+=`<button data-l="${i}" class="${i<S.max?"done":""} ${i===S.level?"cur":""}" ${i>S.max?"disabled":""}>${i}</button>`;
+  L.innerHTML=`<div class="menu"><div class="sh"><h2>Stages</h2><p style="color:#9aa0aa;font-size:12px;margin-top:4px">${MAXLV} stages (then endless). Tap one to switch – stage upgrades stay with each stage.</p><div class="lvls">${g}</div>
+    <div class="srow"><span>🎵 Lo-fi music</span><button class="tg ${S.music?"on":""}" id="tm">${S.music?"On":"Off"}</button></div>
+    <div class="srow"><span>🔔 Sounds</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
+    <div class="srow"><span>📳 Vibration</span><button class="tg ${S.haptic?"on":""}" id="th">${S.haptic?"On":"Off"}</button></div>
+    <div class="srow"><span>Total earned</span><b>${money(S.total)}</b></div>
+    <div class="srow"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ZEN_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
+    ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
+    <button class="btn g" id="rst">Start over</button><button class="btn" id="cl">Close</button></div></div>`;
+  const q=s=>L.querySelector(s);
+  q("#cl").onclick=()=>{ L.innerHTML=""; };
+  L.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{ const l=+b.dataset.l; if(l===S.level) return; if(S.level===S.max&&!S.done) S.cur={L:S.level,e:S.earned}; L.innerHTML=""; goStage(l); floatText("Stage "+l,innerWidth/2-30,110); });
+  q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
+  q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
+  q("#th").onclick=()=>{ S.haptic=!S.haptic; save(true); if(S.haptic) buzz(); openMenu(); };
+  q("#upd")&&(q("#upd").onclick=()=>{ try{ NATIVE.checkUpdates(); }catch(e){} });
+  q("#inst")&&(q("#inst").onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} });
+  q("#rst").onclick=()=>popup(`<h1>Start over?</h1><p>Money, upgrades, stages, perks and cards are reset.</p><button class="btn" id="yes">Yes, start over</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ const keep={sound:S.sound,music:S.music,haptic:S.haptic,seen:1}; S=Object.assign(fresh(),keep); loadStage(); save(true); }}); }
+let apkUpdate=null;
+window.ascendApkUpdate=v=>{ apkUpdate=v; floatText("📦 Update ready – see ☰",innerWidth/2-90,90); };
+window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
+
+/* ================= boot ================= */
+B=buildStage(S.level); resize(); uiTop(); uiList(true);
+document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x.dataset.t===S.tab)); document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x.dataset.m===S.mode));
+(function(){ const away=(Date.now()-(S.last||Date.now()))/1000; if(away>60&&S.avg>0){ const secs=Math.min(away,4*3600), gain=S.avg*secs*0.5*(1+0.25*P("offline")); pay(gain); save(true);
+  setTimeout(()=>{ if(!document.querySelector(".pop")) popup(`<div style="font-size:38px">🌙</div><h1>Welcome back</h1><p>While you were away (${Math.floor(secs/3600)}h ${Math.floor(secs%3600/60)}m) you earned</p><p style="font-size:26px;font-weight:900;color:#ffd400;margin-top:8px">${money(gain)}</p><button class="btn" id="ok">Collect</button>`); },300); } })();
+if(!S.seen){ S.seen=1; setTimeout(()=>popup(`<h1>Zen Drop</h1><p>Balls fall and bounce off the black obstacles. <b>Every bounce</b> makes a ball worth more, and <b>yellow gates</b> multiply it.<br><br><b>BALLS</b>: raise value & spawn time. <b>STAGE</b>: upgrade obstacles & gates.<br>Reach the goal to clear the stage → get a ⭐ perk and a 🃏 card.<br><br>Tap the board to drop extra balls.</p><button class="btn" id="ok">Start</button>`),300); }
+if(S.pendPerk) setTimeout(()=>{ if(!document.querySelector(".pop")) choosePerk(false); },800);
+window.addEventListener("resize",resize);
+window.addEventListener("pointerdown",()=>{ if(S.music&&!MUSIC.on) syncMusic(); },{capture:true});
+document.addEventListener("visibilitychange",()=>{ syncMusic(); try{ if(AC){ document.hidden?AC.suspend():AC.resume(); } }catch(e){} if(document.hidden) save(true); else lastT=performance.now(); });
+window.addEventListener("pagehide",()=>save(true));
+let lastT=performance.now(), uiT=0;
+function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const n=dt>0.025?4:3; for(let i=0;i<n;i++) step(dt/n); render(); uiT+=dt; if(uiT>0.25){ uiT=0; uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+/* test hooks */
+window.__z={step,
+  calib(N,tgt){ simMode=true; const dt=1/120; const E=[], CB=[]; const m=S.mode; S.mode="1"; const t0=performance.now();
+    const opts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(S.max>=GATE[k]) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); } if(stageOf(S.level).o<OMAX) o.push(["o",costObs(S.level,stageOf(S.level).o)]); if(stageOf(S.level).g<GMAX) o.push(["g",costGate(S.level,stageOf(S.level).g)]); return o; };
+    for(let L=1;L<=N;L++){
+      const est=L===1?150:E[L-2];
+      CB[L-1]=est; COSTB[L-1]=est; GOALS[L-1]=1e300; /*calibration only*/ S.level=L; S.earned=0; S.done=false; B=buildStage(L); balls=[];
+      const T=tgt(L); for(let t=0;t<T;t+=dt){ step(dt,true); if(((t*120)|0)%30===0){ for(let q=0;q<30;q++){ const o=opts().sort((a,b)=>a[1]-b[1])[0]; if(o&&S.coins>=o[1]) buy(o[0],true); else break; } } }
+      E[L-1]=S.earned; GOALS[L-1]=S.earned; S.done=true; S.max=L+1; S.pendPerk=1; onDone(); console.log("calib",L,S.earned.toExponential(2),Math.round((performance.now()-t0)/1000)+"s"); }
+    simMode=false; S.mode=m; return {E,CB}; },buildStage,goalOf,goStage,nextStage,MUSIC,setScale:v=>GOAL_SCALE=v,get S(){return S;},get B(){return B;},get balls(){return balls;},
+  sim(seconds,autobuy){ simMode=true; const dt=1/120; const st=S.level; let t=0; const m=S.mode; S.mode="1";
+    const opts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(S.max>=GATE[k]) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); } if(stageOf(S.level).o<OMAX) o.push(["o",costObs(S.level,stageOf(S.level).o)]); if(stageOf(S.level).g<GMAX) o.push(["g",costGate(S.level,stageOf(S.level).g)]); return o; };
+    for(;t<seconds;t+=dt){ step(dt,true); if(autobuy&&((t*120)|0)%30===0){ for(let q=0;q<30;q++){ const o=opts().sort((a,b)=>a[1]-b[1])[0]; if(o&&S.coins>=o[1]) buy(o[0],true); else break; } }
+      if(S.done){ simMode=false; S.mode=m; return {stage:st,t:Math.round(t),balls:balls.length}; } }
+    simMode=false; S.mode=m; return {stage:st,notDone:true,earned:S.earned,goal:goalOf(S.level),balls:balls.length}; }};
+})();
+</script>
+</body>
+</html>
