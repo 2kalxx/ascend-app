@@ -96,6 +96,37 @@ nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
 .seg button{padding:8px 12px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:13px}
 .seg button.on{border-color:var(--acc);background:#0f2a1b}
 .center{text-align:center}
+/* ---- tutor (original character "Mira") ---- */
+#tutor{width:100%;max-width:190px;display:block;margin:0 auto;overflow:visible}
+#tutor .breath{animation:breath 3.6s ease-in-out infinite;transform-origin:120px 300px}
+@keyframes breath{50%{transform:translateY(-1.6px)}}
+#tutor .head{transform-origin:120px 148px;transition:transform .45s ease}
+#tutor.listen .head{transform:rotate(-6deg)}
+#tutor.think .head{transform:rotate(6deg) translateY(1px)}
+#tutor.nod .head{animation:nod .6s ease-in-out 2}
+@keyframes nod{50%{transform:translateY(5px) rotate(1deg)}}
+#tutor .armR{transform-origin:158px 178px;transition:transform .6s ease}
+#tutor .armL{transform-origin:82px 178px;transition:transform .6s ease}
+#tutor.think .armR{transform:rotate(-24deg)}
+#tutor.listen .armL{transform:rotate(9deg)}
+#tutor.gA .armR{transform:rotate(-16deg)}#tutor.gA .armL{transform:rotate(6deg)}
+#tutor.gB .armL{transform:rotate(14deg)}#tutor.gB .armR{transform:rotate(-5deg)}
+#tutor.wave .armR{animation:wave 1.6s ease-in-out}
+@keyframes wave{0%{transform:rotate(0)}18%{transform:rotate(-150deg)}34%{transform:rotate(-132deg)}50%{transform:rotate(-156deg)}66%{transform:rotate(-132deg)}82%{transform:rotate(-150deg)}100%{transform:rotate(0)}}
+#tutor .eye{transform-box:fill-box;transform-origin:center;transition:transform .07s}
+#tutor.blink .eye{transform:scaleY(.08)}
+#tutor .lock{transform-box:fill-box;transform-origin:top center;animation:sway 4.2s ease-in-out infinite}
+#tutor .lock.r{animation-delay:-2s}
+@keyframes sway{50%{transform:rotate(2.5deg)}}
+#tutor .mouth>*{display:none}#tutor .mouth .m0{display:inline}
+#tutor.m1 .mouth .m0,#tutor.m2 .mouth .m0,#tutor.m3 .mouth .m0{display:none}
+#tutor.m1 .mouth .m1,#tutor.m2 .mouth .m2,#tutor.m3 .mouth .m3{display:inline}
+.stage{position:relative;background:radial-gradient(circle at 50% 30%,#1e2a3a,#0c1016 70%);border:1px solid var(--line);border-radius:22px;padding:14px 10px 6px;overflow:hidden}
+.sbubble{background:#fff;color:#1a1d24;border-radius:16px;padding:10px 13px;margin:0 6px 10px;position:relative;font-size:16px;font-weight:600;min-height:44px}
+.sbubble:after{content:"";position:absolute;left:50%;bottom:-8px;border:8px solid transparent;border-top-color:#fff;border-bottom:0;transform:translateX(-50%)}
+.mic{width:76px;height:76px;border-radius:50%;background:var(--acc);display:grid;place-items:center;font-size:32px;box-shadow:0 5px 0 #15803d,0 0 0 0 rgba(34,197,94,.5)}
+.mic.on{background:var(--bad);box-shadow:0 5px 0 #b91c1c;animation:ring 1.2s infinite}
+@keyframes ring{0%{box-shadow:0 5px 0 #b91c1c,0 0 0 0 rgba(248,113,113,.55)}100%{box-shadow:0 5px 0 #b91c1c,0 0 0 22px rgba(248,113,113,0)}}
 </style>
 </head>
 <body>
@@ -105,7 +136,7 @@ nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
 <script>
 (function(){
 "use strict";
-const LINGUA_WEB_VERSION = 6; // bump on every web update (the Android app reads this)
+const LINGUA_WEB_VERSION = 7; // bump on every web update (the Android app reads this)
 const NATIVE = (typeof window.LinguaNative!=="undefined") ? window.LinguaNative : null;
 const COURSES = {};
 /* German – 30 units (A1–B1). Words/sentences: [German, English]. */
@@ -545,10 +576,10 @@ function render(){
   if(lesson){ document.body.classList.add("lesson"); $nav.style.display="none"; return renderLesson(); }
   document.body.classList.remove("lesson");
   $nav.style.display="flex";
-  const tabs=[["learn","🏠","Learn"],["practice","🔁","Practice"],["league","🏆","League"],["me","👤","Me"]];
+  const tabs=[["learn","🏠","Learn"],["practice","🔁","Practice"],["talk","🗣️","Talk"],["league","🏆","League"],["me","👤","Me"]];
   $nav.innerHTML=tabs.map(([k,i,l])=>`<button data-v="${k}" class="${view===k?"on":""}"><span class="i">${i}</span>${l}</button>`).join("");
-  $nav.querySelectorAll("button").forEach(b=>b.onclick=()=>{view=b.dataset.v;render();window.scrollTo(0,0);});
-  ({learn:renderLearn,practice:renderPractice,talk:renderTalk,league:renderLeague,me:renderMe})[view]();
+  $nav.querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(view==="talk"&&b.dataset.v!=="talk"){ try{NATIVE&&NATIVE.stopListening&&NATIVE.stopListening();}catch(e){} Tutor.stopMouth(); } view=b.dataset.v;render();window.scrollTo(0,0);});
+  ({learn:renderLearn,practice:renderPractice,talk:renderTutor,league:renderLeague,me:renderMe})[view]();
 }
 function topbar(){
   const li=langInfo(state.cur), t=todayKey(), today=state.daily[t]||0;
@@ -1035,6 +1066,187 @@ function startPractice(){
 }
 
 /* ---------- talk (AI conversation) ---------- */
+/* ================= voice tutor ================= */
+const TUTOR_SVG=`<svg id="tutor" viewBox="20 18 200 420" xmlns="http://www.w3.org/2000/svg">
+<defs><linearGradient id="iris" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1b5f7a"/><stop offset=".55" stop-color="#2bb6b0"/><stop offset="1" stop-color="#7ff0de"/></linearGradient>
+<linearGradient id="hair" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e3def6"/><stop offset="1" stop-color="#b8aee0"/></linearGradient>
+<linearGradient id="hood" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#e8decd"/><stop offset=".5" stop-color="#f6efe3"/><stop offset="1" stop-color="#e3d8c4"/></linearGradient></defs>
+<g class="breath">
+ <path d="M70,98 Q66,36 120,30 Q174,36 170,98 L173,150 Q162,163 150,152 L90,152 Q78,163 67,150 Z" fill="url(#hair)"/>
+ <path d="M98,298 L115,298 L113,398 L98,398 Z" fill="#2e3656"/><path d="M125,298 L142,298 L142,398 L127,398 Z" fill="#283050"/>
+ <rect x="90" y="394" width="27" height="14" rx="7" fill="#f4f4f8"/><rect x="123" y="394" width="27" height="14" rx="7" fill="#f4f4f8"/>
+ <rect x="90" y="404" width="27" height="4" rx="2" fill="#2bb6b0"/><rect x="123" y="404" width="27" height="4" rx="2" fill="#2bb6b0"/>
+ <g class="armL"><path d="M78,172 Q63,177 61,202 L57,262 Q65,271 76,265 L85,206 Z" fill="url(#hood)"/><rect x="55" y="258" width="22" height="9" rx="4" fill="#2bb6b0" transform="rotate(6 66 262)"/><circle cx="65" cy="274" r="9" fill="#ffe2d3"/></g>
+ <path d="M78,170 Q120,157 162,170 L170,302 Q120,314 70,302 Z" fill="url(#hood)"/>
+ <path d="M95,256 Q120,263 145,256 L148,286 Q120,292 92,286 Z" fill="#e2d6c1"/>
+ <ellipse cx="120" cy="170" rx="35" ry="12" fill="#e2d6c1"/>
+ <path d="M112,174 L111,212" stroke="#2bb6b0" stroke-width="2.4" stroke-linecap="round"/><path d="M128,174 L129,212" stroke="#2bb6b0" stroke-width="2.4" stroke-linecap="round"/>
+ <circle cx="111" cy="214" r="2.8" fill="#2bb6b0"/><circle cx="129" cy="214" r="2.8" fill="#2bb6b0"/>
+ <rect x="108" y="226" width="24" height="12" rx="4" fill="#2bb6b0" opacity=".85"/><text x="120" y="235.5" text-anchor="middle" font-size="8" font-weight="900" fill="#f6efe3">LIN</text>
+ <g class="armR"><path d="M162,172 Q177,177 179,202 L183,262 Q175,271 164,265 L155,206 Z" fill="url(#hood)"/><rect x="163" y="258" width="22" height="9" rx="4" fill="#2bb6b0" transform="rotate(-6 174 262)"/><circle cx="175" cy="274" r="9" fill="#ffe2d3"/></g>
+ <rect x="110" y="138" width="20" height="28" rx="6" fill="#f7d3c2"/>
+ <g class="head">
+  <path d="M86,82 Q86,142 120,152 Q154,142 154,82 Q154,58 120,56 Q86,58 86,82 Z" fill="#ffe6d8"/>
+  <ellipse cx="96" cy="123" rx="7.5" ry="3.4" fill="#ff9fb3" opacity=".45"/><ellipse cx="144" cy="123" rx="7.5" ry="3.4" fill="#ff9fb3" opacity=".45"/>
+  <g class="eye"><ellipse cx="104" cy="105" rx="11" ry="13" fill="#fff"/><ellipse cx="104.5" cy="106" rx="8" ry="11" fill="url(#iris)"/><ellipse cx="104.5" cy="107" rx="3.6" ry="5.2" fill="#0f2633"/><circle cx="100.5" cy="100" r="3" fill="#fff"/><circle cx="107.5" cy="111.5" r="1.4" fill="#fff"/><path d="M93,99 Q104,90 116,97" stroke="#3b3150" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M93,99 L90,96" stroke="#3b3150" stroke-width="2" stroke-linecap="round"/></g>
+  <g class="eye"><ellipse cx="136" cy="105" rx="11" ry="13" fill="#fff"/><ellipse cx="135.5" cy="106" rx="8" ry="11" fill="url(#iris)"/><ellipse cx="135.5" cy="107" rx="3.6" ry="5.2" fill="#0f2633"/><circle cx="131.5" cy="100" r="3" fill="#fff"/><circle cx="138.5" cy="111.5" r="1.4" fill="#fff"/><path d="M124,97 Q136,90 147,99" stroke="#3b3150" stroke-width="2.6" fill="none" stroke-linecap="round"/><path d="M147,99 L150,96" stroke="#3b3150" stroke-width="2" stroke-linecap="round"/></g>
+  <path d="M96,83 Q104,78.5 112,81" stroke="#b3a9da" stroke-width="2" fill="none" stroke-linecap="round"/><path d="M128,81 Q136,78.5 144,83" stroke="#b3a9da" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M120,117 l-1.8,5.5 l3,0" stroke="#e5b49f" stroke-width="1.4" fill="none" stroke-linecap="round"/>
+  <g class="mouth"><path class="m0" d="M113,133 Q120,138.5 127,133" stroke="#b4546a" stroke-width="2.2" fill="none" stroke-linecap="round"/>
+   <path class="m1" d="M114,132 Q120,140 126,132 Q120,134 114,132 Z" fill="#8e3a4f"/>
+   <g class="m2"><ellipse cx="120" cy="135" rx="6.2" ry="5.2" fill="#8e3a4f"/><ellipse cx="120" cy="138" rx="3.8" ry="2" fill="#ff8fa3"/></g>
+   <ellipse class="m3" cx="120" cy="135" rx="3.6" ry="4.4" fill="#8e3a4f"/></g>
+  <path class="lock" d="M86,92 Q78,122 84,152 Q92,140 93,118 Z" fill="url(#hair)"/>
+  <path class="lock r" d="M154,92 Q162,122 156,152 Q148,140 147,118 Z" fill="url(#hair)"/>
+  <path d="M84,94 Q85,48 120,46 Q156,48 156,94 Q151,75 141,70 Q136,87 126,89 Q124,73 118,71 Q112,87 100,91 Q99,75 93,77 Q88,85 84,94 Z" fill="url(#hair)"/>
+  <path d="M104,58 Q120,52 136,58" stroke="#fff" stroke-width="2" opacity=".55" fill="none" stroke-linecap="round"/>
+  <path d="M120,47 Q126,30 135,36" stroke="#cfc6ec" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <g transform="translate(146 70) rotate(20)"><path d="M0,-6 L4,0 L0,6 L-4,0 Z" fill="#2bb6b0"/><path d="M0,-6 L4,0 L0,0 Z" fill="#7ff0de"/></g>
+ </g>
+</g></svg>`;
+const Tutor={
+  el:null, state:"idle", talking:false, mouthT:null, gestT:null, blinkT:null,
+  mount(){ this.el=document.getElementById("tutor"); if(!this.el) return; this.apply(); this.loopBlink(); if(this.talking) this.startMouth(); },
+  set(st){ this.state=st; this.apply(); },
+  apply(){ if(!this.el) return; this.el.classList.remove("listen","think"); if(this.state==="listen"||this.state==="think") this.el.classList.add(this.state); },
+  pulse(cls,ms){ if(!this.el) return; this.el.classList.remove(cls); void this.el.getBoundingClientRect(); this.el.classList.add(cls); setTimeout(()=>this.el&&this.el.classList.remove(cls),ms); },
+  wave(){ this.pulse("wave",1700); }, nod(){ this.pulse("nod",1300); },
+  loopBlink(){ clearTimeout(this.blinkT); const go=()=>{ if(!this.el||!document.body.contains(this.el)) return; this.el.classList.add("blink"); setTimeout(()=>this.el&&this.el.classList.remove("blink"),130); this.blinkT=setTimeout(go,2200+Math.random()*3200); }; this.blinkT=setTimeout(go,1500); },
+  startMouth(){ this.talking=true; clearInterval(this.mouthT); clearInterval(this.gestT); let g=0;
+    this.mouthT=setInterval(()=>{ if(!this.el) return; this.el.classList.remove("m1","m2","m3"); const r=Math.random(); if(r>0.18) this.el.classList.add(r>0.7?"m2":r>0.45?"m1":"m3"); },115);
+    this.gestT=setInterval(()=>{ if(!this.el) return; this.el.classList.remove("gA","gB"); g++; if(g%3) this.el.classList.add(g%2?"gA":"gB"); },1300); },
+  stopMouth(){ this.talking=false; clearInterval(this.mouthT); clearInterval(this.gestT); if(this.el) this.el.classList.remove("m1","m2","m3","gA","gB"); }
+};
+window.linguaTTS=function(ev){ if(ev==="start") Tutor.startMouth(); else if(ev==="done") Tutor.stopMouth(); };
+let tutorSpeakT=null;
+function tutorSay(text){
+  const code=state.cur;
+  if(nativeVoice(code)){ speak(text,code); clearTimeout(tutorSpeakT); Tutor.startMouth(); tutorSpeakT=setTimeout(()=>Tutor.stopMouth(),Math.min(20000,600+text.length*85)); }
+  else { Tutor.startMouth(); clearTimeout(tutorSpeakT); tutorSpeakT=setTimeout(()=>Tutor.stopMouth(),Math.min(9000,500+text.length*60)); }
+}
+/* ---------- Gemini (user's own free API key) ---------- */
+const AI_MODELS=["gemini-flash-latest","gemini-2.5-flash","gemini-2.0-flash"];
+const aiWait={};
+window.linguaAI=function(id,status,body){ const w=aiWait[id]; if(!w) return; delete aiWait[id]; w({status,body}); };
+function aiPost(model,payload){
+  const id=Math.random().toString(36).slice(2), url="https://generativelanguage.googleapis.com/v1beta/models/"+model+":generateContent?key="+encodeURIComponent(state.aiKey||"");
+  if(NATIVE&&NATIVE.aiRequest) return new Promise(res=>{ aiWait[id]=res; NATIVE.aiRequest(id,url,JSON.stringify(payload)); setTimeout(()=>{ if(aiWait[id]){ delete aiWait[id]; res({status:0,body:"timeout"}); } },65000); });
+  return fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)}).then(async r=>({status:r.status,body:await r.text()})).catch(e=>({status:0,body:String(e)}));
+}
+async function aiChat(system,turns){
+  const payload={systemInstruction:{parts:[{text:system}]},contents:turns,generationConfig:{temperature:0.8,maxOutputTokens:500,responseMimeType:"application/json"}};
+  let last=null;
+  for(const m of [state.aiModel].filter(Boolean).concat(AI_MODELS)){
+    const r=await aiPost(m,payload); last=r;
+    if(r.status===404||(r.status===400&&/not found|not supported/i.test(r.body))) continue;
+    if(r.status===200){ state.aiModel=m;
+      try{ const j=JSON.parse(r.body), t=j.candidates[0].content.parts.map(p=>p.text||"").join(""); const a=t.indexOf("{"), b=t.lastIndexOf("}"); return JSON.parse(t.slice(a,b+1)); }
+      catch(e){ throw {code:"parse"}; } }
+    break;
+  }
+  if(last&&last.status===429) throw {code:"limit"};
+  if(last&&(last.status===400||last.status===403)&&/key|permission|API_KEY/i.test(last.body)) throw {code:"key"};
+  throw {code:"net",detail:last&&last.status};
+}
+/* ---------- Talk view ---------- */
+let tk={scene:null,msgs:[],busy:false,listening:false,heard:"",showT:false,typing:false,err:""};
+const TUTOR_SCENES=[["👋","Get to know each other"],["☕","Order at a café"],["🛍️","Go shopping"],["🗺️","Ask for directions"],["🍽️","At a restaurant"],["🏨","Check in at a hotel"],["💼","Job interview practice"],["🎲","Free chat about anything"]];
+function tutorBase(){ return state.cur==="en"?"German":"English"; }
+function renderTutor(){
+  const li=langInfo(state.cur), C=COURSES[state.cur];
+  if(!C){ $app.innerHTML=topbar()+`<div class="card" style="margin-top:16px">The voice tutor works with the offline courses. Switch to one of them first.</div>`; bindTop(); return; }
+  if(!state.aiKey) return renderAiSetup();
+  if(!tk.scene){
+    $app.innerHTML=topbar()+`<div class="stage" style="margin-top:12px"><div class="sbubble">${esc({es:"¡Hola! Soy Mira. ¿Hablamos?",ja:"こんにちは！ミラです。話しましょう！",de:"Hallo! Ich bin Mira. Wollen wir reden?",en:"Hi! I'm Mira. Shall we talk?"}[state.cur]||"Hi! I'm Mira – let's talk!")}</div>${TUTOR_SVG}</div>
+      <h2>What do you want to practise?</h2>${TUTOR_SCENES.map((s2,i)=>`<button class="langbtn" data-sc="${i}"><span class="fl">${s2[0]}</span><b style="flex:1">${esc(s2[1])}</b><span class="mut">›</span></button>`).join("")}
+      <p class="tiny mut center" style="margin:10px 0 20px">Mira speaks ${esc(li.name)} at your level and corrects you. +2 XP per message.</p>`;
+    bindTop(); Tutor.mount(); if(!renderTutor.waved){ renderTutor.waved=1; setTimeout(()=>Tutor.wave(),400); }
+    $app.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{ tk={scene:TUTOR_SCENES[+b.dataset.sc],msgs:[],busy:false,listening:false,heard:"",showT:false,typing:false,err:""}; render(); tutorTurn(null); });
+    return;
+  }
+  const last=[...tk.msgs].reverse().find(m=>m.role==="ai");
+  const bubble=tk.busy?`<span class="mut">…</span>`:last?`${esc(last.reply)}${last.r?`<div class="rom" style="color:#556">${esc(last.r)}</div>`:""}${tk.showT&&last.t?`<div class="small" style="color:#556;margin-top:4px;font-weight:500">${esc(last.t)}</div>`:""}`:"";
+  $app.innerHTML=`<div class="row between" style="margin:4px 0 10px"><button class="btn ghost" style="padding:6px 12px" id="tb">‹</button><b>${tk.scene[0]} ${esc(tk.scene[1])}</b><span class="chip">${li.flag}</span></div>
+    <div class="stage"><div class="sbubble" id="bub">${bubble}</div>${TUTOR_SVG}
+      <div class="row" style="justify-content:center;gap:8px;margin:2px 0 4px">${last?`<button class="chip" id="rep">🔁 Repeat</button><button class="chip" id="slow">🐢 Slow</button><button class="chip ${tk.showT?"on":""}" id="tr">🌐 ${tutorBase()==="German"?"Deutsch":"English"}</button>`:""}</div></div>
+    ${tk.err?`<div class="card small" style="margin-top:10px;border-color:var(--warn)">${esc(tk.err)}</div>`:""}
+    <div id="log" style="margin-top:12px">${tk.msgs.filter(m=>m.role==="me").slice(-4).map(m=>`<div class="bubble me">${esc(m.text)}</div>${m.fix?`<div class="fix">✏️ ${esc(m.fix)}</div>`:m.good?`<div class="small" style="color:var(--acc2);text-align:right;margin:-2px 4px 6px">✓ ${esc(m.good)}</div>`:""}`).join("")}</div>
+    <div style="height:150px"></div>
+    <div class="checkbar"><div class="inner">
+      <div class="small mut center" style="min-height:20px;margin-bottom:6px">${tk.listening?(tk.heard?"“"+esc(tk.heard)+"”":"Listening… speak "+esc(li.name)):tk.busy?"Mira is thinking…":"Tap the mic and answer"}</div>
+      ${tk.typing?`<div class="row"><input id="ti" placeholder="Write in ${esc(li.name)}…"><button class="btn" id="ts" style="padding:12px 16px">➤</button><button class="btn ghost" id="kb" style="padding:12px">🎤</button></div>`:
+      `<div class="row" style="justify-content:center;gap:22px"><button class="btn ghost" id="kb" style="padding:12px 14px">⌨️</button><button class="mic ${tk.listening?"on":""}" id="mic" ${tk.busy?"disabled":""}>${tk.listening?"■":"🎤"}</button><button class="btn ghost" id="hint" style="padding:12px 14px">💡</button></div>`}
+    </div></div>`;
+  Tutor.mount(); Tutor.set(tk.listening?"listen":tk.busy?"think":"idle");
+  $app.querySelector("#tb").onclick=()=>{ try{NATIVE&&NATIVE.stopListening&&NATIVE.stopListening();NATIVE&&NATIVE.stopSpeaking&&NATIVE.stopSpeaking();}catch(e){} Tutor.stopMouth(); tk.scene=null; render(); };
+  const rp=$app.querySelector("#rep"); rp&&(rp.onclick=()=>tutorSay(last.reply));
+  const sl=$app.querySelector("#slow"); sl&&(sl.onclick=()=>{ if(nativeVoice(state.cur)){ speak(last.reply,state.cur,true); Tutor.startMouth(); clearTimeout(tutorSpeakT); tutorSpeakT=setTimeout(()=>Tutor.stopMouth(),800+last.reply.length*140);} });
+  const trb=$app.querySelector("#tr"); trb&&(trb.onclick=()=>{ tk.showT=!tk.showT; render(); });
+  const kb=$app.querySelector("#kb"); kb&&(kb.onclick=()=>{ tk.typing=!tk.typing; render(); if(tk.typing) setTimeout(()=>{const t=$app.querySelector("#ti");t&&t.focus();},50); });
+  const ti=$app.querySelector("#ti"), ts=$app.querySelector("#ts");
+  if(ts){ const send=()=>{ const v=ti.value.trim(); if(v&&!tk.busy) tutorTurn(v); }; ts.onclick=send; ti.onkeydown=e=>{ if(e.key==="Enter") send(); }; }
+  const mic=$app.querySelector("#mic"); mic&&(mic.onclick=()=>{
+    if(tk.listening){ try{NATIVE.stopListening();}catch(e){} return; }
+    if(!(NATIVE&&NATIVE.listen)){ tk.typing=true; tk.err="Voice input needs the newest Lingua app – typing instead."; render(); return; }
+    tk.heard=""; tk.listening=true; tk.err=""; render(); try{ NATIVE.listen((COURSES[state.cur]||{}).tts||state.cur); }catch(e){ tk.listening=false; render(); }
+  });
+  const hint=$app.querySelector("#hint"); hint&&(hint.onclick=()=>{ if(last&&last.hint) toast("💡 "+last.hint); else toast("💡 Answer her question – short sentences are fine!"); });
+}
+window.linguaSTT=function(json){
+  let e; try{ e=JSON.parse(json); }catch(x){ return; }
+  if(e.type==="partial"){ tk.heard=e.text; const el=document.querySelector(".checkbar .small"); if(el) el.textContent="“"+e.text+"”"; return; }
+  if(e.type==="final"){ tk.listening=false; if(e.text&&e.text.trim()) tutorTurn(e.text.trim()); else render(); return; }
+  if(e.type==="error"){ tk.listening=false; tk.err=e.text==="permission"?"Lingua needs microphone permission to hear you.":(e.text==="7"||e.text==="6")?"I didn't catch that – tap the mic and try again.":"Speech recognition problem ("+e.text+"). You can type instead (⌨️)."; render(); return; }
+};
+async function tutorTurn(text){
+  const li=langInfo(state.cur), base=tutorBase(), lvl=(()=>{const n=nextLesson();return n?UNITS[n[0]][0]:"B1";})(), C=COURSES[state.cur];
+  if(text) tk.msgs.push({role:"me",text});
+  tk.busy=true; tk.err=""; render();
+  const known=knownWords(40).join(", ");
+  const system=`You are Mira, a warm, upbeat ${li.name} tutor and conversation partner in a language-learning app. The learner's level is ${lvl} (CEFR) and their base language is ${base}.
+Scenario: ${tk.scene[1]}. Play a natural role in it and keep the conversation going.
+Rules: answer ONLY in ${li.name}; 1–2 short sentences suited to ${lvl}; end with a simple question; reuse words they know (${known||"basic words"}); be encouraging.${C&&C.nospace?" Use simple, polite Japanese (desu/masu), mostly hiragana plus very common kanji.":""}
+If the learner's last message had a grammar, word or spelling mistake, give the corrected sentence plus a very short ${base} explanation in "fix"; if it was correct, put a short ${base} compliment in "good" and leave "fix" empty. If they wrote in ${base} instead of ${li.name}, gently show how to say it in ${li.name} in "fix".
+Reply with ONLY JSON: {"reply":"...", "r":"${C&&C.nospace?"romaji of reply":""}", "t":"${base} translation of reply", "fix":"", "good":"", "hint":"a short example answer in ${li.name} the learner could say next"}`;
+  const turns=[]; tk.msgs.slice(-12).forEach(m=>turns.push(m.role==="ai"?{role:"model",parts:[{text:JSON.stringify({reply:m.reply})}]}:{role:"user",parts:[{text:m.text}]}));
+  if(!turns.length||turns[0].role!=="user") turns.unshift({role:"user",parts:[{text:"(Start the conversation: greet me and open the scenario.)"}]});
+  try{
+    const res=await aiChat(system,turns);
+    const lastMe=[...tk.msgs].reverse().find(m=>m.role==="me");
+    if(text&&lastMe){ if(res.fix) lastMe.fix=String(res.fix); else if(res.good) lastMe.good=String(res.good); }
+    tk.msgs.push({role:"ai",reply:String(res.reply||"…"),r:String(res.r||""),t:String(res.t||""),hint:String(res.hint||"")});
+    if(text){ const t=todayKey(); state.talkXP[t]=state.talkXP[t]||0; if(state.talkXP[t]<30){ state.talkXP[t]+=2; addXP(2); } save(); }
+    tk.busy=false; render();
+    if(text&&!res.fix) Tutor.nod();
+    tutorSay(String(res.reply||""));
+  }catch(e){
+    tk.busy=false;
+    tk.err=e.code==="limit"?"Today's free Gemini limit is used up. Try again tomorrow – or keep learning in Practice.":e.code==="key"?"Your Gemini key doesn't work. Check it under Me → Voice tutor.":e.code==="parse"?"Mira got confused – try saying it again.":"No connection to Gemini"+(e.detail?" (error "+e.detail+")":"")+". Check your internet and try again.";
+    if(text) tk.msgs.pop();
+    render();
+  }
+}
+function renderAiSetup(){
+  $app.innerHTML=topbar()+`<div class="stage" style="margin-top:12px"><div class="sbubble">Hi! I'm Mira, your speaking tutor. I just need one thing to wake up 🙂</div>${TUTOR_SVG}</div>
+    <h2>Set up the free AI (one time, ~2 minutes)</h2>
+    <div class="card small">
+      <p><b>1.</b> Open Google AI Studio and sign in with your Google account.</p>
+      <button class="btn blue full" id="ok1" style="margin:10px 0 14px">Open aistudio.google.com/apikey ↗</button>
+      <p><b>2.</b> Tap <b>Create API key</b> and copy it.</p>
+      <p style="margin-top:8px"><b>3.</b> Paste it here:</p>
+      <input id="key" placeholder="AIza…" autocomplete="off" style="margin-top:8px">
+      <button class="btn full" id="sv" style="margin-top:12px">Wake up Mira</button>
+      <p class="tiny mut" style="margin-top:12px">Free, no credit card. Google's free tier has a daily message limit, and Google may use free-tier conversations to improve its products – don't share private things. The key is stored only on this phone.</p>
+    </div>`;
+  bindTop(); Tutor.mount();
+  $app.querySelector("#ok1").onclick=()=>{ try{ if(NATIVE&&NATIVE.openUrl){ NATIVE.openUrl("https://aistudio.google.com/apikey"); return; } }catch(e){} location.href="https://aistudio.google.com/apikey"; };
+  $app.querySelector("#sv").onclick=async()=>{
+    const k=$app.querySelector("#key").value.trim(); if(k.length<20){ toast("That key looks too short"); return; }
+    state.aiKey=k; save(); toast("Checking your key…");
+    try{ await aiChat('Reply with ONLY JSON {"reply":"ok"}',[{role:"user",parts:[{text:"ping"}]}]); toast("✅ Mira is ready!"); render(); }
+    catch(e){ if(e.code==="key"){ state.aiKey=""; save(); toast("Google rejected that key – copy it again"); } else { toast(e.code==="limit"?"Key saved – today's free limit is used up":"Key saved – couldn't reach Google right now"); render(); } }
+  };
+}
 let talk={msgs:[],busy:false,scene:null,showT:{}};
 const SCENES=[["☕","Order at a café"],["👋","Meet someone new"],["🛍️","Buy something in a shop"],["🗺️","Ask for directions"],["🏨","Check in at a hotel"],["🎲","Free chat about anything"]];
 function renderTalk(){
@@ -1136,6 +1348,7 @@ function renderMe(){
     </div>
     ${NATIVE?`<h2>🔔 Daily reminder</h2><div class="card"><div class="row between"><span><b>Practice reminder</b><br><span class="small mut">Only if you haven't reached your daily goal</span></span><button class="btn ${state.rem&&state.rem.on?"":"ghost"}" style="padding:7px 14px" id="remon">${state.rem&&state.rem.on?"On":"Off"}</button></div>
       ${state.rem&&state.rem.on?`<input type="time" id="remt" value="${esc(state.rem.t)}" style="margin-top:10px">`:""}</div>`:""}
+    <h2>🗣️ Voice tutor</h2><div class="card"><div class="row between"><span class="small">${state.aiKey?"Gemini key saved ✓":"Not set up yet"}</span>${state.aiKey?`<button class="btn ghost" style="padding:7px 12px" id="rmkey">Remove key</button>`:`<button class="btn" style="padding:7px 12px" id="gokey">Set up</button>`}</div></div>
     <h2>Backup</h2><div class="card"><p class="small mut" style="margin-bottom:10px">Progress is saved on this phone. Copy a backup now and then.</p>
       <div class="row"><button class="btn ghost full" id="cp">Copy backup</button><button class="btn ghost full" id="rs">Restore…</button></div></div>
     <p class="tiny mut center" style="margin:16px 0">Lingua app ${esc(NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web")} · content v${LINGUA_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?' · <button id="upd" style="color:var(--blue)">Check for updates</button>':""}</p>`;
@@ -1143,10 +1356,12 @@ function renderMe(){
   const nm=$app.querySelector("#nm"); nm.onchange=()=>{state.name=nm.value.trim();save();toast("Saved");};
   $app.querySelectorAll("[data-g]").forEach(b=>b.onclick=()=>{state.goal=+b.dataset.g;save();render();});
   $app.querySelector("#ll").onclick=()=>openLangPicker();
+  const rk=$app.querySelector("#rmkey"); rk&&(rk.onclick=()=>{ state.aiKey=""; save(); render(); toast("Key removed"); });
+  const gk=$app.querySelector("#gokey"); gk&&(gk.onclick=()=>{ view="talk"; render(); });
   const ro=$app.querySelector("#remon"); ro&&(ro.onclick=()=>{ state.rem=state.rem||{on:false,t:"19:00"}; state.rem.on=!state.rem.on; if(state.rem.on){ try{NATIVE.askPermission();}catch(e){} toast("Reminder at "+state.rem.t); } save(); nativeSync(); render(); });
   const rt=$app.querySelector("#remt"); rt&&(rt.onchange=()=>{ if(/^\d\d:\d\d$/.test(rt.value)){ state.rem.t=rt.value; save(); nativeSync(); toast("Reminder at "+rt.value); } });
   const up=$app.querySelector("#upd"); up&&(up.onclick=()=>{ try{NATIVE.checkUpdates(); toast("Checking for updates…");}catch(e){} });
-  $app.querySelector("#cp").onclick=async()=>{ const txt=JSON.stringify(state);
+  $app.querySelector("#cp").onclick=async()=>{ const txt=JSON.stringify(Object.assign({},state,{aiKey:""}));
     try{ await navigator.clipboard.writeText(txt); toast("Backup copied – paste it into a note"); }
     catch(e){ sheet('<h2 style="margin-top:0">Your backup</h2><textarea rows="8" readonly>'+esc(txt)+'</textarea><button class="btn full" style="margin-top:10px" id="dn">Done</button>',s2=>{s2.querySelector("#dn").onclick=closeSheet;const ta=s2.querySelector("textarea");ta.focus();ta.select();}); } };
   $app.querySelector("#rs").onclick=()=>sheet('<h2 style="margin-top:0">Restore backup</h2><textarea id="rt2" rows="8" placeholder="Paste backup here"></textarea><button class="btn full" style="margin-top:10px" id="rok">Restore</button>',s2=>{

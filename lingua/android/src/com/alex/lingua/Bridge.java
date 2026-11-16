@@ -40,6 +40,15 @@ public class Bridge implements Runnable {
                 .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 
+    /** Voice tutor: microphone */
+    @JavascriptInterface public boolean hasMic() { return act.speech != null && act.speech.available(); }
+    @JavascriptInterface public void listen(String lang) { act.runOnUiThread(new SpeechTask(act, lang)); }
+    @JavascriptInterface public void stopListening() { act.runOnUiThread(new SpeechTask(act, null)); }
+    @JavascriptInterface public void stopSpeaking() { act.stopSpeaking(); }
+
+    /** Voice tutor: AI request to Gemini (only generativelanguage.googleapis.com is allowed). */
+    @JavascriptInterface public void aiRequest(String id, String url, String body) { new Thread(new AiCall(act, id, url, body)).start(); }
+
     @JavascriptInterface public void checkUpdates() { Updater.start(act, true); }
     @JavascriptInterface public void installApk() { ApkInstaller.start(act); }
 

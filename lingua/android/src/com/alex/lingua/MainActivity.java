@@ -13,6 +13,7 @@ import java.util.Locale;
 public class MainActivity extends Activity implements ValueCallback<String>, TextToSpeech.OnInitListener {
     private WebView web;
     TextToSpeech tts;
+    Speech speech;
     volatile boolean ttsReady = false;
 
     @Override
@@ -21,6 +22,7 @@ public class MainActivity extends Activity implements ValueCallback<String>, Tex
         getWindow().setStatusBarColor(Color.parseColor("#0c1016"));
         getWindow().setNavigationBarColor(Color.parseColor("#0c1016"));
         tts = new TextToSpeech(this, this);
+        speech = new Speech(this);
         web = new WebView(this);
         web.setBackgroundColor(Color.parseColor("#0c1016"));
         WebSettings s = web.getSettings();
@@ -39,6 +41,7 @@ public class MainActivity extends Activity implements ValueCallback<String>, Tex
     @Override
     public void onInit(int status) {
         ttsReady = status == TextToSpeech.SUCCESS;
+        if (ttsReady) tts.setOnUtteranceProgressListener(new TtsListener(this));
         if (ttsReady) runJs("window.__lingua&&__lingua.render&&!__lingua.lesson&&__lingua.render()");
     }
 
@@ -52,7 +55,30 @@ public class MainActivity extends Activity implements ValueCallback<String>, Tex
         if (!ttsReady) return;
         tts.setLanguage(Locale.forLanguageTag(tag));
         tts.setSpeechRate(rate);
-        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "lingua");
+        tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "lingua" + System.nanoTime());
+    }
+
+    void stopSpeaking() { if (ttsReady) tts.stop(); }
+
+    /** Mic: ask for permission first if needed, then listen. */
+    void listen(String lang) {
+        if (checkSelfPermission(android.Manifest.permission.RECORD_AUDIO) != android.content.pm.PackageManager.PERMISSION_GRANTED) {
+            speech.pendingLang = lang;
+            requestPermissions(new String[]{android.Manifest.permission.RECORD_AUDIO}, 3);
+            return;
+        }
+        if (ttsReady) tts.stop();
+        speech.start(lang);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] res) {
+        if (code == 3) {
+            boolean ok = res.length > 0 && res[0] == android.content.pm.PackageManager.PERMISSION_GRANTED;
+            if (ok && speech.pendingLang != null) speech.start(speech.pendingLang);
+            else runJs("window.linguaSTT&&linguaSTT('{\"type\":\"error\",\"text\":\"permission\"}')");
+            speech.pendingLang = null;
+        }
     }
 
     void loadPage() {
@@ -108,6 +134,7 @@ public class MainActivity extends Activity implements ValueCallback<String>, Tex
     @Override
     protected void onDestroy() {
         if (tts != null) tts.shutdown();
+        if (speech != null) speech.destroy();
         super.onDestroy();
     }
 }

@@ -1,9 +1,9 @@
 {
-  "web": 6,
-  "apk": 2,
+  "web": 7,
+  "apk": 3,
   "minApk": 1,
   "apkPath": "apk/Lingua.apk",
-  "notes": "Lingua 1.1: all languages listed (AI fallback in Claude), course packs, nightly new languages",
+  "notes": "Lingua 1.2: voice tutor Mira (speak & listen, Gemini)",
   "courses": [
     "de",
     "en",
