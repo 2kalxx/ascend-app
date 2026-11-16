@@ -9,7 +9,7 @@
 :root{
   --bg:#0d0f17;--card:#161a26;--card2:#1d2232;--line:#2a3045;--txt:#eef0f7;--mut:#8b93ad;
   --acc:#7c6cff;--acc2:#a78bfa;--ok:#34d399;--warn:#fbbf24;--bad:#f87171;
-  --mind:#60a5fa;--body:#34d399;--discipline:#f59e0b;--social:#f472b6;
+  --mind:#60a5fa;--body:#34d399;--discipline:#f59e0b;--social:#f472b6;--focus:#a78bfa;--energy:#facc15;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 html,body{background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
@@ -86,6 +86,7 @@ nav button.on{color:var(--acc2)}
 .preset.on{border-color:var(--acc);background:#221f4a}
 .preset .ck{margin-left:auto;width:20px;height:20px;border-radius:6px;border:2px solid var(--line);display:grid;place-items:center;font-size:12px}
 .preset.on .ck{background:var(--acc);border-color:var(--acc)}
+.spin{display:inline-block;animation:spin 1.6s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 .sync{font-size:11px;color:var(--mut);text-align:center;margin-top:24px}
 </style>
 </head>
@@ -98,16 +99,194 @@ nav button.on{color:var(--acc2)}
 (function(){
 "use strict";
 /* ---------- constants ---------- */
-const ASCEND_WEB_VERSION = 5; // bump on every web update (read by the Android app too)
+const ASCEND_WEB_VERSION = 6; // bump on every web update (read by the Android app too)
 const PROGRAM_DAYS = 66;
 const LS_KEY = "ascend_state_v1";
 const CATS = {
   mind:{label:"Mind",color:"var(--mind)",icon:"🧠"},
   body:{label:"Body",color:"var(--body)",icon:"💪"},
   discipline:{label:"Discipline",color:"var(--discipline)",icon:"⚔️"},
-  social:{label:"Social",color:"var(--social)",icon:"🤝"}
+  social:{label:"Social",color:"var(--social)",icon:"🤝"},
+  focus:{label:"Focus",color:"var(--focus)",icon:"🎯"},
+  energy:{label:"Energy",color:"var(--energy)",icon:"⚡"}
 };
+const STAT_ORDER = ["body","energy","focus","discipline","mind","social"];
 const DIFF = {10:"Easy",20:"Medium",30:"Hard"};
+/* ---------- life assessment ---------- */
+const QUESTIONS = [
+  {id:"goals",multi:true,q:"What do you want to change most?",sub:"Pick everything that matters to you.",o:[
+    ["body","💪","Get fit & healthier"],["energy","⚡","More energy & better sleep"],["focus","🎯","Better focus, less phone"],
+    ["discipline","⚔️","More discipline"],["mind","🧠","Less stress, clearer mind"],["learn","📚","Learn & grow (school, career)"],["social","🤝","Better relationships & confidence"]]},
+  {id:"morning",q:"How do you usually feel when you wake up?",o:[["4","🌞","Energized"],["3","🙂","Okay"],["2","🥱","Tired"],["1","😵","Exhausted"]]},
+  {id:"sleep",q:"How many hours do you sleep on a normal night?",o:[["1","😴","Less than 5"],["2","🌙","5–6 hours"],["3","🛌","6–7 hours"],["4","✨","7–8 hours"],["5","💤","More than 8"]]},
+  {id:"bedtime",q:"When do you usually go to bed?",o:[["4","🌆","Before 22:00"],["3","🌃","22:00–23:00"],["2","🌌","23:00–00:00"],["1","🦉","After midnight"]]},
+  {id:"screen",q:"How much time do you spend on your phone (not for work) per day?",o:[["4","📱","Under 2 hours"],["3","📲","2–4 hours"],["2","🤳","4–6 hours"],["1","🔋","More than 6 hours"]]},
+  {id:"exercise",q:"How often do you work out?",o:[["1","🛋️","Never"],["2","🚶","1–2× a week"],["3","🏃","3–4× a week"],["4","🏋️","5× or more"]]},
+  {id:"activity",q:"How active is a normal day for you?",o:[["1","🪑","Mostly sitting"],["2","🚶","Some walking"],["3","🚴","Very active"]]},
+  {id:"water",q:"How much water do you drink per day?",o:[["1","🥤","Less than 1 L"],["2","💧","1–2 L"],["3","🌊","More than 2 L"]]},
+  {id:"diet",q:"How would you describe your diet?",o:[["1","🍔","Lots of junk food"],["2","🍝","Mixed"],["3","🥗","Mostly healthy"]]},
+  {id:"read",q:"How often do you read or learn something new?",o:[["1","🚫","Almost never"],["2","📘","Sometimes"],["3","📚","Every day"]]},
+  {id:"stress",q:"How stressed do you feel most days?",o:[["4","😌","Rarely stressed"],["3","😐","A bit"],["2","😣","Often"],["1","🤯","All the time"]]},
+  {id:"procrast",q:"How often do you put things off?",o:[["4","⚡","Rarely"],["3","🤏","Sometimes"],["2","🐢","Often"],["1","🛑","Almost always"]]},
+  {id:"socialq",q:"How connected do you feel to the people around you?",o:[["3","🫂","Very connected"],["2","🙂","Okay"],["1","🏝️","Lonely or isolated"]]},
+  {id:"quit",multi:true,q:"Any habits you want to break?",sub:"Optional – pick all that apply.",o:[
+    ["smoke","🚭","Smoking / vaping"],["socialmedia","📵","Too much social media"],["gaming","🎮","Too much gaming"],
+    ["junk","🍬","Sugar & junk food"],["alcohol","🍺","Alcohol"],["late","🌙","Staying up too late"],["none","👌","None of these"]]},
+  {id:"time",q:"How much time can you invest per day?",o:[["4","⏱️","About 15 minutes"],["5","🕧","About 30 minutes"],["7","🕐","About 1 hour"],["9","🕑","1.5 hours or more"]]},
+  {id:"intensity",q:"How hard do you want to go?",o:[["easy","🌱","Easy start – build slowly"],["balanced","⚖️","Balanced"],["hard","🔥","Hardcore – push me"]]}
+];
+const QUEST_LIB = {
+  water:["💧","Drink 2L of water","energy",10], sleep23:["🛏️","Sleep before 23:00","energy",20],
+  noscreenbed:["📴","No screens 30 min before bed","energy",20], outside:["🌳","20 min outside in daylight","energy",10],
+  wake7:["⏰","Wake up before 7:00","discipline",20], walk:["🚶","Walk 8,000 steps","body",20],
+  exercise:["🏃","Exercise 30 min","body",30], exercise15:["🤸","Move for 15 minutes","body",10],
+  eatclean:["🥗","Eat clean today","body",20], noalcohol:["🍺","No alcohol","body",20],
+  nosugar:["🍬","No sugar / junk food","discipline",20], mit:["✅","Do the most important task first","discipline",20],
+  bed:["🧹","Make bed & tidy 10 min","discipline",10], cold:["🧊","Cold shower","discipline",20],
+  nosmoke:["🚭","No smoking / vaping","discipline",30], socialmax:["📵","Max 1h social media","focus",30],
+  deepwork:["🎯","25 min deep work, phone in another room","focus",20], plan:["🗂️","Plan tomorrow in writing","focus",10],
+  nogaming:["🎮","No gaming before evening","focus",20], read:["📖","Read 20 pages","mind",20],
+  read10:["📖","Read 10 pages","mind",10], meditate:["🧘","Meditate 10 min","mind",10],
+  journal:["✍️","Journal","mind",10], study:["📚","Study / learn 45 min","mind",30],
+  reach:["📞","Reach out to a friend/family","social",10], grateful:["🙏","Write 3 things I'm grateful for","social",10],
+  talk:["💬","Have a real conversation (no phone)","social",20]
+};
+/* catch-up quests per stat, used after day 66 for stats that missed their goal */
+const CATCHUP = {body:["walk","exercise15","eatclean"],energy:["sleep23","water","outside"],focus:["deepwork","plan","socialmax"],
+  discipline:["mit","bed","cold"],mind:["meditate","read10","journal"],social:["reach","talk","grateful"]};
+const avg = arr => arr.reduce((a,b)=>a+b,0)/arr.length;
+function scoreAnswers(a){
+  const n = k => +a[k];
+  const map = (v, table) => table[v-1];
+  const quitN = (a.quit||[]).filter(x=>x!=="none").length;
+  const sc = {
+    energy: avg([map(n("morning"),[20,40,65,85]), map(n("sleep"),[20,40,60,85,80]), map(n("bedtime"),[30,55,80,90]), map(n("water"),[40,65,85])]),
+    body: avg([map(n("exercise"),[20,45,70,90]), map(n("activity"),[30,55,80]), map(n("diet"),[30,55,85])]),
+    focus: avg([map(n("screen"),[20,40,65,85]), map(n("procrast"),[20,35,60,85])]),
+    discipline: avg([map(n("procrast"),[20,35,60,85]), [85,65,50,35,25][Math.min(quitN,4)], map(n("bedtime"),[35,55,75,85])]),
+    mind: avg([map(n("read"),[25,50,85]), map(n("stress"),[20,35,60,85])]),
+    social: map(n("socialq"),[30,60,85])
+  };
+  for(const k in sc) sc[k]=Math.round(sc[k]);
+  return sc;
+}
+const GOAL_STAT = {body:"body",energy:"energy",focus:"focus",discipline:"discipline",mind:"mind",learn:"mind",social:"social"};
+function goalScores(before, a){
+  const f = {easy:.35,balanced:.5,hard:.65}[a.intensity]||.5;
+  const wanted = new Set((a.goals||[]).map(g=>GOAL_STAT[g]));
+  const g={};
+  for(const k of STAT_ORDER){ const b=before[k]; g[k]=Math.min(95, Math.max(b+5, Math.round(b+(100-b)*(f+(wanted.has(k)?.1:0))))); }
+  return g;
+}
+/* goals depend on the chosen quests: no quest for a stat → only a small goal */
+function goalsForPlan(qz){
+  const full=goalScores(qz.before,qz.a), g={};
+  const names=new Set([...qz.pick].map(k=>QUEST_LIB[k][1]));
+  const covered=new Set([...qz.pick].map(k=>QUEST_LIB[k][2]));
+  qz.have.forEach(n=>{ const h=state&&state.habits.find(x=>x.name===n&&!x.archived); if(h) covered.add(h.cat); });
+  STAT_ORDER.forEach(k=>{ g[k]= covered.has(k)? full[k] : Math.min(full[k], qz.before[k]+5); });
+  return g;
+}
+function planQuests(a, before){
+  const P={}; const add=(k,p)=>{ P[k]=Math.max(P[k]||0,p); };
+  const def = k => (100-before[k])/10;
+  const n = k => +a[k], quit=new Set(a.quit||[]), goals=new Set(a.goals||[]), easy=a.intensity==="easy", hard=a.intensity==="hard";
+  if(n("sleep")<=3 || n("bedtime")<=2) add("sleep23", def("energy")+2);
+  if(n("screen")<=2) add("noscreenbed", def("energy"));
+  if(n("morning")<=2) add("outside", def("energy")-1);
+  if(n("water")<=2) add("water", def("energy")+1);
+  if(n("bedtime")>=3 && (n("morning")<=2 || hard)) add("wake7", def("discipline"));
+  if(n("exercise")===1){ add("walk", def("body")+1); add(easy?"exercise15":"exercise", def("body")); }
+  else if(n("exercise")===2){ add("exercise", def("body")+1); add("walk", def("body")-1); }
+  else add("exercise", def("body")-2);
+  if(n("activity")===1) add("walk", def("body")+1);
+  if(n("diet")===1){ add("nosugar", def("body")+1); add("eatclean", def("body")); } else if(n("diet")===2) add("eatclean", def("body")-1);
+  if(n("screen")<=2) add("socialmax", def("focus")+1);
+  if(n("procrast")<=2){ add("mit", def("focus")+1); add("plan", def("focus")); add("deepwork", def("focus")-1); }
+  else if(n("procrast")===3) add("plan", def("focus")-1);
+  if(n("read")===1) add("read10", def("mind")); else if(n("read")===2) add("read", def("mind"));
+  if(goals.has("learn")) add("study", def("mind")+2);
+  if(n("stress")<=2){ add("meditate", def("mind")+1); add("journal", def("mind")-1); }
+  if(n("socialq")===1){ add("reach", def("social")+1); add("talk", def("social")); } else add("grateful", def("social")-2);
+  if(quit.has("smoke")) add("nosmoke", 9); if(quit.has("socialmedia")) add("socialmax", 8); if(quit.has("gaming")) add("nogaming", 7);
+  if(quit.has("junk")) add("nosugar", 7); if(quit.has("alcohol")) add("noalcohol", 7); if(quit.has("late")) add("sleep23", 8);
+  if(hard) add("cold", 3);
+  add("bed", 2);
+  // goals the user picked get a boost
+  for(const k in P){ const st=QUEST_LIB[k][2]; if([...goals].some(g=>GOAL_STAT[g]===st)) P[k]+=3; }
+  const max = +a.time||5;
+  let keys = Object.keys(P).sort((x,y)=>P[y]-P[x]);
+  if(keys.includes("read") && keys.includes("read10")) keys=keys.filter(k=>k!=="read10");
+  // make sure every stat that needs work gets at least one quest (weakest first)
+  const picked=[];
+  STAT_ORDER.slice().sort((x,y)=>before[x]-before[y]).forEach(st=>{
+    if(picked.length>=max) return;
+    let k=keys.find(k=>QUEST_LIB[k][2]===st && !picked.includes(k));
+    if(!k) k=CATCHUP[st].find(k=>!picked.includes(k));
+    if(k) picked.push(k);
+  });
+  keys.forEach(k=>{ if(picked.length<max && !picked.includes(k)) picked.push(k); });
+  const extra=keys.filter(k=>!picked.includes(k)).slice(0,4);
+  STAT_ORDER.forEach(st=>{ if(![...picked,...extra].some(k=>QUEST_LIB[k][2]===st)){ const k=CATCHUP[st].find(k=>!picked.includes(k)); if(k) extra.push(k); } });
+  return {picked, extra};
+}
+let quiz = null; // {mode:"new"|"existing", i, a:{}, phase:"intro"|"q"|"analyzing"|"result", view:"before"|"after", pick:Set}
+function radarSVG(a, b, size){
+  size=size||280; const c=size/2, R=size/2-46, N=STAT_ORDER.length;
+  const pt=(i,v)=>{ const ang=-Math.PI/2+i*2*Math.PI/N; return [c+Math.cos(ang)*R*v/100, c+Math.sin(ang)*R*v/100]; };
+  let g="";
+  [25,50,75,100].forEach(l=>{ g+=`<polygon points="${STAT_ORDER.map((_,i)=>pt(i,l).join(",")).join(" ")}" fill="none" stroke="#2a3045" stroke-width="1"/>`; });
+  STAT_ORDER.forEach((_,i)=>{ const [x,y]=pt(i,100); g+=`<line x1="${c}" y1="${c}" x2="${x}" y2="${y}" stroke="#2a3045"/>`; });
+  const poly=(sc,fill,stroke,dash)=>`<polygon points="${STAT_ORDER.map((k,i)=>pt(i,sc[k]).join(",")).join(" ")}" fill="${fill}" stroke="${stroke}" stroke-width="2.5" ${dash?'stroke-dasharray="6 5"':""} stroke-linejoin="round"/>`;
+  if(b) g+=poly(b,"rgba(52,211,153,.18)","#34d399",true);
+  g+=poly(a,"rgba(124,108,255,.32)","#a78bfa",false);
+  STAT_ORDER.forEach((k,i)=>{ const [x,y]=pt(i,100+30); const v=a[k];
+    g+=`<text x="${x}" y="${y-5}" text-anchor="middle" fill="#eef0f7" font-size="12" font-weight="600">${CATS[k].icon} ${CATS[k].label}</text><text x="${x}" y="${y+11}" text-anchor="middle" fill="${b&&b[k]>v?"#8b93ad":"#a78bfa"}" font-size="12">${v}${b?" → "+b[k]:""}</text>`; });
+  return `<svg viewBox="0 0 ${size} ${size}" width="100%" style="max-width:${size+40}px;display:block;margin:0 auto">${g}</svg>`;
+}
+const lifeScore = sc => Math.round(avg(STAT_ORDER.map(k=>sc[k])));
+/* current stats: before + share of the XP needed for that stat */
+function statXP(sinceKey){
+  const a={}; STAT_ORDER.forEach(k=>a[k]=0);
+  const byId={}; state.habits.forEach(h=>byId[h.id]=h);
+  for(const k in state.log){ if(k<sinceKey) continue;
+    const lg=state.log[k], d=lg.d||{}, s=lg.s||{};
+    for(const id in d){ const h=byId[id]; if(h&&a[h.cat]!=null) a[h.cat]+=d[id]; }
+    (lg.sq||[]).forEach(q=>{ if(s[q.id]!=null && a[q.cat]!=null) a[q.cat]+=s[q.id]; });
+  }
+  return a;
+}
+function currentStats(){
+  const A=state.assess; if(!A) return null;
+  const x=statXP(A.date), cur={};
+  STAT_ORDER.forEach(k=>{ const b=A.before[k], g=A.goal[k]; cur[k]=Math.min(g, Math.round(b+(g-b)*Math.min(1, x[k]/(A.need[k]||600)))); });
+  return cur;
+}
+function computeNeed(daysLeft){
+  const need={}; STAT_ORDER.forEach(k=>{
+    const xp=state.habits.filter(h=>!h.archived&&h.cat===k).reduce((t,h)=>t+h.xp*(h.days&&h.days.length?h.days.length/7:1),0);
+    need[k]=Math.max(200, Math.round((xp||12)*daysLeft*0.75));
+  }); return need;
+}
+function programDone(){ return diffDays(state.start,todayKey()) >= PROGRAM_DAYS; }
+function missingStats(){ const cur=currentStats(); if(!cur) return []; return STAT_ORDER.filter(k=>cur[k] < state.assess.goal[k]); }
+/* after day 66: keep catch-up quests only for stats that still miss their goal */
+function ensureCatchup(){
+  if(!state.assess || !programDone()) return;
+  const miss=new Set(missingStats()); let changed=false;
+  state.habits.forEach(h=>{ if(h.catchup && !h.archived && !miss.has(h.cat)){ h.archived=true; changed=true; } });
+  if(state.assess.catchupOn){
+    miss.forEach(k=>{
+      if(state.habits.some(h=>h.catchup&&!h.archived&&h.cat===k)) return;
+      CATCHUP[k].slice(0,2).forEach(key=>{ const q=QUEST_LIB[key];
+        const ex=state.habits.find(h=>h.name===q[1]);
+        if(ex){ if(ex.archived){ ex.archived=false; ex.catchup=true; changed=true; } return; }
+        state.habits.push({id:uid(),emoji:q[0],name:q[1],cat:q[2],xp:q[3],days:[],since:todayKey(),catchup:true}); changed=true; });
+    });
+  }
+  if(changed) save();
+}
+
 const PRESETS = [
   ["💧","Drink 2L of water","body",10],["🏃","Exercise 30 min","body",30],["🚶","Walk 8,000 steps","body",20],
   ["🛏️","Sleep before 23:00","body",20],["🥗","Eat clean today","body",20],["🧊","Cold shower","discipline",20],
@@ -120,16 +299,16 @@ const SIDE_POOL = [
   ["b1","🚶","Take a 20-minute walk without your phone","body",15],["b2","🧎","Do 30 push-ups (split up is fine)","body",20],
   ["b3","🧘","Stretch for 10 minutes","body",15],["b4","🪜","Take the stairs everywhere today","body",15],
   ["b5","🍎","Eat 3 portions of fruit or veg","body",15],["b6","🚰","No soft drinks or energy drinks today","body",15],
-  ["b7","🏋️","Hold a 2-minute plank (total)","body",20],["b8","🌳","Spend 30 min outside","body",15],
-  ["d1","🧹","Clean one area you've been avoiding","discipline",20],["d2","📵","No phone for the first hour after waking","discipline",25],
-  ["d3","📴","Phone off 1 hour before bed","discipline",25],["d4","✅","Finish one task you've been putting off","discipline",25],
+  ["b7","🏋️","Hold a 2-minute plank (total)","body",20],["b8","🌳","Spend 30 min outside","energy",15],
+  ["d1","🧹","Clean one area you've been avoiding","discipline",20],["d2","📵","No phone for the first hour after waking","focus",25],
+  ["d3","📴","Phone off 1 hour before bed","energy",25],["d4","✅","Finish one task you've been putting off","discipline",25],
   ["d5","🗂️","Plan tomorrow in writing","discipline",15],["d6","🧺","Do the laundry / dishes right away","discipline",15],
   ["d7","🧊","End your shower 60 seconds cold","discipline",20],["d8","🎮","No gaming / streaming before 18:00","discipline",25],
-  ["d9","💰","Spend nothing that isn't necessary","discipline",20],["d10","🛏️","In bed by 22:30","discipline",20],
+  ["d9","💰","Spend nothing that isn't necessary","discipline",20],["d10","🛏️","In bed by 22:30","energy",20],
   ["m1","📖","Read 10 pages of a book","mind",15],["m2","🎧","Listen to an educational podcast","mind",15],
   ["m3","✍️","Write down 3 goals for this month","mind",15],["m4","🧠","Learn one new fact and explain it to someone","mind",15],
   ["m5","📝","Review your notes from class / work for 20 min","mind",20],["m6","🇪🇸","Learn 10 new words in a language","mind",15],
-  ["m7","🤔","10 minutes of quiet thinking – no input","mind",15],["m8","📚","Study 25 minutes without distraction","mind",20],
+  ["m7","🤔","10 minutes of quiet thinking – no input","mind",15],["m8","📚","Study 25 minutes without distraction","focus",20],
   ["s1","💬","Compliment someone honestly","social",10],["s2","📞","Call (not text) a friend or family member","social",15],
   ["s3","🤝","Help someone without being asked","social",15],["s4","🙏","Thank someone for something specific","social",10],
   ["s5","👋","Start a conversation with someone new","social",20],["s6","🍽️","Eat a meal without screens, with someone","social",15],
@@ -168,6 +347,13 @@ function migrate(s){
   if(![1,2,3].includes(s.side.count)) s.side.count=2;
   s.rem = s.rem || {m:{on:false,t:"08:00"}, e:{on:false,t:"20:00"}};
   s.health = s.health || {on:false};
+  if(!s.catV){
+    (s.habits||[]).forEach(h=>{
+      if(/sleep|bed before|water|drink 2l|daylight/i.test(h.name)) h.cat="energy";
+      else if(/social media|phone|screen|deep work|plan tomorrow|gaming/i.test(h.name)) h.cat="focus";
+    });
+    s.catV=2;
+  }
   return s;
 }
 const NATIVE = (typeof window.AscendNative!=="undefined") ? window.AscendNative : null;
@@ -293,7 +479,7 @@ function habitRate(h){
   return sch? Math.round(dn/sch*100) : 0;
 }
 function attrXP(){
-  const a={mind:0,body:0,discipline:0,social:0};
+  const a={}; Object.keys(CATS).forEach(k=>a[k]=0);
   const byId={}; state.habits.forEach(h=>byId[h.id]=h);
   for(const k in state.log){
     const lg=state.log[k], d=lg.d||{}, s=lg.s||{};
@@ -326,19 +512,124 @@ function confirmSheet(text, okLabel, onOk){
   });
 }
 
-/* ---------- onboarding ---------- */
+/* ---------- onboarding: life assessment → plan (no paywall) ---------- */
 let obPick = new Set([0,6,11,12,1]);
 let obName = "";
+function startQuiz(mode){ quiz={mode, i:0, a:{goals:[],quit:[]}, phase: mode==="new"?"intro":"q", view:"before"}; render(); window.scrollTo(0,0); }
 function renderOnboarding(){
+  if(!quiz) quiz={mode:"new",i:0,a:{goals:[],quit:[]},phase:"intro",view:"before"};
+  if(quiz.phase==="picker") return renderPicker();
+  renderQuiz();
+}
+function renderQuiz(){
   $nav.style.display="none";
-  $app.innerHTML = `
-    <div style="text-align:center;margin:28px 0 22px">
-      <div style="font-size:44px">🔥</div>
-      <h1 style="font-size:26px;margin-top:6px">Ascend</h1>
-      <p class="mut">Your 66-day reset. Daily quests, XP, levels, streaks – no paywall.</p>
+  const Q=QUESTIONS, qz=quiz;
+  if(qz.phase==="intro"){
+    $app.innerHTML=`
+    <div style="text-align:center;margin:40px 0 26px">
+      <div style="font-size:52px">🔥</div>
+      <h1 style="font-size:28px;margin-top:8px">Ascend</h1>
+      <p class="mut" style="margin-top:6px">Your 66-day life reset. Answer a few questions, see your stats, get your personal plan.</p>
     </div>
     <div class="field"><label>What should I call you?</label><input id="obn" maxlength="30" placeholder="Your name" value="${esc(obName)}"></div>
-    <h2>Pick your daily quests <span class="mut small">(you can change them anytime)</span></h2>
+    <button class="btn full" id="go" style="margin-top:8px">Start my assessment →</button>
+    <p class="small mut" style="text-align:center;margin-top:10px">About 2 minutes · ${Q.length} questions</p>
+    <button class="btn ghost full small" id="skip" style="margin-top:26px">Skip – I'll pick my quests myself</button>`;
+    $app.querySelector("#obn").oninput=e=>obName=e.target.value;
+    $app.querySelector("#go").onclick=()=>{ qz.phase="q"; qz.i=0; render(); };
+    $app.querySelector("#skip").onclick=()=>{ qz.phase="picker"; render(); };
+    return;
+  }
+  if(qz.phase==="q"){
+    const q=Q[qz.i], val=qz.a[q.id], multi=!!q.multi;
+    const sel = v => multi ? (val||[]).includes(v) : val===v;
+    $app.innerHTML=`
+    <div class="row between" style="margin:8px 0 12px">
+      <button class="btn ghost" style="padding:6px 12px" id="back">‹</button>
+      <span class="small mut">${qz.i+1} / ${Q.length}</span>
+      <button class="btn ghost" style="padding:6px 12px" id="quit">✕</button>
+    </div>
+    <div class="bar" style="height:6px;margin-bottom:22px"><i style="width:${Math.round((qz.i)/Q.length*100)}%"></i></div>
+    <h1 style="font-size:21px;margin-bottom:6px">${esc(q.q)}</h1>
+    ${q.sub?`<p class="small mut" style="margin-bottom:14px">${esc(q.sub)}</p>`:'<div style="height:12px"></div>'}
+    ${q.o.map(([v,e,l])=>`<button class="preset ${sel(v)?"on":""}" data-v="${v}" style="padding:14px"><span style="font-size:22px">${e}</span><span style="font-weight:550">${esc(l)}</span>${multi?`<span class="ck">${sel(v)?"✓":""}</span>`:""}</button>`).join("")}
+    ${multi?`<button class="btn full" id="next" style="margin-top:12px">${(val||[]).length||q.id==="quit"?"Continue →":"Skip →"}</button>`:""}`;
+    $app.querySelector("#back").onclick=()=>{ if(qz.i>0){ qz.i--; render(); } else if(qz.mode==="new"){ qz.phase="intro"; render(); } else { quiz=null; render(); } };
+    $app.querySelector("#quit").onclick=()=>{ if(qz.mode==="new"){ qz.phase="intro"; } else quiz=null; render(); };
+    const nextQ=()=>{ if(qz.i<Q.length-1){ qz.i++; render(); } else { qz.phase="analyzing"; render(); } window.scrollTo(0,0); };
+    $app.querySelectorAll("[data-v]").forEach(b=>b.onclick=()=>{
+      const v=b.dataset.v;
+      if(multi){ let arr=qz.a[q.id]||[]; if(v==="none") arr=arr.includes("none")?[]:["none"]; else { arr=arr.filter(x=>x!=="none"); arr=arr.includes(v)?arr.filter(x=>x!==v):arr.concat([v]); } qz.a[q.id]=arr; render(); }
+      else { qz.a[q.id]=v; render(); setTimeout(nextQ,180); }
+    });
+    const nx=$app.querySelector("#next"); nx&&(nx.onclick=nextQ);
+    return;
+  }
+  if(qz.phase==="analyzing"){
+    const steps=["Analyzing your sleep & energy","Measuring focus & discipline","Checking body & mind","Building your 66-day plan"];
+    $app.innerHTML=`<div style="text-align:center;margin-top:90px"><div style="font-size:46px" class="spin">🧬</div><h1 style="margin:18px 0 18px">Analyzing your answers…</h1>
+      <div id="anl" style="text-align:left;max-width:300px;margin:0 auto">${steps.map((t,i)=>`<div class="row small" data-st="${i}" style="opacity:.3;margin:9px 0"><span>⏳</span><span>${t}</span></div>`).join("")}</div></div>`;
+    steps.forEach((_,i)=>setTimeout(()=>{ const el=$app.querySelector(`[data-st="${i}"]`); if(el){ el.style.opacity=1; el.firstChild.textContent="✅"; } }, 450*(i+1)));
+    setTimeout(()=>{ if(quiz===qz && qz.phase==="analyzing"){
+      qz.before=scoreAnswers(qz.a);
+      const pl=planQuests(qz.a,qz.before);
+      const have = state? new Set(state.habits.filter(h=>!h.archived).map(h=>h.name)) : new Set();
+      qz.plan=pl.picked.concat(pl.extra); qz.pick=new Set(pl.picked.filter(k=>!have.has(QUEST_LIB[k][1]))); qz.have=have;
+      qz.phase="result"; render(); } }, 450*steps.length+500);
+    return;
+  }
+  if(qz.phase==="result"){
+    qz.goal=goalsForPlan(qz);
+    const B=qz.before, G=qz.goal, showAfter=qz.view==="after";
+    const lsB=lifeScore(B), lsG=lifeScore(G);
+    const weakest=STAT_ORDER.slice().sort((x,y)=>B[x]-B[y]).slice(0,2);
+    $app.innerHTML=`
+    <h1 style="margin:14px 0 4px">${qz.mode==="new"&&obName.trim()?esc(obName.trim())+", here":"Here"} are your stats</h1>
+    <p class="small mut">Your biggest opportunities: <b style="color:var(--txt)">${weakest.map(k=>CATS[k].label).join(" & ")}</b></p>
+    <div class="card" style="margin-top:14px">
+      <div class="seg" style="justify-content:center;margin-bottom:6px">
+        <button data-vw="before" class="${!showAfter?"on":""}">Before</button>
+        <button data-vw="after" class="${showAfter?"on":""}">After 66 days</button>
+      </div>
+      <div style="text-align:center;margin:10px 0 0"><span class="small mut">Life score</span><div style="font-size:34px;font-weight:800;color:${showAfter?"var(--ok)":"var(--acc2)"}">${showAfter?lsG:lsB}<span class="small mut" style="font-size:14px">/100</span></div></div>
+      ${radarSVG(showAfter?G:B, showAfter?null:null)}
+      <div class="small mut" style="text-align:center">${showAfter?"Your goals if you complete your quests for 66 days.":"Where you are today, based on your answers."}</div>
+    </div>
+    <h2>Your 66-day plan</h2>
+    <p class="small mut" style="margin:-4px 0 10px">Personal daily quests for your weak spots. Tap to change.</p>
+    ${qz.plan.map(k=>{ const q=QUEST_LIB[k], on=qz.pick.has(k), had=qz.have.has(q[1]); return `
+      <button class="preset ${on?"on":""}" data-k="${k}" ${had?'style="opacity:.55"':""}><span style="font-size:20px">${q[0]}</span>
+      <span><b style="font-weight:600">${esc(q[1])}</b><br><span class="small" style="color:${CATS[q[2]].color}">${CATS[q[2]].icon} ${CATS[q[2]].label}</span><span class="small mut"> · +${q[3]} XP${had?" · already yours":""}</span></span>
+      <span class="ck" ${had?'style="background:var(--ok);border-color:var(--ok)"':""}>${on||had?"✓":""}</span></button>`; }).join("")}
+    <button class="btn full" id="start" style="margin:18px 0 8px">${qz.mode==="new"?"Start my 66 days 🔥":"Save my stats & add quests"}</button>
+    <p class="small mut" style="text-align:center;margin-bottom:30px">100% free. No paywall. Ever.</p>`;
+    $app.querySelectorAll("[data-vw]").forEach(b=>b.onclick=()=>{ qz.view=b.dataset.vw; render(); });
+    $app.querySelectorAll("[data-k]").forEach(b=>b.onclick=()=>{ const k=b.dataset.k; if(qz.have.has(QUEST_LIB[k][1])) return; qz.pick.has(k)?qz.pick.delete(k):qz.pick.add(k); render(); });
+    $app.querySelector("#start").onclick=()=>finishQuiz();
+  }
+}
+function finishQuiz(){
+  const qz=quiz, t=todayKey();
+  const mk = k => { const q=QUEST_LIB[k]; return {id:uid(),emoji:q[0],name:q[1],cat:q[2],xp:q[3],days:[],since:t}; };
+  if(qz.mode==="new"){
+    if(!qz.pick.size){ toast("Pick at least one quest"); return; }
+    state = { v:1, name:obName.trim(), start:t, createdAt:Date.now(), updatedAt:Date.now(), habits:[...qz.pick].map(mk), log:{}, catV:2 };
+    migrate(state);
+  } else {
+    [...qz.pick].forEach(k=>{ const q=QUEST_LIB[k]; const ex=state.habits.find(h=>h.name===q[1]);
+      if(ex){ ex.archived=false; ex.cat=q[2]; } else state.habits.push(mk(k)); });
+  }
+  const daysLeft = Math.max(21, PROGRAM_DAYS - Math.max(0, diffDays(state.start, t)));
+  state.assess = {date:t, answers:qz.a, before:qz.before, goal:goalsForPlan(qz), need:computeNeed(daysLeft)};
+  if(state.health && state.health.on) guessAuto();
+  quiz=null; save(); view="today"; viewDay=t; render(); window.scrollTo(0,0);
+  toast(qz.mode==="new"?"Day 1 – let's go! 🔥":"Stats saved 📊");
+}
+function renderPicker(){
+  $nav.style.display="none";
+  $app.innerHTML = `
+    <div class="row between" style="margin:10px 0 14px"><button class="btn ghost" style="padding:6px 12px" id="back">‹</button><span></span></div>
+    <h1>Pick your daily quests</h1><p class="small mut" style="margin-bottom:12px">You can take the assessment later from the Today screen.</p>
     <div id="obl">${PRESETS.map((p,i)=>`
       <button class="preset ${obPick.has(i)?"on":""}" data-i="${i}">
         <span style="font-size:20px">${p[0]}</span>
@@ -346,15 +637,15 @@ function renderOnboarding(){
         <span class="ck">${obPick.has(i)?"✓":""}</span>
       </button>`).join("")}</div>
     <button class="btn full" id="obgo" style="margin:16px 0 30px">Start my 66 days →</button>`;
-  $app.querySelector("#obn").oninput=e=>obName=e.target.value;
-  $app.querySelectorAll(".preset").forEach(b=>b.onclick=()=>{ const i=+b.dataset.i; obPick.has(i)?obPick.delete(i):obPick.add(i); renderOnboarding(); });
+  $app.querySelector("#back").onclick=()=>{ quiz.phase="intro"; render(); };
+  $app.querySelectorAll(".preset").forEach(b=>b.onclick=()=>{ const i=+b.dataset.i; obPick.has(i)?obPick.delete(i):obPick.add(i); render(); });
   $app.querySelector("#obgo").onclick=()=>{
     if(!obPick.size){ toast("Pick at least one quest"); return; }
     const t=todayKey();
     state = { v:1, name:obName.trim(), start:t, createdAt:Date.now(), updatedAt:Date.now(),
       habits:[...obPick].sort((a,b)=>a-b).map(i=>({id:uid(),emoji:PRESETS[i][0],name:PRESETS[i][1],cat:PRESETS[i][2],xp:PRESETS[i][3],days:[],since:t})),
       log:{} };
-    migrate(state); save(); view="today"; viewDay=t; render(); toast("Day 1 – let's go! 🔥");
+    quiz=null; migrate(state); save(); view="today"; viewDay=t; render(); toast("Day 1 – let's go! 🔥");
   };
 }
 
@@ -380,6 +671,7 @@ function renderToday(){
     </div>
     ${healthStrip()}
   </div>
+  ${statsCard()}
   <div class="daynav">
     <button id="prev" ${diffDays(state.start,viewDay)<=0?"disabled":""}>‹</button>
     <div style="text-align:center"><b>${viewDay===t?"Today":esc(fmtDay(viewDay))}</b><div class="small mut">${doneN}/${hs.length} quests · +${dayXP(viewDay)} XP</div></div>
@@ -399,6 +691,21 @@ function renderToday(){
     <textarea id="note" rows="3" placeholder="How did today go? What did you learn?">${esc(lg.note||"")}</textarea>
   </div>`;
 }
+function statsCard(){
+  if(viewDay!==todayKey()) return "";
+  if(!state.assess) return `<button class="card" id="takeq" style="display:block;width:100%;text-align:left;margin-top:14px;border-color:var(--acc)">
+    <b style="font-weight:600">📊 Get your life stats</b><br><span class="small mut">2-minute assessment → Body, Mind, Focus, Discipline, Energy & Social, your 66-day goals and a personal plan.</span></button>`;
+  const cur=currentStats(), A=state.assess;
+  if(programDone()){
+    const miss=missingStats();
+    if(!miss.length) return `<div class="card" style="margin-top:14px;border-color:var(--ok)"><b>🏆 All 66-day goals reached!</b><br><span class="small mut">Life score ${lifeScore(cur)}. Want a new challenge? Settings → Start a new 66 days.</span></div>`;
+    return `<div class="card" style="margin-top:14px;border-color:var(--warn)"><b>🎯 Almost there – ${miss.length} goal${miss.length>1?"s":""} left</b>
+      <div class="small mut" style="margin:6px 0 10px">${miss.map(k=>`${CATS[k].icon} ${CATS[k].label} ${cur[k]}/${A.goal[k]}`).join(" · ")}</div>
+      ${A.catchupOn?`<span class="small mut">Catch-up quests are in your list. They disappear once a goal is reached.</span>`:`<button class="btn full" id="catchup">Add catch-up quests</button>`}</div>`;
+  }
+  return `<button class="card" id="gostats" style="display:block;width:100%;text-align:left;margin-top:14px"><div class="row between"><b style="font-weight:600">📊 Life score ${lifeScore(cur)} <span class="mut small">→ goal ${lifeScore(A.goal)}</span></b><span class="mut">›</span></div>
+    <div class="row" style="gap:6px;margin-top:8px">${STAT_ORDER.map(k=>`<div style="flex:1"><div class="bar" style="height:5px"><i style="width:${Math.round(cur[k])}%;background:${CATS[k].color}"></i></div><div class="small mut" style="font-size:10px;text-align:center;margin-top:2px">${CATS[k].icon}</div></div>`).join("")}</div></button>`;
+}
 function renderSide(){
   const lg = state.log[viewDay]||{}, sq = lg.sq||[], s = lg.s||{};
   if(!sq.length) return "";
@@ -417,6 +724,9 @@ function renderSide(){
   <div class="small mut" style="text-align:center;margin-top:4px">Optional – bonus XP, they don't affect your streak.</div>`;
 }
 function bindToday(){
+  const tq=$app.querySelector("#takeq"); tq&&(tq.onclick=()=>startQuiz("existing"));
+  const gs=$app.querySelector("#gostats"); gs&&(gs.onclick=()=>{ view="progress"; render(); window.scrollTo(0,0); });
+  const cu=$app.querySelector("#catchup"); cu&&(cu.onclick=()=>{ state.assess.catchupOn=true; ensureCatchup(); save(); render(); toast("🎯 Catch-up quests added"); });
   const rr=$app.querySelector("#reroll");
   rr&&(rr.onclick=()=>{
     const lg=state.log[viewDay]; if(!lg||!lg.sq) return;
@@ -483,7 +793,8 @@ function renderProgress(){
       <span class="row" style="gap:5px"><i class="dot" style="background:#1f8a63"></i>≥70%</span>
       <span class="row" style="gap:5px"><i class="dot" style="background:#3b3470"></i>Partial</span>
     </div></div>
-  <h2>Attributes</h2>
+  ${lifeStatsCard()}
+  <h2>XP by attribute</h2>
   <div class="card">${Object.keys(CATS).map(c=>`
     <div class="attr"><div class="row between small" style="margin-bottom:5px"><span>${CATS[c].icon} ${CATS[c].label}</span><span class="mut">${a[c]} XP · Lv ${levelInfo(a[c]).lvl}</span></div>
     <div class="bar"><i style="width:${Math.round(a[c]/maxA*100)}%;background:${CATS[c].color}"></i></div></div>`).join("")}
@@ -499,6 +810,25 @@ function renderProgress(){
   </div>`;
 }
 
+let statView="now";
+function lifeStatsCard(){
+  if(!state.assess) return `<h2>Life stats</h2><div class="card"><p class="small mut" style="margin-bottom:10px">Take the 2-minute assessment to see your Before / After 66 days stats.</p><button class="btn full" id="takeq2">Get my life stats</button></div>`;
+  const A=state.assess, cur=currentStats();
+  const show = statView==="before"?A.before : statView==="after"?A.goal : cur;
+  return `<h2>Life stats</h2><div class="card">
+    <div class="seg" style="justify-content:center">${[["before","Before"],["now","Now"],["after","After 66 days"]].map(([k,l])=>`<button data-sv="${k}" class="${statView===k?"on":""}">${l}</button>`).join("")}</div>
+    <div style="text-align:center;margin-top:10px"><span class="small mut">Life score</span><div style="font-size:30px;font-weight:800;color:${statView==="after"?"var(--ok)":"var(--acc2)"}">${lifeScore(show)}</div></div>
+    ${radarSVG(show, statView==="now"?A.goal:null)}
+    ${statView==="now"?`<div class="small mut" style="text-align:center;margin-bottom:10px"><span style="color:#a78bfa">■</span> now &nbsp; <span style="color:#34d399">┅</span> 66-day goal</div>`:""}
+    ${STAT_ORDER.map(k=>{ const b=A.before[k], g=A.goal[k], c=cur[k], done=c>=g; return `<div class="attr"><div class="row between small" style="margin-bottom:5px"><span>${CATS[k].icon} ${CATS[k].label}</span><span class="mut">${b} → <b style="color:${done?"var(--ok)":"var(--txt)"}">${c}</b> / ${g}${done?" ✓":""}</span></div>
+      <div class="bar" style="height:8px;position:relative"><i style="width:${c}%;background:${CATS[k].color}"></i><span style="position:absolute;top:-3px;left:calc(${g}% - 1px);width:2px;height:14px;background:var(--ok)"></span></div></div>`; }).join("")}
+    <p class="small mut" style="margin-top:6px">Stats grow when you complete quests of that type. Measured ${esc(fmtDay(A.date))}.</p>
+  </div>`;
+}
+function bindProgress(){
+  $app.querySelectorAll("[data-sv]").forEach(b=>b.onclick=()=>{ statView=b.dataset.sv; render(); });
+  const t=$app.querySelector("#takeq2"); t&&(t.onclick=()=>startQuiz("existing"));
+}
 function renderQuests(){
   const act=state.habits.filter(h=>!h.archived), arc=state.habits.filter(h=>h.archived);
   const dn=["Su","Mo","Tu","We","Th","Fr","Sa"];
@@ -653,6 +983,9 @@ function renderSettings(){
     ${NATIVE&&NATIVE.checkUpdates?'<button class="btn ghost" style="padding:7px 12px" id="upd">Check now</button>':''}</div>
     <p class="small mut" style="margin-top:8px">${NATIVE?"New features install automatically when you open the app.":"This web version is always up to date."}</p>
   </div>
+  <h2>Life assessment</h2>
+  <div class="card"><p class="small mut" style="margin-bottom:10px">${state.assess?"Measured "+esc(fmtDay(state.assess.date))+". Redoing it sets new Before stats and goals.":"Not taken yet."}</p>
+    <button class="btn ghost full" id="redoq">${state.assess?"Redo assessment":"Take assessment"}</button></div>
   <h2>Backup</h2>
   <div class="card">
     <p class="small mut" style="margin-bottom:10px">Copy your data to keep a backup, or paste a backup to restore it.</p>
@@ -686,6 +1019,7 @@ function bindSettings(){
   });
   const hcget=$app.querySelector("#hcget"); hcget&&(hcget.onclick=()=>{ try{ NATIVE.healthInstall(); }catch(e){ toast("Search 'Health Connect' in the Play Store"); } });
   const hcoff=$app.querySelector("#hcoff"); hcoff&&(hcoff.onclick=()=>{ state.health.on=false; state.health.status=""; health=null; save(); render(); toast("Disconnected"); });
+  const rq=$app.querySelector("#redoq"); rq&&(rq.onclick=()=>{ if(state.assess) confirmSheet("Redo the assessment? Your Before stats and 66-day goals will be replaced.","Redo",()=>startQuiz("existing")); else startQuiz("existing"); });
   const upd=$app.querySelector("#upd"); upd&&(upd.onclick=()=>{ try{ NATIVE.checkUpdates(); toast("Checking for updates…"); }catch(e){} });
   $app.querySelector("#cp").onclick=async()=>{
     const txt=JSON.stringify(state);
@@ -700,12 +1034,12 @@ function bindSettings(){
     };
   });
   $app.querySelector("#nr").onclick=()=>confirmSheet("Start a new 66-day run from today? Progress, XP and journal will be cleared (copy a backup first if you want to keep them).","Start over",()=>{
-    const t=todayKey(); state.start=t; state.log={}; state.habits.forEach(h=>h.since=t); save(); viewDay=t; view="today"; render(); toast("Fresh start 🔥");
+    const t=todayKey(); state.start=t; state.log={}; delete state.assess; state.habits=state.habits.filter(h=>!h.catchup); state.habits.forEach(h=>h.since=t); save(); viewDay=t; view="today"; render(); toast("Fresh start 🔥");
   });
   $app.querySelector("#wipe").onclick=()=>confirmSheet("Erase all quests, progress and journal entries? This can't be undone.","Erase",()=>{
     state=null; try{localStorage.removeItem(LS_KEY);}catch(e){}
     if(remoteRef) remoteRef.delete().catch(()=>{});
-    obPick=new Set([0,6,11,12,1]); obName=""; render();
+    obPick=new Set([0,6,11,12,1]); obName=""; quiz=null; render();
   });
 }
 
@@ -717,6 +1051,8 @@ function renderSync(){
 }
 function render(){
   if(!state){ renderOnboarding(); return; }
+  if(quiz){ renderQuiz(); return; }
+  ensureCatchup();
   if(viewDay>todayKey()) viewDay=todayKey();
   if(diffDays(state.start,viewDay)<0) viewDay=state.start;
   ensureSide(todayKey());
@@ -726,7 +1062,7 @@ function render(){
   const body = view==="today"?renderToday(): view==="progress"?renderProgress(): view==="quests"?renderQuests(): renderSettings();
   $app.innerHTML = (view==="today"?apkBanner():"") + body + '<div class="sync" id="sync"></div>';
   const ag=$app.querySelector("#apkgo"); ag&&(ag.onclick=()=>{ try{ NATIVE.installApk(); toast("Downloading update…"); }catch(e){} });
-  if(view==="today") bindToday(); else if(view==="quests") bindQuests(); else if(view==="settings") bindSettings();
+  if(view==="today") bindToday(); else if(view==="quests") bindQuests(); else if(view==="settings") bindSettings(); else if(view==="progress") bindProgress();
   renderSync();
 }
 
@@ -790,6 +1126,7 @@ function apkBanner(){
     <span><b style="font-weight:600">📦 App update ready</b><br><span class="small mut">Tap install – your progress stays.</span></span>
     <button class="btn" style="padding:8px 14px" id="apkgo">Install</button></div></div>`;
 }
+window.__ascendDebug = { currentStats:()=>currentStats(), missingStats:()=>missingStats(), state:()=>state, rerender:()=>{ save(); render(); } };
 /* roll over to a new day if the app stays open past midnight */
 let lastDay=todayKey();
 function checkDay(){ const t=todayKey(); if(t!==lastDay){ if(viewDay===lastDay) viewDay=t; lastDay=t; health=null; if(state) render(); } healthRefresh(); }

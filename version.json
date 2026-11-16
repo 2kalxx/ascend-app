@@ -1,7 +1,7 @@
 {
-  "web": 5,
+  "web": 6,
   "apk": 5,
   "minApk": 3,
   "apkPath": "apk/Ascend.apk",
-  "notes": "v1.4: Health Connect on Android 9-16 (Samsung Galaxy S20 FE etc.)"
+  "notes": "v6: life assessment \u2013 Before / After 66 days stats, personal plan, catch-up quests"
 }
