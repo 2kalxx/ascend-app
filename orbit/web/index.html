@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#000000">
+<title>Orbit Crush</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
+html,body{background:#000;color:#fff;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;height:100%;overflow:hidden;touch-action:manipulation}
+#game{position:fixed;inset:0;display:flex;flex-direction:column;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)}
+#top{display:flex;align-items:center;justify-content:space-between;padding:12px 16px 0}
+.coins{display:flex;align-items:center;gap:10px;font-size:34px;font-weight:900;letter-spacing:.5px}
+.coin{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe08a,#f5a524 55%,#c97a0a);box-shadow:inset 0 0 0 3px #d98a12;display:grid;place-items:center;font-size:14px;color:#8a4b00;font-weight:900}
+.coin.sm{width:18px;height:18px;font-size:9px;box-shadow:inset 0 0 0 2px #d98a12}
+.icon{width:40px;height:40px;border-radius:12px;background:#151515;border:1px solid #2a2a2a;display:grid;place-items:center;font-size:18px}
+#stage{text-align:center;margin-top:4px;color:#9aa;font-size:13px;font-weight:700;letter-spacing:1px}
+#pbar{height:5px;width:150px;margin:6px auto 0;background:#1b1b1b;border-radius:9px;overflow:hidden}#pbar i{display:block;height:100%;background:linear-gradient(90deg,#b6f23a,#33e39b);width:0}
+#wrap{flex:1;display:grid;place-items:center;position:relative;min-height:0}
+canvas{display:block;touch-action:none}
+#rate{position:absolute;bottom:4px;left:0;right:0;text-align:center;color:#6c7;font-size:12px;font-weight:700}
+#boost{position:absolute;top:6px;left:50%;transform:translateX(-50%);color:#ffd36a;font-weight:900;font-size:14px;opacity:0;transition:opacity .2s}
+#cards{display:flex;gap:10px;overflow-x:auto;padding:10px 14px 14px;scrollbar-width:none}
+#cards::-webkit-scrollbar{display:none}
+.card{flex:none;width:96px;border-radius:14px;background:linear-gradient(#26262c,#18181c);border:2px solid #3a3a42;overflow:hidden;text-align:center;position:relative;transition:transform .08s}
+.card:active{transform:scale(.95)}
+.card .t{font-size:13px;font-weight:900;letter-spacing:1px;text-transform:uppercase;margin-top:9px;font-variant:small-caps}
+.card .l{font-size:10px;color:#9a9aa6;font-weight:700;letter-spacing:.5px}
+.card .v{font-size:30px;font-weight:900;margin:4px 0 2px}
+.card .b{height:5px;margin:0 12px 9px;background:#0e0e10;border-radius:9px;overflow:hidden}.card .b i{display:block;height:100%;background:#f5b02a}
+.card .c{background:#3a3a44;padding:7px 0;font-weight:900;font-size:15px;display:flex;align-items:center;justify-content:center;gap:6px}
+.card.ok{border-color:#e8b33a;box-shadow:0 0 14px rgba(245,176,42,.25)}
+.card.ok .c{background:linear-gradient(#f6c247,#e09a14);color:#3a2100}
+.card.max .c{background:#2a2a30;color:#888}
+.hand{position:absolute;right:-6px;bottom:-4px;font-size:38px;pointer-events:none;animation:tap 1s ease-in-out infinite}
+@keyframes tap{50%{transform:translate(-6px,-8px) scale(.92)}}
+.pop{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:rgba(10,10,12,.96);border:2px solid #e8b33a;border-radius:20px;padding:22px 20px;text-align:center;z-index:30;width:min(320px,86vw);animation:in .25s}
+@keyframes in{from{opacity:0;transform:translate(-50%,-44%)}}
+.pop h1{font-size:24px;margin:6px 0}
+.btn{display:block;width:100%;margin-top:14px;padding:13px;border-radius:14px;border:0;font:inherit;font-weight:900;font-size:16px;background:linear-gradient(#f6c247,#e09a14);color:#3a2100}
+.btn.g{background:#222;color:#ddd;border:1px solid #333}
+.float{position:fixed;font-weight:900;color:#ffd36a;pointer-events:none;font-size:15px;animation:fl .9s ease-out forwards;z-index:5;text-shadow:0 1px 4px #000}
+@keyframes fl{to{transform:translateY(-36px);opacity:0}}
+.menu{position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:40;display:flex;align-items:flex-end}
+.menu .sh{background:#121214;border-top:1px solid #2a2a2a;border-radius:20px 20px 0 0;width:100%;padding:18px 16px calc(18px + env(safe-area-inset-bottom))}
+.row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid #222}
+.tg{padding:7px 14px;border-radius:10px;border:1px solid #333;background:#1c1c1f;color:#ddd;font:inherit;font-weight:700}
+.tg.on{background:#2a2410;border-color:#e8b33a;color:#ffd36a}
+</style>
+</head>
+<body>
+<div id="game">
+  <div id="top"><button class="icon" id="menuB">☰</button><div class="coins"><div class="coin">◉</div><span id="coinT">0</span></div><button class="icon" id="sndB">🔊</button></div>
+  <div id="stage">STAGE 1</div><div id="pbar"><i></i></div>
+  <div id="wrap"><div id="boost">⚡ BOOST</div><canvas id="cv"></canvas><div id="rate"></div></div>
+  <div id="cards"></div>
+</div>
+<div id="layer"></div>
+<script>
+(function(){
+"use strict";
+const ORBIT_WEB_VERSION = 1; // bump on every web update (the Android app reads this)
+const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
+
+/* ================= numbers ================= */
+function fmt(n){ n=Math.floor(n); if(n<1000) return String(n); const u=["K","M","B","T","Qa","Qi","Sx","Sp"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+u[i]; }
+
+/* ================= upgrades ================= */
+const UP=[
+ {id:"size",  name:"Size",  base:3,   grow:1.55, max:40, val:l=>l,                  show:l=>l},
+ {id:"income",name:"Income",base:8,   grow:1.42, max:999,val:l=>l,                  show:l=>fmt(incomePer(l))},
+ {id:"speed", name:"Speed", base:12,  grow:1.6,  max:30, val:l=>l,                  show:l=>"x"+(1+0.12*(l-1)).toFixed(1)},
+ {id:"balls", name:"Balls", base:60,  grow:3.2,  max:12, val:l=>l,                  show:l=>l},
+ {id:"power", name:"Power", base:25,  grow:1.75, max:200,val:l=>l,                  show:l=>fmt(powerOf(l))}
+];
+const costOf=(u,l)=>Math.ceil(u.base*Math.pow(u.grow,l-1)*(u.id==="income"?1+0.02*(l-1):1));
+const incomePer=l=>Math.round(l*Math.pow(1.06,l-1));
+const powerOf=l=>Math.round(10*Math.pow(1.22,l-1));
+const ballRadius=l=>9+l*1.8;               // in arena units (arena radius = 200)
+const ballSpeed=l=>175*(1+0.12*(l-1));
+
+/* ================= state ================= */
+const LS="orbit_state_v1";
+let S=null;
+function fresh(){ return {coins:0,lv:{size:1,income:1,speed:1,balls:1,power:1},stage:1,cells:null,sound:true,hint:true,last:Date.now(),best:0,total:0,earnLog:[]}; }
+function load(){ try{ const s=JSON.parse(localStorage.getItem(LS)); if(s&&s.lv) return Object.assign(fresh(),s); }catch(e){} return fresh(); }
+let saveT=0; function save(force){ const now=Date.now(); if(!force&&now-saveT<2000) return; saveT=now; S.last=now; S.cells=packCells(); try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
+
+/* ================= arena ================= */
+const R=200, GRID=46, CELL=2*R/GRID;
+let cells=[], aliveCount=0, totalCells=0, layer=null, lctx=null;
+function seeded(n){ let h=(n*2654435761)>>>0; return()=>{ h^=h<<13; h^=h>>>17; h^=h<<5; return((h>>>0)%100000)/100000; }; }
+const PATTERNS=["full","rings","spiral","checker","cross","dots","waves","hollow"];
+function inPattern(p,x,y,i,j,rnd){ const d=Math.hypot(x,y)/R, a=Math.atan2(y,x);
+  switch(p){
+    case "rings": return Math.floor(d*7)%2===0||d>0.92;
+    case "spiral": return Math.sin(a*3+d*14)>-0.35;
+    case "checker": return ((Math.floor(i/4)+Math.floor(j/4))%2===0)||d<0.25;
+    case "cross": return Math.abs(x)<R*0.28||Math.abs(y)<R*0.28||d>0.8;
+    case "dots": return (Math.hypot(((i%8)-3.5),((j%8)-3.5))<3.2);
+    case "waves": return Math.sin(x/22+Math.sin(y/30)*2)>-0.5;
+    case "hollow": return d>0.35;
+    default: return true; } }
+function stageHP(st){ return Math.round(10*Math.pow(1.38,st-1)); }
+function stageColor(st,d,hpFrac){
+  const pal=[[[210,255,60],[40,230,120]],[[90,220,255],[150,90,255]],[[255,190,60],[255,80,120]],[[120,255,220],[40,140,255]],[[255,120,220],[255,220,90]],[[180,255,120],[255,240,90]]][(st-1)%6];
+  const [a,b]=pal, t=Math.min(1,Math.abs(d)), k=0.45+0.55*hpFrac;
+  return `rgb(${Math.round((a[0]+(b[0]-a[0])*(1-t))*k)},${Math.round((a[1]+(b[1]-a[1])*(1-t))*k)},${Math.round((a[2]+(b[2]-a[2])*(1-t))*k)})`; }
+function buildStage(st,packed){
+  const rnd=seeded(st*977), p=st===1?"full":PATTERNS[(st-1)%PATTERNS.length], hp=stageHP(st);
+  cells=[]; aliveCount=0;
+  for(let j=0;j<GRID;j++) for(let i=0;i<GRID;i++){
+    const x=-R+CELL*(i+0.5), y=-R+CELL*(j+0.5), d=Math.hypot(x,y);
+    if(d>R-CELL*0.6||!inPattern(p,x,y,i,j,rnd)){ cells.push(null); continue; }
+    const c={i,j,x,y,hp,max:hp,d:d/R}; cells.push(c); aliveCount++;
+  }
+  if(aliveCount<200){ for(let k=0;k<cells.length;k++){ const i=k%GRID,j=Math.floor(k/GRID),x=-R+CELL*(i+0.5),y=-R+CELL*(j+0.5),d=Math.hypot(x,y); if(!cells[k]&&d<=R-CELL*0.6){ cells[k]={i,j,x,y,hp,max:hp,d:d/R}; aliveCount++; } } }
+  totalCells=aliveCount;
+  if(packed&&packed.st===st&&packed.a&&packed.a.length===cells.length){ aliveCount=0; cells.forEach((c,k)=>{ if(!c) return; const v=packed.a[k]; if(v<=0){ cells[k]=null; } else { c.hp=Math.min(c.max,v); aliveCount++; } }); }
+  drawLayer();
+}
+function packCells(){ return {st:S.stage,a:cells.map(c=>c?Math.ceil(c.hp):0)}; }
+/* ================= rendering ================= */
+const cv=document.getElementById("cv"), ctx=cv.getContext("2d");
+let scale=1, dpr=1, cx=0, cy=0, size=0;
+function resize(){
+  const wrap=document.getElementById("wrap"), w=wrap.clientWidth, h=wrap.clientHeight;
+  size=Math.max(200,Math.min(w-28,h-28)); dpr=Math.min(2.5,window.devicePixelRatio||1);
+  cv.style.width=cv.style.height=size+"px"; cv.width=cv.height=Math.round(size*dpr);
+  scale=cv.width/(2*R+24); cx=cy=cv.width/2;
+  layer=document.createElement("canvas"); layer.width=layer.height=cv.width; lctx=layer.getContext("2d");
+  drawLayer();
+}
+function drawCell(c){ const s=CELL*scale, gap=Math.max(1,s*0.12), x=cx+(c.x-CELL/2)*scale+gap/2, y=cy+(c.y-CELL/2)*scale+gap/2, r=Math.max(1,s*0.22);
+  lctx.clearRect(x-1,y-1,s-gap+2,s-gap+2);
+  lctx.fillStyle=stageColor(S.stage,c.d,c.hp/c.max); roundRect(lctx,x,y,s-gap,s-gap,r); lctx.fill(); }
+function clearCell(c){ const s=CELL*scale, gap=Math.max(1,s*0.12), x=cx+(c.x-CELL/2)*scale+gap/2, y=cy+(c.y-CELL/2)*scale+gap/2; lctx.clearRect(x-1,y-1,s-gap+2,s-gap+2); }
+function roundRect(g,x,y,w,h,r){ g.beginPath(); g.moveTo(x+r,y); g.arcTo(x+w,y,x+w,y+h,r); g.arcTo(x+w,y+h,x,y+h,r); g.arcTo(x,y+h,x,y,r); g.arcTo(x,y,x+w,y,r); g.closePath(); }
+function drawLayer(){ if(!lctx) return; lctx.clearRect(0,0,layer.width,layer.height); cells.forEach(c=>{ if(c) drawCell(c); }); }
+
+/* ================= balls & physics ================= */
+let balls=[], parts=[], boostUntil=0;
+function syncBalls(){ const n=S.lv.balls; while(balls.length<n){ const a=Math.random()*Math.PI*2; balls.push({x:Math.cos(a)*R*0.3,y:Math.sin(a)*R*0.3,a:Math.random()*Math.PI*2,trail:[]}); } balls.length=n; }
+let earnedWindow=0, windowStart=performance.now(), rateNow=0;
+function step(dt){
+  const r=ballRadius(S.lv.size), sp=ballSpeed(S.lv.speed)*(performance.now()<boostUntil?2:1), pw=powerOf(S.lv.power), inc=incomePer(S.lv.income)*Math.max(1,Math.floor(Math.pow(1.25,S.stage-1)));
+  let gained=0, broke=0;
+  for(const b of balls){
+    // integrate in small sub-steps for precise wall hits
+    const steps=Math.ceil(sp*dt/(r*0.5)); const h=dt/steps;
+    for(let k=0;k<steps;k++){
+      b.x+=Math.cos(b.a)*sp*h; b.y+=Math.sin(b.a)*sp*h;
+      const d=Math.hypot(b.x,b.y), lim=R-r;
+      if(d>lim){ const nx=b.x/d, ny=b.y/d; let vx=Math.cos(b.a), vy=Math.sin(b.a); const dot=vx*nx+vy*ny; vx-=2*dot*nx; vy-=2*dot*ny;
+        b.a=Math.atan2(vy,vx)+(Math.random()-0.5)*0.35; b.x=nx*lim; b.y=ny*lim; if(S.sound) tick(220,0.02); }
+    }
+    b.trail.push([b.x,b.y]); if(b.trail.length>8) b.trail.shift();
+    // damage cells under the ball
+    const i0=Math.max(0,Math.floor((b.x-r+R)/CELL)), i1=Math.min(GRID-1,Math.floor((b.x+r+R)/CELL)), j0=Math.max(0,Math.floor((b.y-r+R)/CELL)), j1=Math.min(GRID-1,Math.floor((b.y+r+R)/CELL));
+    for(let j=j0;j<=j1;j++) for(let i=i0;i<=i1;i++){ const k=j*GRID+i, c=cells[k]; if(!c) continue;
+      if(Math.hypot(c.x-b.x,c.y-b.y)>r+CELL*0.35) continue;
+      c.hp-=pw*dt*6;
+      if(c.hp<=0){ cells[k]=null; aliveCount--; clearCell(c); gained+=inc; broke++; if(parts.length<240) for(let q=0;q<2;q++) parts.push({x:c.x,y:c.y,vx:(Math.random()-.5)*120,vy:(Math.random()-.5)*120,t:0.5,col:stageColor(S.stage,c.d,1)}); }
+      else if(Math.random()<0.25) drawCell(c);
+    }
+  }
+  if(gained){ S.coins+=gained; S.total+=gained; earnedWindow+=gained; if(S.sound&&Math.random()<0.35) tick(520+Math.random()*300,0.03); }
+  for(const p of parts){ p.x+=p.vx*dt; p.y+=p.vy*dt; p.t-=dt; } parts=parts.filter(p=>p.t>0);
+  if(performance.now()-windowStart>3000){ rateNow=earnedWindow/((performance.now()-windowStart)/1000); S.earnLog.push(rateNow); if(S.earnLog.length>20) S.earnLog.shift(); earnedWindow=0; windowStart=performance.now(); }
+  if(aliveCount<=Math.max(2,totalCells*0.004)) stageClear();
+}
+function render(){
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // glowing border
+  ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,(R+6)*scale,0,Math.PI*2); ctx.strokeStyle="rgba(170,255,170,.85)"; ctx.lineWidth=3*scale; ctx.shadowColor="rgba(140,255,140,.8)"; ctx.shadowBlur=22*scale; ctx.stroke(); ctx.restore();
+  ctx.drawImage(layer,0,0);
+  for(const p of parts){ ctx.globalAlpha=Math.max(0,p.t*2); ctx.fillStyle=p.col; const s=CELL*scale*0.35; ctx.fillRect(cx+p.x*scale-s/2,cy+p.y*scale-s/2,s,s); } ctx.globalAlpha=1;
+  const r=ballRadius(S.lv.size)*scale, boosted=performance.now()<boostUntil;
+  for(const b of balls){
+    b.trail.forEach((t,i)=>{ ctx.beginPath(); ctx.arc(cx+t[0]*scale,cy+t[1]*scale,r*(0.4+i/16),0,Math.PI*2); ctx.fillStyle=`rgba(255,255,255,${0.03*i})`; ctx.fill(); });
+    ctx.beginPath(); ctx.arc(cx+b.x*scale,cy+b.y*scale,r,0,Math.PI*2); ctx.fillStyle="rgba(0,0,0,.55)"; ctx.fill();
+    ctx.lineWidth=Math.max(2,r*0.16); ctx.strokeStyle=boosted?"#ffd36a":"#fff"; ctx.shadowColor=boosted?"#ffb020":"rgba(255,255,255,.9)"; ctx.shadowBlur=14*scale; ctx.stroke(); ctx.shadowBlur=0;
+  }
+}
+/* ================= sound ================= */
+let AC=null; function tick(f,len){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), g=AC.createGain(); o.type="triangle"; o.frequency.value=f; g.gain.value=0.035; g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+len*4); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+len*4); }catch(e){} }
+
+/* ================= UI ================= */
+const $=id=>document.getElementById(id);
+function uiTop(){ $("coinT").textContent=fmt(S.coins); $("stage").textContent="STAGE "+S.stage; $("pbar").firstChild.style.width=Math.round((1-aliveCount/Math.max(1,totalCells))*100)+"%";
+  $("rate").textContent=rateNow>0?"+"+fmt(rateNow)+" / sec":""; $("boost").style.opacity=performance.now()<boostUntil?1:0; }
+let cardsSig="";
+function uiCards(force){
+  const sig=UP.map(u=>u.id+S.lv[u.id]+(S.coins>=costOf(u,S.lv[u.id])?1:0)+Math.floor(Math.min(1,S.coins/costOf(u,S.lv[u.id]))*20)).join("|")+S.hint;
+  if(!force&&sig===cardsSig) return; cardsSig=sig;
+  const cheapest=UP.filter(u=>S.lv[u.id]<u.max).sort((a,b)=>costOf(a,S.lv[a.id])-costOf(b,S.lv[b.id]))[0];
+  $("cards").innerHTML=UP.map(u=>{ const l=S.lv[u.id], max=l>=u.max, c=costOf(u,l), ok=!max&&S.coins>=c;
+    return `<button class="card ${max?"max":ok?"ok":""}" data-u="${u.id}"><div class="t">${u.name}</div><div class="l">LEVEL ${l}</div><div class="v">${u.show(l)}</div>
+      <div class="b"><i style="width:${max?100:Math.min(100,Math.round(S.coins/c*100))}%"></i></div><div class="c">${max?"MAX":`<span class="coin sm">◉</span>${fmt(c)}`}</div>
+      ${S.hint&&ok&&cheapest&&cheapest.id===u.id?`<span class="hand">👆</span>`:""}</button>`; }).join("");
+  document.querySelectorAll("[data-u]").forEach(b=>b.onclick=()=>buy(b.dataset.u));
+}
+function buy(id){ const u=UP.find(x=>x.id===id), l=S.lv[id]; if(l>=u.max) return; const c=costOf(u,l);
+  if(S.coins<c){ if(S.sound) tick(140,0.05); return; }
+  S.coins-=c; S.lv[id]++; S.hint=false; if(id==="balls") syncBalls(); if(S.sound){ tick(660,0.04); setTimeout(()=>tick(990,0.05),70); }
+  try{ NATIVE&&NATIVE.buzz&&NATIVE.buzz(); }catch(e){}
+  floatText("+1 "+u.name, innerWidth/2, innerHeight-170); save(true); uiCards(true); }
+function floatText(t,x,y){ const d=document.createElement("div"); d.className="float"; d.textContent=t; d.style.left=(x-30)+"px"; d.style.top=y+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),900); }
+function stageClear(){
+  const bonus=Math.round(40*Math.pow(1.55,S.stage-1)*incomePer(S.lv.income));
+  S.coins+=bonus; S.stage++; S.best=Math.max(S.best,S.stage); buildStage(S.stage); save(true);
+  if(S.sound){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tick(f,0.06),i*90)); }
+  popup(`<div style="font-size:52px">🌟</div><h1>Stage cleared!</h1><p style="color:#bbb">Bonus <b style="color:#ffd36a">+${fmt(bonus)}</b> coins<br>Stage ${S.stage}: new shape, tougher blocks, more coins.</p><button class="btn" id="ok">Next stage</button>`);
+}
+function popup(html){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; const ok=L.querySelector("#ok"); if(ok) ok.onclick=()=>{ L.innerHTML=""; }; }
+/* tap the arena = short speed boost */
+cv.addEventListener("pointerdown",e=>{ boostUntil=performance.now()+1500; const r=cv.getBoundingClientRect(); floatText("⚡",e.clientX,e.clientY-10); if(S.sound) tick(880,0.02); });
+$("sndB").onclick=()=>{ S.sound=!S.sound; $("sndB").textContent=S.sound?"🔊":"🔇"; save(true); };
+$("menuB").onclick=()=>{
+  const L=$("layer"); L.innerHTML=`<div class="menu"><div class="sh"><h2 style="margin-bottom:6px">Orbit Crush</h2>
+    <div class="row"><span>Highest stage</span><b>${S.best||S.stage}</b></div>
+    <div class="row"><span>Coins earned in total</span><b>${fmt(S.total)}</b></div>
+    <div class="row"><span>Sound</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
+    <div class="row"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ORBIT_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
+    ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
+    <button class="btn g" id="rst">Reset game</button><button class="btn" id="cl">Close</button></div></div>`;
+  L.querySelector("#cl").onclick=()=>{ L.innerHTML=""; };
+  L.querySelector("#ts").onclick=()=>{ S.sound=!S.sound; $("sndB").textContent=S.sound?"🔊":"🔇"; save(true); $("menuB").onclick(); };
+  const up=L.querySelector("#upd"); up&&(up.onclick=()=>{ try{ NATIVE.checkUpdates(); }catch(e){} });
+  const ins=L.querySelector("#inst"); ins&&(ins.onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} });
+  L.querySelector("#rst").onclick=()=>{ L.innerHTML=`<div class="pop"><h1>Reset everything?</h1><p style="color:#bbb">Coins, upgrades and stages start over.</p><button class="btn" id="y">Reset</button><button class="btn g" id="n">Cancel</button></div>`;
+    L.querySelector("#n").onclick=()=>{ L.innerHTML=""; }; L.querySelector("#y").onclick=()=>{ S=fresh(); balls=[]; syncBalls(); buildStage(1); save(true); L.innerHTML=""; uiCards(true); }; };
+};
+/* ================= offline earnings ================= */
+function offlineEarnings(){
+  const away=(Date.now()-(S.last||Date.now()))/1000; if(away<60) return;
+  const log=S.earnLog.filter(x=>x>0), avg=log.length?log.reduce((a,b)=>a+b,0)/log.length:incomePer(S.lv.income)*S.lv.balls*2;
+  const secs=Math.min(away,3*3600), gain=Math.round(avg*secs*0.4); if(gain<1) return;
+  S.coins+=gain; S.total+=gain;
+  const h=Math.floor(secs/3600), m=Math.floor((secs%3600)/60);
+  popup(`<div style="font-size:48px">💤</div><h1>Welcome back!</h1><p style="color:#bbb">Your balls kept rolling for ${h?h+"h ":""}${m}m${away>secs?" (max 3h)":""}.</p><div class="coins" style="justify-content:center;margin-top:10px"><div class="coin">◉</div>+${fmt(gain)}</div><button class="btn" id="ok">Collect</button>`);
+}
+/* ================= Android bridge (updates) ================= */
+let apkUpdate=null;
+window.ascendApkUpdate=v=>{ apkUpdate=v; floatText("📦 Update ready – see ☰",innerWidth/2-60,90); };
+window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
+/* ================= loop ================= */
+S=load();
+$("sndB").textContent=S.sound?"🔊":"🔇";
+buildStage(S.stage,S.cells); syncBalls(); resize(); offlineEarnings();
+window.addEventListener("resize",resize);
+let lastT=performance.now(), uiT=0;
+function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; step(dt); render(); uiT+=dt; if(uiT>0.12){ uiT=0; uiTop(); uiCards(); save(); } requestAnimationFrame(frame); }
+requestAnimationFrame(frame);
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) save(true); else { lastT=performance.now(); offlineEarnings(); } });
+window.addEventListener("pagehide",()=>save(true));
+try{ const seen=+localStorage.getItem("orbit_seen_ver")||0; if(seen&&seen<ORBIT_WEB_VERSION) setTimeout(()=>floatText("✨ Updated!",innerWidth/2-40,90),500); localStorage.setItem("orbit_seen_ver",String(ORBIT_WEB_VERSION)); }catch(e){}
+window.__oc={get S(){return S;},get alive(){return aliveCount;},buy,stageClear};
+})();
+</script>
+</body>
+</html>
