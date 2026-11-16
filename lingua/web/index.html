@@ -105,7 +105,7 @@ nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
 <script>
 (function(){
 "use strict";
-const LINGUA_WEB_VERSION = 4; // bump on every web update (the Android app reads this)
+const LINGUA_WEB_VERSION = 5; // bump on every web update (the Android app reads this)
 const NATIVE = (typeof window.LinguaNative!=="undefined") ? window.LinguaNative : null;
 const COURSES = {};
 /* German – 30 units (A1–B1). Words/sentences: [German, English]. */
@@ -653,14 +653,74 @@ function renderChars(){
   const learned=sc.chars.filter(c=>charStr(c)>=3).length;
   $app.innerHTML=`<div class="row between" style="margin:6px 0 10px"><button class="btn ghost" style="padding:6px 12px" id="cb">‹</button><b style="font-size:18px">${sc.icon} ${esc(sc.name)}</b><span class="small mut">${learned}/${sc.chars.length}</span></div>
     <p class="small mut">${esc(sc.info)}</p>
-    <div class="row" style="gap:8px;margin:14px 0"><button class="btn full" id="cp1">✍️ Practice (+XP)</button></div>
+    <div class="row" style="gap:8px;margin:14px 0"><button class="btn full" id="cp1">✍️ Practice</button><button class="btn blue full" id="cp2">✏️ Drawing</button></div>
     <div class="grid2" style="grid-template-columns:repeat(${kanji?4:5},1fr);gap:6px">${sc.chars.map((c,i)=>{ const st=charStr(c);
       const col=st>=3?"var(--acc)":st>0?"var(--warn)":"var(--line)";
       return `<button class="stat" data-ch="${i}" style="padding:8px 2px;border-color:${col}"><b style="font-size:${kanji?26:24}px;font-weight:600">${esc(c[0])}</b><span style="text-transform:none;font-size:11px">${esc(c[1])}</span>${kanji?`<div class="tiny mut" style="line-height:1.2;margin-top:2px">${esc(c[2])}</div>`:""}</button>`; }).join("")}</div>
     <p class="tiny mut center" style="margin:14px 0">Green = learned · yellow = practising · tap a character to hear it</p>`;
   $app.querySelector("#cb").onclick=()=>{ charView=null; render(); window.scrollTo(0,0); };
   $app.querySelector("#cp1").onclick=()=>startCharPractice(sc);
+  $app.querySelector("#cp2").onclick=()=>startDrawPractice(sc);
   $app.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{ const c=sc.chars[+b.dataset.ch]; if(canSpeak(state.cur)) speak(kanji?c[3]:c[0],state.cur); else toast(c[0]+" = "+c[1]); });
+}
+/* ---------- handwriting: compare a drawing with the real character ---------- */
+const JP_FONT="'Noto Sans JP','Noto Sans CJK JP','Hiragino Sans','Yu Gothic','Droid Sans Japanese',sans-serif";
+const MASK_N=48, glyphCache={};
+function normMask(canvas){
+  const W=canvas.width, H=canvas.height, d=canvas.getContext("2d").getImageData(0,0,W,H).data;
+  let x0=W,y0=H,x1=-1,y1=-1;
+  for(let y=0;y<H;y++)for(let x=0;x<W;x++){ if(d[(y*W+x)*4+3]>100){ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; } }
+  if(x1<0) return null;
+  const bw=x1-x0+1, bh=y1-y0+1, side=Math.max(bw,bh), c=document.createElement("canvas"); c.width=c.height=MASK_N;
+  const g=c.getContext("2d"), sc=(MASK_N-6)/side;
+  g.drawImage(canvas,x0,y0,bw,bh,(MASK_N-bw*sc)/2,(MASK_N-bh*sc)/2,bw*sc,bh*sc);
+  const e=g.getImageData(0,0,MASK_N,MASK_N).data, m=new Uint8Array(MASK_N*MASK_N);
+  for(let i=0;i<m.length;i++) m[i]=e[i*4+3]>60?1:0;
+  return {m,aspect:bw/bh};
+}
+function glyphMask(ch){
+  if(glyphCache[ch]) return glyphCache[ch];
+  const c=document.createElement("canvas"); c.width=c.height=220; const g=c.getContext("2d");
+  g.font="500 170px "+JP_FONT; g.textAlign="center"; g.textBaseline="middle"; g.fillStyle="#000"; g.fillText(ch,110,118);
+  return glyphCache[ch]=normMask(c);
+}
+function dilate(m,r){
+  const N=MASK_N, a=new Uint8Array(N*N), b=new Uint8Array(N*N);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){ let v=0; for(let k=-r;k<=r&&!v;k++){ const xx=x+k; if(xx>=0&&xx<N&&m[y*N+xx]) v=1; } a[y*N+x]=v; }
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){ let v=0; for(let k=-r;k<=r&&!v;k++){ const yy=y+k; if(yy>=0&&yy<N&&a[yy*N+x]) v=1; } b[y*N+x]=v; }
+  return b;
+}
+function maskScore(u,g){
+  if(!u||!g) return 0;
+  const R=2, ud=u.d||(u.d=dilate(u.m,R)), gd=g.d||(g.d=dilate(g.m,R));
+  let un=0,ui=0,gn=0,gi=0;
+  for(let i=0;i<u.m.length;i++){ if(u.m[i]){un++; if(gd[i])ui++;} if(g.m[i]){gn++; if(ud[i])gi++;} }
+  if(!un||!gn) return 0;
+  const P=ui/un, Rc=gi/gn, f=P+Rc?2*P*Rc/(P+Rc):0;
+  const ar=Math.min(u.aspect,g.aspect)/Math.max(u.aspect,g.aspect); // very different shapes (一 vs 口) get penalised
+  return f*(0.75+0.25*Math.min(1,ar*1.6));
+}
+function judgeDrawing(strokeCanvas,target,candidates){
+  const u=normMask(strokeCanvas); if(!u) return {ok:false,score:0,rank:99};
+  const t=maskScore(u,glyphMask(target));
+  let better=0; candidates.forEach(c=>{ if(c!==target && maskScore(u,glyphMask(c))>t) better++; });
+  return {ok:(better===0&&t>=0.55)||(better<=1&&t>=0.7)||(better<=3&&t>=0.82), score:t, rank:better+1};
+}
+function strokesCanvas(strokes){
+  const c=document.createElement("canvas"); c.width=c.height=220; const g=c.getContext("2d");
+  g.lineCap="round"; g.lineJoin="round"; g.lineWidth=15; g.strokeStyle="#000";
+  strokes.forEach(st=>{ g.beginPath(); st.forEach((p,i)=>{ const x=p[0]*220,y=p[1]*220; if(i) g.lineTo(x,y); else { g.moveTo(x,y); g.lineTo(x+0.1,y+0.1);} }); g.stroke(); });
+  return c;
+}
+function drawItem(c,sc,trace){
+  const kanji=sc.id==="kanji";
+  return {type:"draw",ch:c[0],label:kanji?c[2]:c[1],sub:kanji?c[1]+" · "+c[3]:"",say:kanji?c[3]:c[0],trace:!!trace,set:sc.chars.map(x=>x[0]),_ch:trace?null:c[0],_chTrace:c[0]};
+}
+function startDrawPractice(sc){
+  const pool=sc.chars.slice().sort((a,b)=>charStr(a)-charStr(b)||sc.chars.indexOf(a)-sc.chars.indexOf(b));
+  const pick=pool.slice(0,6), ex=[];
+  pick.forEach(c=>{ if(charStr(c)===0) ex.push(drawItem(c,sc,true)); ex.push(drawItem(c,sc,false)); });
+  startPlayer({title:sc.name+" drawing",tip:"",newWords:[],exercises:ex.slice(0,10)},{kind:"chars",sc:sc.id});
 }
 function startCharPractice(sc){
   const kanji=sc.id==="kanji", rnd=Math.random;
@@ -680,6 +740,7 @@ function startCharPractice(sc){
     else { const o=shuffle([c[0]].concat(others(c,3,x=>x[0]))); ex.push({type:"listen",target:kanji?c[3]:c[0],r:"",options:o,answer:o.indexOf(c[0]),_ch:c[0],_hideText:1}); }
   });
   ex.splice(4,0,{type:"match",pairs:pick.slice(0,5).map(c=>[c[0],kanji?c[2]:c[1]]),_noWords:1});
+  pick.slice(0,2).forEach(c=>ex.push(drawItem(c,sc,charStr(c)===0)));
   startPlayer({title:sc.name+" practice",tip:"",newWords:intro,exercises:ex},{kind:"chars",sc:sc.id});
 }
 function renderLearn(){
@@ -790,6 +851,17 @@ function renderLesson(){
   } else if(it.type==="type"){
     body=`<div class="prompt">Write this in ${esc(li.name)}</div><div class="card" style="margin-bottom:14px;font-size:18px;font-weight:650">${esc(it.base)}</div>
       <textarea id="ta" rows="3" placeholder="Type in ${esc(li.name)}…" ${lz.fb?"disabled":""}>${esc(lz.ans||"")}</textarea>`;
+  } else if(it.type==="draw"){
+    if(!it._strokes) it._strokes=[];
+    const showGuide=it.trace||it._hint||lz.fb;
+    body=`<div class="prompt">${it.trace?"Trace":"Draw"} this character</div>
+      <div class="row" style="justify-content:center;margin-bottom:12px"><div class="center"><div style="font-size:26px;font-weight:800">${esc(it.label)}</div>${it.sub?`<div class="small mut">${esc(it.sub)}</div>`:""}</div>${canSpeak(state.cur)?`<button class="speak sm" data-say="${esc(it.say)}" style="margin-left:10px">🔊</button>`:""}</div>
+      <div id="padwrap" style="position:relative;width:min(300px,84vw);aspect-ratio:1;margin:0 auto;background:var(--card);border:2px solid ${lz.fb?(lz.fb.ok?"var(--acc)":"var(--bad)"):"var(--line)"};border-radius:18px;overflow:hidden;touch-action:none">
+        <div style="position:absolute;inset:0;background:linear-gradient(var(--line),var(--line)) center/100% 1px no-repeat,linear-gradient(var(--line),var(--line)) center/1px 100% no-repeat;opacity:.6"></div>
+        ${showGuide?`<div style="position:absolute;inset:0;display:grid;place-items:center;font-family:${JP_FONT.replace(/"/g,"'")};font-size:min(220px,62vw);line-height:1;color:${lz.fb?"rgba(74,222,128,.35)":"rgba(255,255,255,.13)"};pointer-events:none">${esc(it.ch)}</div>`:""}
+        <canvas id="pad" style="position:absolute;inset:0;width:100%;height:100%"></canvas>
+      </div>
+      ${lz.fb?"":`<div class="row" style="justify-content:center;gap:8px;margin-top:12px"><button class="btn ghost" style="padding:8px 14px" id="clr">↺ Clear</button>${it.trace?"":`<button class="btn ghost" style="padding:8px 14px" id="hint">💡 Hint</button>`}</div>`}`;
   } else if(it.type==="match"){
     if(!it._L){ it._L=shuffle(it.pairs.map((p,i)=>i)); it._R=shuffle(it.pairs.map((p,i)=>i)); it._done=[]; it._pick=null; it._err=0; }
     body=`<div class="prompt">Tap the matching pairs</div><div class="match">`+
@@ -804,11 +876,12 @@ function renderLesson(){
     foot=`<div class="feedback ${ok?"ok":"no"}"><div class="inner">
       <div style="font-weight:800;font-size:18px;color:${ok?"var(--acc2)":"var(--bad)"}">${ok?(lz.fb.note||["Nice!","Great job!","Correct!","Awesome!","¡Bien!"][Math.floor(Math.random()*5)]):"Correct answer:"}</div>
       ${!ok||lz.fb.show?`<div style="margin:4px 0 2px;font-weight:600">${esc(lz.fb.correct||"")}</div>`:""}${lz.fb.extra?`<div class="small mut">${esc(lz.fb.extra)}</div>`:""}
+      ${!ok&&it.type==="draw"?`<button class="btn ghost full small" id="mine" style="margin-top:10px">✋ I drew it right – count it</button>`:""}
       <button class="btn ${ok?"":"bad"} full" id="cont" style="margin-top:12px">Continue</button></div></div>`;
   } else if(it.type==="intro"){
     foot=`<div class="checkbar"><div class="inner"><button class="btn full" id="cont">Got it</button></div></div>`;
   } else if(it.type!=="match"){
-    const ready = it.type==="build"? (it._sel&&it._sel.length>0) : it.type==="type"? !!(lz.ans&&String(lz.ans).trim()) : lz.ans!=null;
+    const ready = it.type==="build"? (it._sel&&it._sel.length>0) : it.type==="type"? !!(lz.ans&&String(lz.ans).trim()) : it.type==="draw"? !!(it._strokes&&it._strokes.length) : lz.ans!=null;
     foot=`<div class="checkbar"><div class="inner"><button class="btn full" id="chk" ${ready?"":"disabled"}>Check</button></div></div>`;
   }
   $app.innerHTML=`<div class="lhead"><button class="btn ghost" style="padding:6px 12px" id="qx">✕</button><div class="bar"><i style="width:${prog}%"></i></div><span class="small mut">${lz.correct}✓</span></div>
@@ -822,6 +895,9 @@ function bindLesson(){
   $app.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>speak(b.dataset.say,state.cur));
   $app.querySelectorAll("[data-slow]").forEach(b=>b.onclick=()=>speak(b.dataset.slow,state.cur,true));
   const cont=$app.querySelector("#cont"); cont&&(cont.onclick=advance);
+  if(it.type==="draw") bindPad(it);
+  const mine=$app.querySelector("#mine"); mine&&(mine.onclick=()=>{ lz.fb.ok=true; lz.fb.note="Counted ✓"; lz.wrong=Math.max(0,lz.wrong-1); lz.correct++;
+    lz.retry=lz.retry.filter(x=>!(x.type==="draw"&&x.ch===it.ch&&x._retry)); if(it._ch){ const m=(L().chars=L().chars||{}); m[it._ch]=Math.min(5,(m[it._ch]||0)+2); } render(); });
   const chk=$app.querySelector("#chk"); chk&&(chk.onclick=check);
   if(lz.fb) return;
   $app.querySelectorAll("[data-o]").forEach(b=>b.onclick=()=>{ lz.ans=+b.dataset.o; render(); });
@@ -836,8 +912,32 @@ function bindLesson(){
     else { it._err++; it._pick=null; b.style.borderColor="var(--bad)"; setTimeout(render,250); }
   });
 }
+function bindPad(it){
+  const cv=$app.querySelector("#pad"); if(!cv) return;
+  const wrap=$app.querySelector("#padwrap"), r=wrap.getBoundingClientRect(), dpr=window.devicePixelRatio||1;
+  cv.width=Math.round(r.width*dpr); cv.height=Math.round(r.height*dpr);
+  const g=cv.getContext("2d");
+  const paint=()=>{ g.clearRect(0,0,cv.width,cv.height); g.lineCap="round"; g.lineJoin="round"; g.lineWidth=Math.max(6,cv.width*0.045); g.strokeStyle="#eef2f7";
+    it._strokes.forEach(st=>{ g.beginPath(); st.forEach((p,i)=>{ const x=p[0]*cv.width,y=p[1]*cv.height; if(i) g.lineTo(x,y); else { g.moveTo(x,y); g.lineTo(x+0.1,y+0.1);} }); g.stroke(); }); };
+  paint();
+  const clr=$app.querySelector("#clr"); clr&&(clr.onclick=()=>{ it._strokes=[]; render(); });
+  const hint=$app.querySelector("#hint"); hint&&(hint.onclick=()=>{ it._hint=1; render(); });
+  if(lesson.fb) return;
+  let cur=null;
+  const pos=e=>{ const b=cv.getBoundingClientRect(); return [Math.min(1,Math.max(0,(e.clientX-b.left)/b.width)),Math.min(1,Math.max(0,(e.clientY-b.top)/b.height))]; };
+  cv.onpointerdown=e=>{ e.preventDefault(); cv.setPointerCapture&&cv.setPointerCapture(e.pointerId); cur=[pos(e)]; it._strokes.push(cur); paint(); };
+  cv.onpointermove=e=>{ if(!cur) return; e.preventDefault(); cur.push(pos(e)); paint(); };
+  cv.onpointerup=cv.onpointercancel=()=>{ if(!cur) return; cur=null; const c=$app.querySelector("#chk"); if(c) c.disabled=false; };
+}
 function check(){
   const lz=lesson, it=curItem(); let ok=false, correct="", extra="", note="", show=false;
+  if(it.type==="draw"){
+    const res=judgeDrawing(strokesCanvas(it._strokes),it.ch,it.set);
+    ok=res.ok; correct=it.ch+"  ("+it.label+")";
+    if(ok&&it._hint) note="Good – next time without the hint!";
+    if(ok&&it.trace) note="Nice tracing! Next time from memory.";
+    if(ok&&it._hint) it._retryFree=1;
+  } else
   if(it.type==="mc"||it.type==="listen"||it.type==="fill"){
     ok=lz.ans===it.answer; correct=it.options[it.answer];
     if(it.type==="listen"){ extra=it.target+(it.r?" ("+it.r+")":""); show=true; }
@@ -852,11 +952,12 @@ function check(){
     correct=it.answers[0];
     if(ok && got!==norm(it.answers[0]) && !note){ /* accepted variant */ }
   }
-  if(ok){ lz.correct++; if(!it._retry) lz.firstTry++; }
-  else { lz.wrong++; if(!it._retry){ const c=Object.assign({},it,{_retry:1,_order:null,_bank:null,_sel:null,_played:0}); lz.retry.push(c); }
+  if(ok){ lz.correct++; if(!it._retry && !it._hint) lz.firstTry++; }
+  else { lz.wrong++; if(!it._retry){ const c=Object.assign({},it,{_retry:1,_order:null,_bank:null,_sel:null,_played:0,_strokes:null,_hint:0}); lz.retry.push(c); }
     const l=L(); l.mistakes=(l.mistakes||[]).concat([{q:it.q||it.base||it.target||"",a:correct}]).slice(-40); }
   if(it._w){ const w=L().words[it._w]; if(w) w.s=Math.max(0,Math.min(5,(w.s||0)+(ok?1:-1))); }
-  if(it._ch){ const m=(L().chars=L().chars||{}); m[it._ch]=Math.max(0,Math.min(5,(m[it._ch]||0)+(ok?1:-1))); }
+  if(it._ch){ const m=(L().chars=L().chars||{}); m[it._ch]=Math.max(0,Math.min(5,(m[it._ch]||0)+(ok?(it._hint?0:1):-1))); }
+  if(it._chTrace&&it.trace&&ok){ const m=(L().chars=L().chars||{}); if(!m[it._chTrace]) m[it._chTrace]=1; }
   lz.fb={ok,correct,extra,note,show}; render();
   if(ok&&(it.type==="mc"&&it.dir!=="to_target"||it.type==="listen")&&canSpeak(state.cur)){ speak(it.type==="listen"?it.target:it.q,state.cur); }
   if(ok&&(it.type==="build"||it.type==="type")&&canSpeak(state.cur)) speak(correct,state.cur);
@@ -1072,7 +1173,7 @@ render();
 nativeSync();
 try{ const seen=+localStorage.getItem("lingua_seen_ver")||0; if(state&&seen&&seen<LINGUA_WEB_VERSION) setTimeout(()=>toast("✨ Lingua updated"),400); localStorage.setItem("lingua_seen_ver",String(LINGUA_WEB_VERSION)); }catch(e){}
 window.addEventListener("focus",()=>{ if(state&&!lesson) render(); });
-window.__lingua={get state(){return state;},get lesson(){return lesson;},render,validLesson,standings,weekKey,buildLesson};
+window.__lingua={COURSES,judgeDrawing,glyphMask,strokesCanvas,get state(){return state;},get lesson(){return lesson;},render,validLesson,standings,weekKey,buildLesson};
 })();
 </script>
 </body>
