@@ -105,7 +105,7 @@ nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
 <script>
 (function(){
 "use strict";
-const LINGUA_WEB_VERSION = 5; // bump on every web update (the Android app reads this)
+const LINGUA_WEB_VERSION = 6; // bump on every web update (the Android app reads this)
 const NATIVE = (typeof window.LinguaNative!=="undefined") ? window.LinguaNative : null;
 const COURSES = {};
 /* German – 30 units (A1–B1). Words/sentences: [German, English]. */
@@ -896,7 +896,7 @@ function bindLesson(){
   $app.querySelectorAll("[data-slow]").forEach(b=>b.onclick=()=>speak(b.dataset.slow,state.cur,true));
   const cont=$app.querySelector("#cont"); cont&&(cont.onclick=advance);
   if(it.type==="draw") bindPad(it);
-  const mine=$app.querySelector("#mine"); mine&&(mine.onclick=()=>{ lz.fb.ok=true; lz.fb.note="Counted ✓"; lz.wrong=Math.max(0,lz.wrong-1); lz.correct++;
+  const mine=$app.querySelector("#mine"); mine&&(mine.onclick=()=>{ lz.fb.ok=true; lz.fb.note="Counted ✓"; lz.wrong=Math.max(0,lz.wrong-1); lz.correct++; if(!it._retry&&!it._hint) lz.firstTry++;
     lz.retry=lz.retry.filter(x=>!(x.type==="draw"&&x.ch===it.ch&&x._retry)); if(it._ch){ const m=(L().chars=L().chars||{}); m[it._ch]=Math.min(5,(m[it._ch]||0)+2); } render(); });
   const chk=$app.querySelector("#chk"); chk&&(chk.onclick=check);
   if(lz.fb) return;
