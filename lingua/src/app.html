@@ -474,7 +474,7 @@ function bindLangPicker(cb){
 function openLangPicker(){
   sheet(`<div id="lp"></div>`, s=>{
     const draw=()=>{ s.querySelector("#lp").innerHTML=`<h2 style="margin-top:0">Your languages</h2>`+Object.keys(state.langs).map(c=>{const li=langInfo(c);return `<button class="langbtn" data-cur="${esc(c)}" style="${c===state.cur?"border-color:var(--acc)":""}"><span class="fl">${li.flag}</span><span style="flex:1"><b>${esc(li.name)}</b><br><span class="small mut">${state.langs[c].xp||0} XP · ${Object.keys(state.langs[c].words||{}).length} words</span></span>${c===state.cur?"✓":""}</button>`;}).join("")+`<button class="btn ghost full" id="addl" style="margin-top:8px">+ Add a language</button>`;
-      s.querySelectorAll("[data-cur]").forEach(b=>b.onclick=()=>{state.cur=b.dataset.cur;save();closeSheet();render();});
+      s.querySelectorAll("[data-cur]").forEach(b=>b.onclick=()=>{state.cur=b.dataset.cur;charView=null;save();closeSheet();render();});
       s.querySelector("#addl").onclick=()=>{ s.querySelector("#lp").innerHTML=langPickerHTML("Add a language"); bindLangPicker(code=>{startLanguage(code);save();closeSheet();view="learn";render();}); const fix2=()=>{const inp=s.querySelector("#lq"); if(inp) inp.oninput=()=>{ob.q=inp.value;s.querySelector("#lp").innerHTML=langPickerHTML("Add a language");bindLangPicker(code=>{startLanguage(code);save();closeSheet();view="learn";render();});fix2();const n=s.querySelector("#lq");n.focus();n.setSelectionRange(n.value.length,n.value.length);};}; fix2(); };
     }; draw();
   });
@@ -484,12 +484,56 @@ function openLangPicker(){
 function lessonKey(u,l){return u+"-"+l;}
 function nextLesson(){const d=L().done;for(let u=0;u<UNITS.length;u++)for(let l=0;l<LESSONS_PER_UNIT;l++)if(!d[lessonKey(u,l)])return[u,l];return null;}
 const COLORS=["#22c55e","#38bdf8","#a78bfa","#f59e0b","#f472b6","#2dd4bf"];
+let charView=null;
+function scriptsOf(){ const C=COURSES[state.cur]; return C&&C.scripts||null; }
+function charStr(ch){ const m=(L().chars=L().chars||{}); return m[ch[0]]||0; }
+function scriptsCard(){
+  const sc=scriptsOf(); if(!sc) return "";
+  return `<div class="card" style="margin-top:14px"><div class="row between"><b>✍️ Writing systems</b><span class="tiny mut">tap to learn</span></div>
+    <div class="grid2" style="grid-template-columns:repeat(${sc.length},1fr);margin-top:10px">${sc.map(x=>{ const m=x.chars.filter(c=>charStr(c)>=3).length;
+      return `<button class="stat" data-script="${x.id}"><b style="font-size:28px">${x.icon}</b><span>${esc(x.name)}</span><div class="bar" style="height:5px;margin-top:6px"><i style="width:${Math.round(m/x.chars.length*100)}%"></i></div><div class="tiny mut" style="margin-top:3px">${m}/${x.chars.length}</div></button>`; }).join("")}</div></div>`;
+}
+function renderChars(){
+  const sc=scriptsOf().find(x=>x.id===charView), kanji=sc.id==="kanji";
+  const learned=sc.chars.filter(c=>charStr(c)>=3).length;
+  $app.innerHTML=`<div class="row between" style="margin:6px 0 10px"><button class="btn ghost" style="padding:6px 12px" id="cb">‹</button><b style="font-size:18px">${sc.icon} ${esc(sc.name)}</b><span class="small mut">${learned}/${sc.chars.length}</span></div>
+    <p class="small mut">${esc(sc.info)}</p>
+    <div class="row" style="gap:8px;margin:14px 0"><button class="btn full" id="cp1">✍️ Practice (+XP)</button></div>
+    <div class="grid2" style="grid-template-columns:repeat(${kanji?4:5},1fr);gap:6px">${sc.chars.map((c,i)=>{ const st=charStr(c);
+      const col=st>=3?"var(--acc)":st>0?"var(--warn)":"var(--line)";
+      return `<button class="stat" data-ch="${i}" style="padding:8px 2px;border-color:${col}"><b style="font-size:${kanji?26:24}px;font-weight:600">${esc(c[0])}</b><span style="text-transform:none;font-size:11px">${esc(c[1])}</span>${kanji?`<div class="tiny mut" style="line-height:1.2;margin-top:2px">${esc(c[2])}</div>`:""}</button>`; }).join("")}</div>
+    <p class="tiny mut center" style="margin:14px 0">Green = learned · yellow = practising · tap a character to hear it</p>`;
+  $app.querySelector("#cb").onclick=()=>{ charView=null; render(); window.scrollTo(0,0); };
+  $app.querySelector("#cp1").onclick=()=>startCharPractice(sc);
+  $app.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{ const c=sc.chars[+b.dataset.ch]; if(canSpeak(state.cur)) speak(kanji?c[3]:c[0],state.cur); else toast(c[0]+" = "+c[1]); });
+}
+function startCharPractice(sc){
+  const kanji=sc.id==="kanji", rnd=Math.random;
+  const pool=shuffle(sc.chars).sort((a,b)=>charStr(a)-charStr(b));
+  // new learners: start from the beginning of the chart, then mix
+  const fresh=sc.chars.filter(c=>charStr(c)===0), started=sc.chars.filter(c=>charStr(c)>0);
+  const pick=(fresh.length===sc.chars.length?sc.chars.slice(0,8):started.sort((a,b)=>charStr(a)-charStr(b)).slice(0,5).concat(fresh.slice(0,3))).slice(0,8);
+  while(pick.length<8 && pool.length){ const c=pool.shift(); if(!pick.includes(c)) pick.push(c); }
+  const lab=c=>kanji?c[2]:c[1];
+  const others=(c,n,f)=>shuffle(sc.chars.filter(x=>x!==c)).slice(0,n).map(f);
+  const ex=[], intro=[];
+  pick.forEach((c,i)=>{
+    if(charStr(c)===0) intro.push({w:c[0],r:kanji?c[1]:"",t:kanji?c[2]+" ("+c[1]+")":c[1],ex:"",exT:""});
+    const k=i%3;
+    if(k===0){ const o=shuffle([lab(c)].concat(others(c,3,lab))); ex.push({type:"mc",dir:"to_base",q:c[0],r:"",options:o,answer:o.indexOf(lab(c)),_ch:c[0]}); }
+    else if(k===1){ const o=shuffle([c[0]].concat(others(c,3,x=>x[0]))); ex.push({type:"mc",dir:"to_target",q:kanji?c[2]+" ("+c[1]+")":c[1],options:o,answer:o.indexOf(c[0]),_ch:c[0]}); }
+    else { const o=shuffle([c[0]].concat(others(c,3,x=>x[0]))); ex.push({type:"listen",target:kanji?c[3]:c[0],r:"",options:o,answer:o.indexOf(c[0]),_ch:c[0],_hideText:1}); }
+  });
+  ex.splice(4,0,{type:"match",pairs:pick.slice(0,5).map(c=>[c[0],kanji?c[2]:c[1]]),_noWords:1});
+  startPlayer({title:sc.name+" practice",tip:"",newWords:intro,exercises:ex},{kind:"chars",sc:sc.id});
+}
 function renderLearn(){
+  if(charView && scriptsOf()) return renderChars();
   const nx=nextLesson(), d=L().done, li=langInfo(state.cur);
   const showUnits=[]; const curU=nx?nx[0]:UNITS.length-1;
   for(let u=0;u<UNITS.length;u++) if(u<=curU+1) showUnits.push(u);
   const offs=[0,38,52,38,0,-38,-52,-38];
-  let html=topbar();
+  let html=topbar()+scriptsCard();
   if(apkUpdate && NATIVE && NATIVE.installApk) html+=`<div class="card" style="margin-top:12px;border-color:var(--blue)"><div class="row between"><span><b>📦 App update ready</b><br><span class="small mut">Your progress stays.</span></span><button class="btn blue" style="padding:8px 14px" id="apkgo">Install</button></div></div>`;
   showUnits.forEach(u=>{
     const U=UNITS[u], col=COLORS[u%COLORS.length];
@@ -503,6 +547,7 @@ function renderLearn(){
   });
   if(!nx) html+=`<div class="card center" style="margin-top:20px"><div style="font-size:40px">🎓</div><b>You finished the whole ${esc(li.name)} course!</b><p class="small mut">Keep your streak with Practice and Talk.</p></div>`;
   $app.innerHTML=html; bindTop();
+  $app.querySelectorAll("[data-script]").forEach(b=>b.onclick=()=>{ charView=b.dataset.script; render(); window.scrollTo(0,0); });
   const ag=$app.querySelector("#apkgo"); ag&&(ag.onclick=()=>{ try{ NATIVE.installApk(); toast("Downloading update…"); }catch(e){} });
   $app.querySelectorAll(".node").forEach(b=>b.onclick=()=>{
     const u=+b.dataset.u, l=+b.dataset.l, k=lessonKey(u,l);
@@ -574,9 +619,10 @@ function renderLesson(){
       </div>`;
   } else if(it.type==="mc"||it.type==="listen"||it.type==="fill"){
     let head="";
-    if(it.type==="listen") head=`<div class="prompt">What do you hear?</div><div class="row" style="margin-bottom:18px">${canSpeak(state.cur)?`<button class="speak" data-say="${esc(it.target)}">🔊</button><button class="speak sm" data-slow="${esc(it.target)}">🐢</button>`:`<div class="card target">${esc(it.target)}${romL(it.r)}</div>`}</div>`;
+    if(it.type==="listen"&&it._hideText&&!canSpeak(state.cur)) head=`<div class="prompt">Which character is this?</div><div class="card target" style="margin-bottom:16px">${esc((scriptsOf()||[]).flatMap(x=>x.chars).find(c=>c[0]===it.options[it.answer])?.[1]||"")}</div>`;
+    else if(it.type==="listen") head=`<div class="prompt">What do you hear?</div><div class="row" style="margin-bottom:18px">${canSpeak(state.cur)?`<button class="speak" data-say="${esc(it.target)}">🔊</button><button class="speak sm" data-slow="${esc(it.target)}">🐢</button>`:`<div class="card target">${esc(it.target)}${romL(it.r)}</div>`}</div>`;
     else if(it.type==="fill") head=`<div class="prompt">Fill in the blank</div><div class="card" style="margin-bottom:16px"><div class="target">${esc(it.q).replace("___",'<span style="color:var(--blue)">____</span>')}</div>${romL(it.r)}<div class="small mut" style="margin-top:6px">${esc(it.t||"")}</div></div>`;
-    else head=`<div class="prompt">${it.dir==="to_target"?"How do you say this?":"What does this mean?"}</div><div class="row" style="margin-bottom:16px">${it.dir!=="to_target"?sp(it.q,"sm"):""}<div><div class="${it.dir==="to_target"?"":"target"}" style="font-size:20px;font-weight:700">${esc(it.q)}</div>${it.dir!=="to_target"?romL(it.r):""}</div></div>`;
+    else head=`<div class="prompt">${it.dir==="to_target"?"How do you say this?":"What does this mean?"}</div><div class="row" style="margin-bottom:16px">${it.dir!=="to_target"?sp(it.q,"sm"):""}<div><div class="${it.dir==="to_target"?"":"target"}" style="font-size:${it._ch&&it.dir!=="to_target"?52:20}px;font-weight:700;line-height:1.2">${esc(it.q)}</div>${it.dir!=="to_target"?romL(it.r):""}</div></div>`;
     if(!it._order) it._order=shuffle(it.options.map((_,i)=>i));
     body=head+it._order.map(i=>{ let cls=""; if(lz.fb){ if(i===it.answer) cls="good"; else if(i===lz.ans) cls="badx"; } else if(lz.ans===i) cls="sel";
       const tr=Array.isArray(it.tr)&&it.tr[i]?`<div class="rom">${esc(it.tr[i])}</div>`:"";
@@ -631,7 +677,7 @@ function bindLesson(){
     const side=b.dataset.ml!=null?"L":"R", i=+(b.dataset.ml!=null?b.dataset.ml:b.dataset.mr);
     if(side==="L" && canSpeak(state.cur)) speak(it.pairs[i][0],state.cur);
     if(!it._pick||it._pick.side===side){ it._pick={side,i}; render(); return; }
-    if(it._pick.i===i){ it._done.push(i); it._pick=null; learnWord(it.pairs[i][0],it.pairs[i][1],""); if(it._done.length===it.pairs.length){ lz.fb={ok:it._err===0,correct:"",note:it._err?"Done – "+it._err+" mistake"+(it._err>1?"s":""):"Perfect match!"}; if(!it._err){lz.correct++; if(!it._retry) lz.firstTry++;} else lz.wrong++; } render(); }
+    if(it._pick.i===i){ it._done.push(i); it._pick=null; if(!it._noWords) learnWord(it.pairs[i][0],it.pairs[i][1],""); else { const m=(L().chars=L().chars||{}); m[it.pairs[i][0]]=Math.min(5,(m[it.pairs[i][0]]||0)+1); } if(it._done.length===it.pairs.length){ lz.fb={ok:it._err===0,correct:"",note:it._err?"Done – "+it._err+" mistake"+(it._err>1?"s":""):"Perfect match!"}; if(!it._err){lz.correct++; if(!it._retry) lz.firstTry++;} else lz.wrong++; } render(); }
     else { it._err++; it._pick=null; b.style.borderColor="var(--bad)"; setTimeout(render,250); }
   });
 }
@@ -655,6 +701,7 @@ function check(){
   else { lz.wrong++; if(!it._retry){ const c=Object.assign({},it,{_retry:1,_order:null,_bank:null,_sel:null,_played:0}); lz.retry.push(c); }
     const l=L(); l.mistakes=(l.mistakes||[]).concat([{q:it.q||it.base||it.target||"",a:correct}]).slice(-40); }
   if(it._w){ const w=L().words[it._w]; if(w) w.s=Math.max(0,Math.min(5,(w.s||0)+(ok?1:-1))); }
+  if(it._ch){ const m=(L().chars=L().chars||{}); m[it._ch]=Math.max(0,Math.min(5,(m[it._ch]||0)+(ok?1:-1))); }
   lz.fb={ok,correct,extra,note,show}; render();
   if(ok&&(it.type==="mc"&&it.dir!=="to_target"||it.type==="listen")&&canSpeak(state.cur)){ speak(it.type==="listen"?it.target:it.q,state.cur); }
   if(ok&&(it.type==="build"||it.type==="type")&&canSpeak(state.cur)) speak(correct,state.cur);
@@ -662,7 +709,7 @@ function check(){
 function learnWord(w,t,r){ const W=L().words; const k=String(w).trim(); if(!k) return; const x=W[k]||{t,r:r||"",s:0,seen:0,added:todayKey()}; x.t=x.t||t; x.seen=(x.seen||0)+1; W[k]=x; }
 function advance(){
   const lz=lesson, it=curItem();
-  if(it.type==="intro") learnWord(it.w.w,it.w.t,it.w.r);
+  if(it.type==="intro" && !(lz.meta&&lz.meta.kind==="chars")) learnWord(it.w.w,it.w.t,it.w.r);
   lz.fb=null; lz.ans=null; lz._focused=0;
   lz.i++;
   if(lz.i>=lz.items.length && lz.retry.length){ lz.items=lz.items.concat(lz.retry); lz.retry=[]; }
@@ -676,7 +723,7 @@ function finishLesson(){
   if(m.kind==="lesson"){ xp=(m.replay?5:10)+lz.firstTry+(perfect?5:0)+(m.l===LESSONS_PER_UNIT-1&&!m.replay?10:0); L().done[lessonKey(m.u,m.l)]=Math.max(L().done[lessonKey(m.u,m.l)]||0,perfect?3:lz.firstTry/total>=.8?2:1); }
   else xp=5+Math.round(lz.firstTry/2)+(perfect?3:0);
   // vocab from lesson exercises
-  (lz.data.newWords||[]).forEach(w=>learnWord(w.w,w.t,w.r));
+  if(m.kind!=="chars") (lz.data.newWords||[]).forEach(w=>learnWord(w.w,w.t,w.r));
   const before=rankOf(state.totalXP).name, dailyBefore=state.daily[todayKey()]||0;
   addXP(xp); save();
   lz.phase="done"; lz.xp=xp; lz.perfect=perfect; lz.acc=Math.round(lz.firstTry/Math.max(1,total)*100);
@@ -700,7 +747,7 @@ function renderResults(){
     ${lz.rankUp?`<div class="card" style="margin-top:14px;border-color:var(--gold)">${lz.rankUp.icon} New rank: <b>${esc(lz.rankUp.name)}</b></div>`:""}
     ${lz.data.tip?`<div class="card small" style="margin-top:14px;text-align:left">💡 ${esc(lz.data.tip)}</div>`:""}
     <button class="btn full" id="go" style="margin-top:24px">Continue</button></div>`;
-  $app.querySelector("#go").onclick=()=>{lesson=null;view=lz.meta.kind==="lesson"?"learn":"practice";render();window.scrollTo(0,0);};
+  $app.querySelector("#go").onclick=()=>{lesson=null;view=lz.meta.kind==="practice"?"practice":"learn";if(lz.meta.kind!=="chars")charView=null;render();window.scrollTo(0,0);};
 }
 
 /* ---------- practice (offline, from your words) ---------- */

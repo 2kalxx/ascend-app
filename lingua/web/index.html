@@ -105,7 +105,7 @@ nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
 <script>
 (function(){
 "use strict";
-const LINGUA_WEB_VERSION = 3; // bump on every web update (the Android app reads this)
+const LINGUA_WEB_VERSION = 4; // bump on every web update (the Android app reads this)
 const NATIVE = (typeof window.LinguaNative!=="undefined") ? window.LinguaNative : null;
 const COURSES = {};
 /* German – 30 units (A1–B1). Words/sentences: [German, English]. */
@@ -234,7 +234,7 @@ COURSES["es"] = {lang:"es", tts:"es-ES", nospace:false, units:[
  s:[["Si tuviera dinero, viajaría por el mundo","If I had money, I would travel the world"],["Me gustaría vivir en España","I would like to live in Spain"],["Ojalá apruebe el examen","I hope I pass the exam"],["Mi sueño es ser abogado","My dream is to be a lawyer"],["Todo es posible","Everything is possible"],["Quiero cambiar mi vida","I want to change my life"],["Imagina un mundo mejor","Imagine a better world"],["Voy a lograr mis metas","I am going to achieve my goals"]]}
 ]};
 /* Japanese – 30 units (A1–B1). Words/sentences: [Japanese (sentences split into word chunks), English, romaji]. */
-COURSES["ja"] = {"lang":"ja","tts":"ja-JP","nospace":true,"units":[{"w":[["こんにちは","hello","konnichiwa"],["さようなら","goodbye","sayōnara"],["ありがとう","thank you","arigatō"],["お願いします","please","onegaishimasu"],["はい","yes","hai"],["いいえ","no","iie"],["おはようございます","good morning","ohayō gozaimasu"],["おやすみなさい","good night","oyasuminasai"],["すみません","excuse me / sorry","sumimasen"],["どういたしまして","you're welcome","dōitashimashite"],["またね","see you","mata ne"],["ようこそ","welcome","yōkoso"]],"s":[["こんにちは、 おはよう ございます","Hello, good morning","konnichiwa, ohayō gozaimasu"],["どうも ありがとう ございます","Thank you very much","dōmo arigatō gozaimasu"],["はい、 お願いします","Yes, please","hai, onegaishimasu"],["いいえ、 けっこう です","No, thank you","iie, kekkō desu"],["またね、 ハナ","See you, Hana","mata ne, Hana"],["すみません、 日本語 は 話せません","Sorry, I don't speak Japanese","sumimasen, nihongo wa hanasemasen"],["おやすみなさい、 お母さん","Good night, mom","oyasuminasai, okāsan"],["日本 へ ようこそ","Welcome to Japan","Nihon e yōkoso"]]},
+COURSES["ja"] = {"lang":"ja","tts":"ja-JP","nospace":true,"scripts":[{"id":"hira","name":"Hiragana","icon":"あ","info":"The basic Japanese alphabet – used for grammar endings and native words.","chars":[["あ","a"],["い","i"],["う","u"],["え","e"],["お","o"],["か","ka"],["き","ki"],["く","ku"],["け","ke"],["こ","ko"],["さ","sa"],["し","shi"],["す","su"],["せ","se"],["そ","so"],["た","ta"],["ち","chi"],["つ","tsu"],["て","te"],["と","to"],["な","na"],["に","ni"],["ぬ","nu"],["ね","ne"],["の","no"],["は","ha"],["ひ","hi"],["ふ","fu"],["へ","he"],["ほ","ho"],["ま","ma"],["み","mi"],["む","mu"],["め","me"],["も","mo"],["や","ya"],["ゆ","yu"],["よ","yo"],["ら","ra"],["り","ri"],["る","ru"],["れ","re"],["ろ","ro"],["わ","wa"],["を","wo"],["ん","n"],["が","ga"],["ぎ","gi"],["ぐ","gu"],["げ","ge"],["ご","go"],["ざ","za"],["じ","ji"],["ず","zu"],["ぜ","ze"],["ぞ","zo"],["だ","da"],["で","de"],["ど","do"],["ば","ba"],["び","bi"],["ぶ","bu"],["べ","be"],["ぼ","bo"],["ぱ","pa"],["ぴ","pi"],["ぷ","pu"],["ぺ","pe"],["ぽ","po"]]},{"id":"kata","name":"Katakana","icon":"ア","info":"Same sounds as hiragana – used for foreign words like コーヒー (coffee).","chars":[["ア","a"],["イ","i"],["ウ","u"],["エ","e"],["オ","o"],["カ","ka"],["キ","ki"],["ク","ku"],["ケ","ke"],["コ","ko"],["サ","sa"],["シ","shi"],["ス","su"],["セ","se"],["ソ","so"],["タ","ta"],["チ","chi"],["ツ","tsu"],["テ","te"],["ト","to"],["ナ","na"],["ニ","ni"],["ヌ","nu"],["ネ","ne"],["ノ","no"],["ハ","ha"],["ヒ","hi"],["フ","fu"],["ヘ","he"],["ホ","ho"],["マ","ma"],["ミ","mi"],["ム","mu"],["メ","me"],["モ","mo"],["ヤ","ya"],["ユ","yu"],["ヨ","yo"],["ラ","ra"],["リ","ri"],["ル","ru"],["レ","re"],["ロ","ro"],["ワ","wa"],["ヲ","wo"],["ン","n"],["ガ","ga"],["ギ","gi"],["グ","gu"],["ゲ","ge"],["ゴ","go"],["ザ","za"],["ジ","ji"],["ズ","zu"],["ゼ","ze"],["ゾ","zo"],["ダ","da"],["デ","de"],["ド","do"],["バ","ba"],["ビ","bi"],["ブ","bu"],["ベ","be"],["ボ","bo"],["パ","pa"],["ピ","pi"],["プ","pu"],["ペ","pe"],["ポ","po"]]},{"id":"kanji","name":"Kanji","icon":"漢","info":"Chinese characters with meanings – 91 common beginner kanji (mostly JLPT N5).","chars":[["一","ichi","one","いち"],["二","ni","two","に"],["三","san","three","さん"],["四","yon","four","よん"],["五","go","five","ご"],["六","roku","six","ろく"],["七","nana","seven","なな"],["八","hachi","eight","はち"],["九","kyū","nine","きゅう"],["十","jū","ten","じゅう"],["百","hyaku","hundred","ひゃく"],["千","sen","thousand","せん"],["万","man","ten thousand","まん"],["円","en","yen / circle","えん"],["日","nichi","day / sun","にち"],["月","tsuki","moon / month","つき"],["火","hi","fire","ひ"],["水","mizu","water","みず"],["木","ki","tree","き"],["金","kane","money / gold","かね"],["土","tsuchi","soil / earth","つち"],["年","toshi","year","とし"],["時","toki","time / hour","とき"],["分","fun","minute","ふん"],["半","han","half","はん"],["今","ima","now","いま"],["何","nani","what","なに"],["人","hito","person","ひと"],["男","otoko","man","おとこ"],["女","onna","woman","おんな"],["子","ko","child","こ"],["母","haha","mother","はは"],["父","chichi","father","ちち"],["友","tomo","friend","とも"],["先","saki","ahead / previous","さき"],["生","sei","life / birth","せい"],["学","gaku","study / learning","がく"],["校","kō","school","こう"],["本","hon","book / origin","ほん"],["山","yama","mountain","やま"],["川","kawa","river","かわ"],["田","ta","rice field","た"],["口","kuchi","mouth","くち"],["目","me","eye","め"],["耳","mimi","ear","みみ"],["手","te","hand","て"],["足","ashi","foot / leg","あし"],["上","ue","up / above","うえ"],["下","shita","down / below","した"],["中","naka","inside / middle","なか"],["大","ō","big","おお"],["小","shō","small","しょう"],["右","migi","right","みぎ"],["左","hidari","left","ひだり"],["前","mae","front / before","まえ"],["後","ato","after / behind","あと"],["外","soto","outside","そと"],["名","na","name","な"],["白","shiro","white","しろ"],["赤","aka","red","あか"],["青","ao","blue","あお"],["高","taka","high / expensive","たか"],["安","yasu","cheap / peaceful","やす"],["新","shin","new","しん"],["古","furu","old","ふる"],["長","naga","long","なが"],["出","de","exit / go out","で"],["入","iri","enter","いり"],["見","miru","see","みる"],["行","iku","go","いく"],["来","kuru","come","くる"],["食","taberu","eat","たべる"],["飲","nomu","drink","のむ"],["話","hanashi","talk / story","はなし"],["読","yomu","read","よむ"],["書","kaku","write","かく"],["聞","kiku","hear / ask","きく"],["言","iu","say","いう"],["休","yasumi","rest / holiday","やすみ"],["買","kau","buy","かう"],["会","au","meet","あう"],["天","ten","heaven / sky","てん"],["雨","ame","rain","あめ"],["電","den","electricity","でん"],["車","kuruma","car","くるま"],["駅","eki","station","えき"],["国","kuni","country","くに"],["東","higashi","east","ひがし"],["西","nishi","west","にし"],["南","minami","south","みなみ"],["北","kita","north","きた"]]}],"units":[{"w":[["こんにちは","hello","konnichiwa"],["さようなら","goodbye","sayōnara"],["ありがとう","thank you","arigatō"],["お願いします","please","onegaishimasu"],["はい","yes","hai"],["いいえ","no","iie"],["おはようございます","good morning","ohayō gozaimasu"],["おやすみなさい","good night","oyasuminasai"],["すみません","excuse me / sorry","sumimasen"],["どういたしまして","you're welcome","dōitashimashite"],["またね","see you","mata ne"],["ようこそ","welcome","yōkoso"]],"s":[["こんにちは、 おはよう ございます","Hello, good morning","konnichiwa, ohayō gozaimasu"],["どうも ありがとう ございます","Thank you very much","dōmo arigatō gozaimasu"],["はい、 お願いします","Yes, please","hai, onegaishimasu"],["いいえ、 けっこう です","No, thank you","iie, kekkō desu"],["またね、 ハナ","See you, Hana","mata ne, Hana"],["すみません、 日本語 は 話せません","Sorry, I don't speak Japanese","sumimasen, nihongo wa hanasemasen"],["おやすみなさい、 お母さん","Good night, mom","oyasuminasai, okāsan"],["日本 へ ようこそ","Welcome to Japan","Nihon e yōkoso"]]},
 {"w":[["名前","name","namae"],["私","I","watashi"],["あなた","you","anata"],["です","am / is","desu"],["から","from","kara"],["歳","years old","sai"],["はじめまして","nice to meet you","hajimemashite"],["ドイツ","Germany","Doitsu"],["ドイツ語","German (language)","Doitsugo"],["日本","Japan","Nihon"],["学生","student","gakusei"],["どこ","where","doko"]],"s":[["私 の 名前 は アレックス です","My name is Alex","watashi no namae wa Arekkusu desu"],["ドイツ から 来ました","I came from Germany","Doitsu kara kimashita"],["お名前 は 何 です か？","What is your name?","o-namae wa nan desu ka?"],["私 は 二十歳 です","I am twenty years old","watashi wa hatachi desu"],["私 は 学生 です","I am a student","watashi wa gakusei desu"],["どこ から 来ました か？","Where are you from?","doko kara kimashita ka?"],["あなた は 日本人 です か？","Are you Japanese?","anata wa nihonjin desu ka?"],["はじめまして、 ケン さん","Nice to meet you, Ken","hajimemashite, Ken-san"]]},
 {"w":[["一","one","ichi"],["二","two","ni"],["三","three","san"],["四","four","yon"],["五","five","go"],["六","six","roku"],["七","seven","nana"],["八","eight","hachi"],["九","nine","kyū"],["十","ten","jū"],["二十","twenty","nijū"],["百","one hundred","hyaku"]],"s":[["兄弟 が 二人 います","I have two siblings","kyōdai ga futari imasu"],["五百 円 です","It is 500 yen","gohyaku en desu"],["何歳 です か？","How old are you?","nansai desu ka?"],["私 の 番号 は 三 です","My number is three","watashi no bangō wa san desu"],["十人 います","There are ten people","jūnin imasu"],["りんご を 四つ ください","Four apples, please","ringo o yottsu kudasai"],["七番 の バス","Bus number seven","nanaban no basu"],["一、 二、 三","One, two, three","ichi, ni, san"]]},
 {"w":[["母","mother","haha"],["父","father","chichi"],["兄","older brother","ani"],["姉","older sister","ane"],["息子","son","musuko"],["娘","daughter","musume"],["祖父","grandfather","sofu"],["祖母","grandmother","sobo"],["家族","family","kazoku"],["弟","younger brother","otōto"],["妹","younger sister","imōto"],["いとこ","cousin","itoko"]],"s":[["母 の 名前 は ハナ です","My mother's name is Hana","haha no namae wa Hana desu"],["妹 が 一人 います","I have one younger sister","imōto ga hitori imasu"],["父 は 背 が 高い です","My father is tall","chichi wa se ga takai desu"],["兄弟 は います か？","Do you have siblings?","kyōdai wa imasu ka?"],["私 の 家族 は 大きい です","My family is big","watashi no kazoku wa ōkii desu"],["祖母 は 八十歳 です","My grandmother is eighty","sobo wa hachijussai desu"],["お兄さん は 優しい です ね","Your older brother is kind","onīsan wa yasashii desu ne"],["家族 が 大好き です","I love my family","kazoku ga daisuki desu"]]},
@@ -629,7 +629,7 @@ function bindLangPicker(cb){
 function openLangPicker(){
   sheet(`<div id="lp"></div>`, s=>{
     const draw=()=>{ s.querySelector("#lp").innerHTML=`<h2 style="margin-top:0">Your languages</h2>`+Object.keys(state.langs).map(c=>{const li=langInfo(c);return `<button class="langbtn" data-cur="${esc(c)}" style="${c===state.cur?"border-color:var(--acc)":""}"><span class="fl">${li.flag}</span><span style="flex:1"><b>${esc(li.name)}</b><br><span class="small mut">${state.langs[c].xp||0} XP · ${Object.keys(state.langs[c].words||{}).length} words</span></span>${c===state.cur?"✓":""}</button>`;}).join("")+`<button class="btn ghost full" id="addl" style="margin-top:8px">+ Add a language</button>`;
-      s.querySelectorAll("[data-cur]").forEach(b=>b.onclick=()=>{state.cur=b.dataset.cur;save();closeSheet();render();});
+      s.querySelectorAll("[data-cur]").forEach(b=>b.onclick=()=>{state.cur=b.dataset.cur;charView=null;save();closeSheet();render();});
       s.querySelector("#addl").onclick=()=>{ s.querySelector("#lp").innerHTML=langPickerHTML("Add a language"); bindLangPicker(code=>{startLanguage(code);save();closeSheet();view="learn";render();}); const fix2=()=>{const inp=s.querySelector("#lq"); if(inp) inp.oninput=()=>{ob.q=inp.value;s.querySelector("#lp").innerHTML=langPickerHTML("Add a language");bindLangPicker(code=>{startLanguage(code);save();closeSheet();view="learn";render();});fix2();const n=s.querySelector("#lq");n.focus();n.setSelectionRange(n.value.length,n.value.length);};}; fix2(); };
     }; draw();
   });
@@ -639,12 +639,56 @@ function openLangPicker(){
 function lessonKey(u,l){return u+"-"+l;}
 function nextLesson(){const d=L().done;for(let u=0;u<UNITS.length;u++)for(let l=0;l<LESSONS_PER_UNIT;l++)if(!d[lessonKey(u,l)])return[u,l];return null;}
 const COLORS=["#22c55e","#38bdf8","#a78bfa","#f59e0b","#f472b6","#2dd4bf"];
+let charView=null;
+function scriptsOf(){ const C=COURSES[state.cur]; return C&&C.scripts||null; }
+function charStr(ch){ const m=(L().chars=L().chars||{}); return m[ch[0]]||0; }
+function scriptsCard(){
+  const sc=scriptsOf(); if(!sc) return "";
+  return `<div class="card" style="margin-top:14px"><div class="row between"><b>✍️ Writing systems</b><span class="tiny mut">tap to learn</span></div>
+    <div class="grid2" style="grid-template-columns:repeat(${sc.length},1fr);margin-top:10px">${sc.map(x=>{ const m=x.chars.filter(c=>charStr(c)>=3).length;
+      return `<button class="stat" data-script="${x.id}"><b style="font-size:28px">${x.icon}</b><span>${esc(x.name)}</span><div class="bar" style="height:5px;margin-top:6px"><i style="width:${Math.round(m/x.chars.length*100)}%"></i></div><div class="tiny mut" style="margin-top:3px">${m}/${x.chars.length}</div></button>`; }).join("")}</div></div>`;
+}
+function renderChars(){
+  const sc=scriptsOf().find(x=>x.id===charView), kanji=sc.id==="kanji";
+  const learned=sc.chars.filter(c=>charStr(c)>=3).length;
+  $app.innerHTML=`<div class="row between" style="margin:6px 0 10px"><button class="btn ghost" style="padding:6px 12px" id="cb">‹</button><b style="font-size:18px">${sc.icon} ${esc(sc.name)}</b><span class="small mut">${learned}/${sc.chars.length}</span></div>
+    <p class="small mut">${esc(sc.info)}</p>
+    <div class="row" style="gap:8px;margin:14px 0"><button class="btn full" id="cp1">✍️ Practice (+XP)</button></div>
+    <div class="grid2" style="grid-template-columns:repeat(${kanji?4:5},1fr);gap:6px">${sc.chars.map((c,i)=>{ const st=charStr(c);
+      const col=st>=3?"var(--acc)":st>0?"var(--warn)":"var(--line)";
+      return `<button class="stat" data-ch="${i}" style="padding:8px 2px;border-color:${col}"><b style="font-size:${kanji?26:24}px;font-weight:600">${esc(c[0])}</b><span style="text-transform:none;font-size:11px">${esc(c[1])}</span>${kanji?`<div class="tiny mut" style="line-height:1.2;margin-top:2px">${esc(c[2])}</div>`:""}</button>`; }).join("")}</div>
+    <p class="tiny mut center" style="margin:14px 0">Green = learned · yellow = practising · tap a character to hear it</p>`;
+  $app.querySelector("#cb").onclick=()=>{ charView=null; render(); window.scrollTo(0,0); };
+  $app.querySelector("#cp1").onclick=()=>startCharPractice(sc);
+  $app.querySelectorAll("[data-ch]").forEach(b=>b.onclick=()=>{ const c=sc.chars[+b.dataset.ch]; if(canSpeak(state.cur)) speak(kanji?c[3]:c[0],state.cur); else toast(c[0]+" = "+c[1]); });
+}
+function startCharPractice(sc){
+  const kanji=sc.id==="kanji", rnd=Math.random;
+  const pool=shuffle(sc.chars).sort((a,b)=>charStr(a)-charStr(b));
+  // new learners: start from the beginning of the chart, then mix
+  const fresh=sc.chars.filter(c=>charStr(c)===0), started=sc.chars.filter(c=>charStr(c)>0);
+  const pick=(fresh.length===sc.chars.length?sc.chars.slice(0,8):started.sort((a,b)=>charStr(a)-charStr(b)).slice(0,5).concat(fresh.slice(0,3))).slice(0,8);
+  while(pick.length<8 && pool.length){ const c=pool.shift(); if(!pick.includes(c)) pick.push(c); }
+  const lab=c=>kanji?c[2]:c[1];
+  const others=(c,n,f)=>shuffle(sc.chars.filter(x=>x!==c)).slice(0,n).map(f);
+  const ex=[], intro=[];
+  pick.forEach((c,i)=>{
+    if(charStr(c)===0) intro.push({w:c[0],r:kanji?c[1]:"",t:kanji?c[2]+" ("+c[1]+")":c[1],ex:"",exT:""});
+    const k=i%3;
+    if(k===0){ const o=shuffle([lab(c)].concat(others(c,3,lab))); ex.push({type:"mc",dir:"to_base",q:c[0],r:"",options:o,answer:o.indexOf(lab(c)),_ch:c[0]}); }
+    else if(k===1){ const o=shuffle([c[0]].concat(others(c,3,x=>x[0]))); ex.push({type:"mc",dir:"to_target",q:kanji?c[2]+" ("+c[1]+")":c[1],options:o,answer:o.indexOf(c[0]),_ch:c[0]}); }
+    else { const o=shuffle([c[0]].concat(others(c,3,x=>x[0]))); ex.push({type:"listen",target:kanji?c[3]:c[0],r:"",options:o,answer:o.indexOf(c[0]),_ch:c[0],_hideText:1}); }
+  });
+  ex.splice(4,0,{type:"match",pairs:pick.slice(0,5).map(c=>[c[0],kanji?c[2]:c[1]]),_noWords:1});
+  startPlayer({title:sc.name+" practice",tip:"",newWords:intro,exercises:ex},{kind:"chars",sc:sc.id});
+}
 function renderLearn(){
+  if(charView && scriptsOf()) return renderChars();
   const nx=nextLesson(), d=L().done, li=langInfo(state.cur);
   const showUnits=[]; const curU=nx?nx[0]:UNITS.length-1;
   for(let u=0;u<UNITS.length;u++) if(u<=curU+1) showUnits.push(u);
   const offs=[0,38,52,38,0,-38,-52,-38];
-  let html=topbar();
+  let html=topbar()+scriptsCard();
   if(apkUpdate && NATIVE && NATIVE.installApk) html+=`<div class="card" style="margin-top:12px;border-color:var(--blue)"><div class="row between"><span><b>📦 App update ready</b><br><span class="small mut">Your progress stays.</span></span><button class="btn blue" style="padding:8px 14px" id="apkgo">Install</button></div></div>`;
   showUnits.forEach(u=>{
     const U=UNITS[u], col=COLORS[u%COLORS.length];
@@ -658,6 +702,7 @@ function renderLearn(){
   });
   if(!nx) html+=`<div class="card center" style="margin-top:20px"><div style="font-size:40px">🎓</div><b>You finished the whole ${esc(li.name)} course!</b><p class="small mut">Keep your streak with Practice and Talk.</p></div>`;
   $app.innerHTML=html; bindTop();
+  $app.querySelectorAll("[data-script]").forEach(b=>b.onclick=()=>{ charView=b.dataset.script; render(); window.scrollTo(0,0); });
   const ag=$app.querySelector("#apkgo"); ag&&(ag.onclick=()=>{ try{ NATIVE.installApk(); toast("Downloading update…"); }catch(e){} });
   $app.querySelectorAll(".node").forEach(b=>b.onclick=()=>{
     const u=+b.dataset.u, l=+b.dataset.l, k=lessonKey(u,l);
@@ -729,9 +774,10 @@ function renderLesson(){
       </div>`;
   } else if(it.type==="mc"||it.type==="listen"||it.type==="fill"){
     let head="";
-    if(it.type==="listen") head=`<div class="prompt">What do you hear?</div><div class="row" style="margin-bottom:18px">${canSpeak(state.cur)?`<button class="speak" data-say="${esc(it.target)}">🔊</button><button class="speak sm" data-slow="${esc(it.target)}">🐢</button>`:`<div class="card target">${esc(it.target)}${romL(it.r)}</div>`}</div>`;
+    if(it.type==="listen"&&it._hideText&&!canSpeak(state.cur)) head=`<div class="prompt">Which character is this?</div><div class="card target" style="margin-bottom:16px">${esc((scriptsOf()||[]).flatMap(x=>x.chars).find(c=>c[0]===it.options[it.answer])?.[1]||"")}</div>`;
+    else if(it.type==="listen") head=`<div class="prompt">What do you hear?</div><div class="row" style="margin-bottom:18px">${canSpeak(state.cur)?`<button class="speak" data-say="${esc(it.target)}">🔊</button><button class="speak sm" data-slow="${esc(it.target)}">🐢</button>`:`<div class="card target">${esc(it.target)}${romL(it.r)}</div>`}</div>`;
     else if(it.type==="fill") head=`<div class="prompt">Fill in the blank</div><div class="card" style="margin-bottom:16px"><div class="target">${esc(it.q).replace("___",'<span style="color:var(--blue)">____</span>')}</div>${romL(it.r)}<div class="small mut" style="margin-top:6px">${esc(it.t||"")}</div></div>`;
-    else head=`<div class="prompt">${it.dir==="to_target"?"How do you say this?":"What does this mean?"}</div><div class="row" style="margin-bottom:16px">${it.dir!=="to_target"?sp(it.q,"sm"):""}<div><div class="${it.dir==="to_target"?"":"target"}" style="font-size:20px;font-weight:700">${esc(it.q)}</div>${it.dir!=="to_target"?romL(it.r):""}</div></div>`;
+    else head=`<div class="prompt">${it.dir==="to_target"?"How do you say this?":"What does this mean?"}</div><div class="row" style="margin-bottom:16px">${it.dir!=="to_target"?sp(it.q,"sm"):""}<div><div class="${it.dir==="to_target"?"":"target"}" style="font-size:${it._ch&&it.dir!=="to_target"?52:20}px;font-weight:700;line-height:1.2">${esc(it.q)}</div>${it.dir!=="to_target"?romL(it.r):""}</div></div>`;
     if(!it._order) it._order=shuffle(it.options.map((_,i)=>i));
     body=head+it._order.map(i=>{ let cls=""; if(lz.fb){ if(i===it.answer) cls="good"; else if(i===lz.ans) cls="badx"; } else if(lz.ans===i) cls="sel";
       const tr=Array.isArray(it.tr)&&it.tr[i]?`<div class="rom">${esc(it.tr[i])}</div>`:"";
@@ -786,7 +832,7 @@ function bindLesson(){
     const side=b.dataset.ml!=null?"L":"R", i=+(b.dataset.ml!=null?b.dataset.ml:b.dataset.mr);
     if(side==="L" && canSpeak(state.cur)) speak(it.pairs[i][0],state.cur);
     if(!it._pick||it._pick.side===side){ it._pick={side,i}; render(); return; }
-    if(it._pick.i===i){ it._done.push(i); it._pick=null; learnWord(it.pairs[i][0],it.pairs[i][1],""); if(it._done.length===it.pairs.length){ lz.fb={ok:it._err===0,correct:"",note:it._err?"Done – "+it._err+" mistake"+(it._err>1?"s":""):"Perfect match!"}; if(!it._err){lz.correct++; if(!it._retry) lz.firstTry++;} else lz.wrong++; } render(); }
+    if(it._pick.i===i){ it._done.push(i); it._pick=null; if(!it._noWords) learnWord(it.pairs[i][0],it.pairs[i][1],""); else { const m=(L().chars=L().chars||{}); m[it.pairs[i][0]]=Math.min(5,(m[it.pairs[i][0]]||0)+1); } if(it._done.length===it.pairs.length){ lz.fb={ok:it._err===0,correct:"",note:it._err?"Done – "+it._err+" mistake"+(it._err>1?"s":""):"Perfect match!"}; if(!it._err){lz.correct++; if(!it._retry) lz.firstTry++;} else lz.wrong++; } render(); }
     else { it._err++; it._pick=null; b.style.borderColor="var(--bad)"; setTimeout(render,250); }
   });
 }
@@ -810,6 +856,7 @@ function check(){
   else { lz.wrong++; if(!it._retry){ const c=Object.assign({},it,{_retry:1,_order:null,_bank:null,_sel:null,_played:0}); lz.retry.push(c); }
     const l=L(); l.mistakes=(l.mistakes||[]).concat([{q:it.q||it.base||it.target||"",a:correct}]).slice(-40); }
   if(it._w){ const w=L().words[it._w]; if(w) w.s=Math.max(0,Math.min(5,(w.s||0)+(ok?1:-1))); }
+  if(it._ch){ const m=(L().chars=L().chars||{}); m[it._ch]=Math.max(0,Math.min(5,(m[it._ch]||0)+(ok?1:-1))); }
   lz.fb={ok,correct,extra,note,show}; render();
   if(ok&&(it.type==="mc"&&it.dir!=="to_target"||it.type==="listen")&&canSpeak(state.cur)){ speak(it.type==="listen"?it.target:it.q,state.cur); }
   if(ok&&(it.type==="build"||it.type==="type")&&canSpeak(state.cur)) speak(correct,state.cur);
@@ -817,7 +864,7 @@ function check(){
 function learnWord(w,t,r){ const W=L().words; const k=String(w).trim(); if(!k) return; const x=W[k]||{t,r:r||"",s:0,seen:0,added:todayKey()}; x.t=x.t||t; x.seen=(x.seen||0)+1; W[k]=x; }
 function advance(){
   const lz=lesson, it=curItem();
-  if(it.type==="intro") learnWord(it.w.w,it.w.t,it.w.r);
+  if(it.type==="intro" && !(lz.meta&&lz.meta.kind==="chars")) learnWord(it.w.w,it.w.t,it.w.r);
   lz.fb=null; lz.ans=null; lz._focused=0;
   lz.i++;
   if(lz.i>=lz.items.length && lz.retry.length){ lz.items=lz.items.concat(lz.retry); lz.retry=[]; }
@@ -831,7 +878,7 @@ function finishLesson(){
   if(m.kind==="lesson"){ xp=(m.replay?5:10)+lz.firstTry+(perfect?5:0)+(m.l===LESSONS_PER_UNIT-1&&!m.replay?10:0); L().done[lessonKey(m.u,m.l)]=Math.max(L().done[lessonKey(m.u,m.l)]||0,perfect?3:lz.firstTry/total>=.8?2:1); }
   else xp=5+Math.round(lz.firstTry/2)+(perfect?3:0);
   // vocab from lesson exercises
-  (lz.data.newWords||[]).forEach(w=>learnWord(w.w,w.t,w.r));
+  if(m.kind!=="chars") (lz.data.newWords||[]).forEach(w=>learnWord(w.w,w.t,w.r));
   const before=rankOf(state.totalXP).name, dailyBefore=state.daily[todayKey()]||0;
   addXP(xp); save();
   lz.phase="done"; lz.xp=xp; lz.perfect=perfect; lz.acc=Math.round(lz.firstTry/Math.max(1,total)*100);
@@ -855,7 +902,7 @@ function renderResults(){
     ${lz.rankUp?`<div class="card" style="margin-top:14px;border-color:var(--gold)">${lz.rankUp.icon} New rank: <b>${esc(lz.rankUp.name)}</b></div>`:""}
     ${lz.data.tip?`<div class="card small" style="margin-top:14px;text-align:left">💡 ${esc(lz.data.tip)}</div>`:""}
     <button class="btn full" id="go" style="margin-top:24px">Continue</button></div>`;
-  $app.querySelector("#go").onclick=()=>{lesson=null;view=lz.meta.kind==="lesson"?"learn":"practice";render();window.scrollTo(0,0);};
+  $app.querySelector("#go").onclick=()=>{lesson=null;view=lz.meta.kind==="practice"?"practice":"learn";if(lz.meta.kind!=="chars")charView=null;render();window.scrollTo(0,0);};
 }
 
 /* ---------- practice (offline, from your words) ---------- */
