@@ -28,7 +28,7 @@ public class MainActivity extends Activity implements ValueCallback<String>, Tex
         s.setDomStorageEnabled(true);   // progress is saved in localStorage
         s.setAllowFileAccess(true);
         s.setMediaPlaybackRequiresUserGesture(false);
-        web.setWebViewClient(new WebViewClient());
+        web.setWebViewClient(new LinkClient(this));
         web.addJavascriptInterface(new Bridge(this), "LinguaNative");
         setContentView(web);
         loadPage();

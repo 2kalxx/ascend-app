@@ -105,10 +105,11 @@ nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
 <script>
 (function(){
 "use strict";
-const LINGUA_WEB_VERSION = 1; // bump on every web update (the Android app reads this)
+const LINGUA_WEB_VERSION = 2; // bump on every web update (the Android app reads this)
 const NATIVE = (typeof window.LinguaNative!=="undefined") ? window.LinguaNative : null;
-/* Spanish course for English speakers – 30 units (A1–B1). Each unit: 12 words [es,en], 8 sentences [es,en]. */
-const COURSE_ES = {lang:"es", tts:"es-ES", units:[
+const COURSES = {};
+/* Spanish – 30 units (A1–B1). Each unit: 12 words [target,english(,romanization)], 8 sentences [target,english(,romanization)]. */
+COURSES["es"] = {lang:"es", tts:"es-ES", nospace:false, units:[
 {w:[["hola","hello"],["adiós","goodbye"],["gracias","thank you"],["por favor","please"],["sí","yes"],["no","no"],["buenos días","good morning"],["buenas noches","good night"],["perdón","sorry"],["de nada","you're welcome"],["hasta luego","see you later"],["bienvenido","welcome"]],
  s:[["Hola, buenos días","Hello, good morning"],["Muchas gracias","Thank you very much"],["Sí, por favor","Yes, please"],["No, gracias","No, thank you"],["Hasta luego, Ana","See you later, Ana"],["Perdón, no hablo español","Sorry, I don't speak Spanish"],["Buenas noches, mamá","Good night, mom"],["Bienvenido a casa","Welcome home"]]},
 {w:[["me llamo","my name is"],["yo","I"],["tú","you"],["soy","I am"],["eres","you are"],["de","from"],["años","years"],["mucho gusto","nice to meet you"],["Alemania","Germany"],["alemán","German"],["España","Spain"],["estudiante","student"]],
@@ -170,8 +171,6 @@ const COURSE_ES = {lang:"es", tts:"es-ES", units:[
 {w:[["me gustaría","I would like"],["ojalá","hopefully"],["sueño","dream"],["futuro","future"],["cambiar","to change"],["mundo","world"],["lograr","to achieve"],["imaginar","to imagine"],["vida","life"],["posible","possible"],["deseo","wish"],["meta","goal"]],
  s:[["Si tuviera dinero, viajaría por el mundo","If I had money, I would travel the world"],["Me gustaría vivir en España","I would like to live in Spain"],["Ojalá apruebe el examen","I hope I pass the exam"],["Mi sueño es ser abogado","My dream is to be a lawyer"],["Todo es posible","Everything is possible"],["Quiero cambiar mi vida","I want to change my life"],["Imagina un mundo mejor","Imagine a better world"],["Voy a lograr mis metas","I am going to achieve my goals"]]}
 ]};
-
-const COURSES = {es:COURSE_ES};
 /* ================= data ================= */
 const LANGS = [
  ["es","Spanish","Español","🇪🇸"],["en","English","English","🇬🇧"],["fr","French","Français","🇫🇷"],["de","German","Deutsch","🇩🇪"],
@@ -396,9 +395,10 @@ function buildLesson(u,l){
   const sents= test?sshuffle(U.s,rnd).slice(0,6):U.s.slice(l*2,l*2+2);
   const review= test?U.w:U.w.slice(0,l*3).concat(u>0?C.units[u-1].w:[]);
   const others=(w,n,key)=>sshuffle(allW.filter(x=>x[0]!==w[0]&&x[1]!==w[1]),rnd).slice(0,n).map(x=>x[key]);
-  const ex=[];
-  const mcWord=(w,i)=>{ if(i%2===0){ const opts=sshuffle([w[1]].concat(others(w,3,1)),rnd); ex.push({type:"mc",dir:"to_base",q:w[0],r:"",options:opts,answer:opts.indexOf(w[1])}); }
-    else { const opts=sshuffle([w[0]].concat(others(w,3,0)),rnd); ex.push({type:"mc",dir:"to_target",q:w[1],options:opts,answer:opts.indexOf(w[0])}); } };
+  const ex=[], NS=!!C.nospace, J=t=>NS?t.split(" ").join(""):t, R=x=>x&&x[2]?x[2]:"";
+  const romOf=t=>{ const w=allW.find(x=>x[0]===t); return w?R(w):""; };
+  const mcWord=(w,i)=>{ if(i%2===0){ const opts=sshuffle([w[1]].concat(others(w,3,1)),rnd); ex.push({type:"mc",dir:"to_base",q:w[0],r:R(w),options:opts,answer:opts.indexOf(w[1])}); }
+    else { const opts=sshuffle([w[0]].concat(others(w,3,0)),rnd); ex.push({type:"mc",dir:"to_target",q:w[1],options:opts,tr:opts.map(romOf),answer:opts.indexOf(w[0])}); } };
   (test?sshuffle(U.w,rnd).slice(0,4):newW).forEach(mcWord);
   const mp=[]; newW.concat(sshuffle(review,rnd)).forEach(w=>{ if(mp.length<5&&!mp.some(p=>p[0]===w[0]||p[1]===w[1])) mp.push([w[0],w[1]]); });
   if(mp.length>=3) ex.push({type:"match",pairs:mp});
@@ -408,27 +408,27 @@ function buildLesson(u,l){
     const kind= test? ["build","listen","fill","build","type","listen"][j%6] : null;
     if(!test||kind==="build"){
       const dis=sshuffle(U.w.map(w=>w[0]).filter(w=>!w.includes(" ")&&!toks.map(t=>norm(t)).includes(norm(w))),rnd).slice(0,3);
-      ex.push({type:"build",base:st[1],target:st[0],tokens:toks,distractors:dis,r:""});
+      ex.push({type:"build",base:st[1],target:J(st[0]),tokens:toks,distractors:dis,r:R(st)});
     }
     if(!test||kind==="listen"){
       const opts=sshuffle([st[1]].concat(sshuffle(near.filter(x=>x[1]!==st[1]),rnd).slice(0,3).map(x=>x[1])),rnd);
-      ex.push({type:"listen",target:st[0],r:"",options:opts,answer:opts.indexOf(st[1])});
+      ex.push({type:"listen",target:J(st[0]),r:R(st),options:opts,answer:opts.indexOf(st[1])});
     }
     if((!test&&j===0)||kind==="fill"){
-      const cand=toks.map((t,i)=>[strip(t),i]).filter(([t])=>t.length>=3); if(cand.length){
+      const cand=toks.map((t,i)=>[strip(t),i]).filter(([t])=>t.length>=(NS?1:3)); if(cand.length){
         const [word,idx]=cand.sort((a,b)=>b[0].length-a[0].length)[Math.floor(rnd()*Math.min(2,cand.length))];
-        const q=toks.map((t,i)=>i===idx?t.replace(word,"___"):t).join(" ");
-        const pool=C.units.slice(Math.max(0,u-1),u+2).flatMap(x=>x.s).flatMap(x=>x[0].split(" ")).map(strip).filter(t=>t.length>=3&&norm(t)!==norm(word));
+        const q=toks.map((t,i)=>i===idx?t.replace(word,"___"):t).join(NS?"":" ");
+        const pool=C.units.slice(Math.max(0,u-1),u+2).flatMap(x=>x.s).flatMap(x=>x[0].split(" ")).map(strip).filter(t=>t.length>=(NS?1:3)&&norm(t)!==norm(word));
         const opts=sshuffle([word].concat(sshuffle([...new Set(pool)],rnd).slice(0,3)),rnd);
-        ex.push({type:"fill",q,r:"",t:st[1],options:opts,answer:opts.indexOf(word)});
+        ex.push({type:"fill",q,r:R(st),t:st[1],options:opts,answer:opts.indexOf(word)});
       }
     }
-    if((!test&&l>=2&&j===1)||kind==="type") ex.push({type:"type",base:st[1],answers:[st[0]]});
+    if((!test&&l>=2&&j===1)||kind==="type") ex.push({type:"type",base:st[1],answers:[J(st[0])].concat(R(st)?[R(st)]:[])});
   });
-  if(newW.length) ex.push({type:"type",base:newW[newW.length-1][1],answers:[newW[newW.length-1][0]]});
+  if(newW.length){ const w=newW[newW.length-1]; ex.push({type:"type",base:w[1],answers:[w[0]].concat(R(w)?[R(w)]:[])}); }
   const exampleFor=w=>{ const s2=U.s.find(x=>norm(x[0]).split(" ").join(" ").includes(norm(w[0]))); return s2||["",""]; };
   const data={title:UNITS[u][2]+" · "+(test?"Unit test":"Lesson "+(l+1)),tip:"",
-    newWords:newW.map(w=>{const e=exampleFor(w);return {w:w[0],r:"",t:w[1],ex:e[0],exT:e[1]};}),
+    newWords:newW.map(w=>{const e=exampleFor(w);return {w:w[0],r:R(w),t:w[1],ex:J(e[0]),exT:e[1]};}),
     exercises:sshuffle(ex,rnd)};
   return validLesson(data);
 }
@@ -498,11 +498,25 @@ function renderOnboarding(){
   }
 }
 function startLanguage(code){ if(!state.langs[code]) state.langs[code]={started:todayKey(),xp:0,done:{},words:{},mistakes:[],crowns:0}; state.cur=code; }
+const AI_URL="https://claude.ai/artifact/V4pUg8SHuyfe84SE2cxdbw";
 function langPickerHTML(title){
-  const avail=LANGS.filter(l=>COURSES[l[0]]);
-  return `<div class="center" style="margin:30px 0 18px"><div style="font-size:52px">🌍</div><h1 style="font-size:26px;margin-top:6px">${esc(title)}</h1><p class="mut small">Free, offline, with real pronunciation.</p></div>
-    ${avail.map(l=>`<button class="langbtn" data-l="${l[0]}"><span class="fl">${l[3]}</span><span style="flex:1"><b>${esc(l[1])}</b> <span class="small mut">${esc(l[2])} · 30 units · A1–B1</span></span>${state&&state.langs[l[0]]?'<span class="chip">'+(state.langs[l[0]].xp||0)+' XP</span>':""}</button>`).join("")}
-    <p class="small mut center" style="margin:14px 0 20px">More languages arrive with app updates. For 90+ languages and AI chat, use Lingua inside the Claude app.</p>`;
+  const q=norm(ob.q), match=l=>!q||norm(l[1]+" "+l[2]+" "+l[0]).includes(q);
+  const avail=LANGS.filter(l=>COURSES[l[0]]&&match(l)), rest=LANGS.filter(l=>!COURSES[l[0]]&&match(l)), nC=Object.keys(COURSES).length;
+  return `<div class="center" style="margin:26px 0 14px"><div style="font-size:48px">🌍</div><h1 style="font-size:24px;margin-top:6px">${esc(title)}</h1><p class="mut small">${nC} offline course${nC>1?"s":""} · new ones arrive every night</p></div>
+    <input id="lq" placeholder="Search any language…" value="${esc(ob.q)}" style="margin-bottom:12px">
+    ${avail.length?`<div class="zone" style="color:var(--acc2)">✅ Offline course</div>`:""}
+    ${avail.map(l=>`<button class="langbtn" data-l="${l[0]}"><span class="fl">${l[3]}</span><span style="flex:1"><b>${esc(l[1])}</b> <span class="small mut">${esc(l[2])} · 30 units</span></span>${state&&state.langs[l[0]]?'<span class="chip">'+(state.langs[l[0]].xp||0)+' XP</span>':""}</button>`).join("")}
+    ${rest.length?`<div class="zone" style="color:var(--pur);margin-top:14px">✨ Learn now with AI in Claude · offline course coming</div>`:""}
+    ${rest.map(l=>`<button class="langbtn" data-ai="${l[0]}" style="opacity:.8"><span class="fl">${l[3]}</span><span style="flex:1"><b>${esc(l[1])}</b> <span class="small mut">${esc(l[2])}</span></span><span class="tiny" style="color:var(--pur)">AI ↗</span></button>`).join("")}
+    ${q?`<button class="langbtn" data-ai="other"><span class="fl">🌐</span><span style="flex:1"><b>Learn "${esc(ob.q)}" with AI</b><br><span class="small mut">Any language or dialect – opens Lingua in Claude</span></span></button>`:""}
+    <p class="tiny mut center" style="margin:14px 0 20px">AI languages open the Claude version of Lingua (uses your Claude account, needs internet).</p>`;
+}
+function openAI(){
+  sheet(`<h2 style="margin-top:0">✨ Learn with AI in Claude</h2><p class="small mut" style="margin-bottom:14px">This language doesn't have an offline course yet. The Claude version of Lingua can teach it right now – AI writes your lessons, plus conversation practice. Your offline progress stays here.</p>
+    <button class="btn full" id="oa">Open in Claude</button><button class="btn ghost full" id="ca" style="margin-top:8px">Not now</button>`,s2=>{
+    s2.querySelector("#ca").onclick=closeSheet;
+    s2.querySelector("#oa").onclick=()=>{ closeSheet(); try{ if(NATIVE&&NATIVE.openUrl){ NATIVE.openUrl(AI_URL); return; } }catch(e){} location.href=AI_URL; };
+  });
 }
 function langPickerHTML_unused(title){
   const q=norm(ob.q);
@@ -515,6 +529,7 @@ function langPickerHTML_unused(title){
 function bindLangPicker(cb){
   const inp=document.getElementById("lq"); if(inp){ inp.oninput=()=>{ob.q=inp.value;const pos=inp.selectionStart;render();const n=document.getElementById("lq");n.focus();n.setSelectionRange(pos,pos);}; }
   document.querySelectorAll("[data-l]").forEach(b=>b.onclick=()=>{ob.q="";cb(b.dataset.l);});
+  document.querySelectorAll("[data-ai]").forEach(b=>b.onclick=()=>openAI());
   const o=document.querySelector("[data-other]"); o&&(o.onclick=()=>{const name=ob.q.trim();ob.q="";const code="x-"+name.replace(/[^A-Za-z0-9 ()-]/g,"").slice(0,40);
     if(!LANGS.find(l=>l[0]===code))LANGS.push([code,name,"","🌐"]); cb(code);});
 }
@@ -693,7 +708,7 @@ function check(){
     ok=norm(got)===norm(want)||norm(got).replace(/ /g,"")===norm(want).replace(/ /g,""); correct=it.target||want; if(it.r) extra=it.r;
   } else if(it.type==="type"){
     const got=norm(lz.ans), answers=it.answers.map(norm);
-    if(answers.includes(got)) ok=true;
+    if(answers.includes(got) || answers.map(a=>a.replace(/ /g,"")).includes(got.replace(/ /g,""))) ok=true;
     else { const best=Math.min(...answers.map(a=>lev(a,got))); if(best<=Math.max(1,Math.floor(answers[0].length/12))){ ok=true; note="Almost! Watch the spelling:"; show=true; } }
     correct=it.answers[0];
     if(ok && got!==norm(it.answers[0]) && !note){ /* accepted variant */ }

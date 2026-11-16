@@ -1,5 +1,5 @@
-/* Spanish course for English speakers – 30 units (A1–B1). Each unit: 12 words [es,en], 8 sentences [es,en]. */
-const COURSE_ES = {lang:"es", tts:"es-ES", units:[
+/* Spanish – 30 units (A1–B1). Each unit: 12 words [target,english(,romanization)], 8 sentences [target,english(,romanization)]. */
+COURSES["es"] = {lang:"es", tts:"es-ES", nospace:false, units:[
 {w:[["hola","hello"],["adiós","goodbye"],["gracias","thank you"],["por favor","please"],["sí","yes"],["no","no"],["buenos días","good morning"],["buenas noches","good night"],["perdón","sorry"],["de nada","you're welcome"],["hasta luego","see you later"],["bienvenido","welcome"]],
  s:[["Hola, buenos días","Hello, good morning"],["Muchas gracias","Thank you very much"],["Sí, por favor","Yes, please"],["No, gracias","No, thank you"],["Hasta luego, Ana","See you later, Ana"],["Perdón, no hablo español","Sorry, I don't speak Spanish"],["Buenas noches, mamá","Good night, mom"],["Bienvenido a casa","Welcome home"]]},
 {w:[["me llamo","my name is"],["yo","I"],["tú","you"],["soy","I am"],["eres","you are"],["de","from"],["años","years"],["mucho gusto","nice to meet you"],["Alemania","Germany"],["alemán","German"],["España","Spain"],["estudiante","student"]],

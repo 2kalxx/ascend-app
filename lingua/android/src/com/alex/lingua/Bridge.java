@@ -32,6 +32,14 @@ public class Bridge implements Runnable {
     @JavascriptInterface public void askPermission() { act.runOnUiThread(this); }
     @Override public void run() { act.askNotificationPermission(); }
 
+    /** Opens a web link outside the app (e.g. the AI version of Lingua in Claude). */
+    @JavascriptInterface
+    public void openUrl(String url) {
+        if (url == null || !(url.startsWith("https://") || url.startsWith("http://"))) return;
+        act.startActivity(new android.content.Intent(android.content.Intent.ACTION_VIEW, android.net.Uri.parse(url))
+                .addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK));
+    }
+
     @JavascriptInterface public void checkUpdates() { Updater.start(act, true); }
     @JavascriptInterface public void installApk() { ApkInstaller.start(act); }
 

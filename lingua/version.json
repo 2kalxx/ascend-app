@@ -1,7 +1,10 @@
 {
-  "web": 1,
-  "apk": 1,
+  "web": 2,
+  "apk": 2,
   "minApk": 1,
   "apkPath": "apk/Lingua.apk",
-  "notes": "Lingua 1.0: offline Spanish course (30 units), native pronunciation, leagues, reminders"
+  "notes": "Lingua 1.1: all languages listed (AI fallback in Claude), course packs, nightly new languages",
+  "courses": [
+    "es"
+  ]
 }
