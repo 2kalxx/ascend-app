@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ORBIT_WEB_VERSION = 5; // bump on every web update (the Android app reads this)
+const ORBIT_WEB_VERSION = 6; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 function fmt(n){ n=Math.floor(n); if(n<1000) return String(n); const u=["K","M","B","T","Qa","Qi"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+u[i]; }
 const mmss=t=>Math.floor(t/60)+":"+String(Math.floor(t%60)).padStart(2,"0");
@@ -94,7 +94,7 @@ const UP=[
  {id:"power", ic:"💥",name:"Power",  start:1,max:30,base:6,  grow:1.5, show:l=>l},
  {id:"income",ic:"💰",name:"Income", start:1,max:30,base:8,  grow:1.5, show:l=>"+"+l},
  {id:"bomb",  ic:"💣",name:"Bomb",   start:0,max:10,base:40, grow:1.75,show:l=>l?bombEvery(l).toFixed(1)+"s":"OFF"},
- {id:"laser", ic:"🔦",name:"Laser",  start:0,max:10,base:70, grow:1.8, show:l=>l?"Lv "+l:"OFF"},
+ {id:"laser", ic:"🔦",name:"Laser",  start:0,max:10,base:110,grow:1.9, show:l=>l?"Lv "+l:"OFF"},
  {id:"shards",ic:"✨",name:"Shards", start:0,max:10,base:35, grow:1.7, req:"shards",show:l=>l?(1+l)+"x":"OFF"},
  {id:"zap",   ic:"⚡",name:"Zap",    start:0,max:10,base:50, grow:1.75,req:"storm", show:l=>l?(l*1.5).toFixed(1)+"/s":"OFF"},
 ];
@@ -106,7 +106,7 @@ const dpsOf=l=>12*Math.pow(1.28,l-1);
 const bombEvery=l=>Math.max(1,6.2-0.55*l);
 const bombRadius=l=>30+8*l;
 const regrowDelay=()=>2;
-const laserDps=l=>dpsOf(1)*1.4*l;
+const laserDps=l=>dpsOf(1)*0.45*l;
 /* ================= Ascend tree (permanent, paid with rubies) ================= */
 const BR=[{id:"ball",name:"BALL",c:"#7fd8ff"},{id:"eco",name:"ECONOMY",c:"#ffd36a"},{id:"boom",name:"EXPLOSIVES",c:"#ff8a3d"},{id:"beam",name:"LASER & STORM",c:"#ff4f6b"}];
 const TREE=[
@@ -226,8 +226,8 @@ function step(dt,sim){
   // bomb: a ball explodes every few seconds
   if(L.bomb>0){ bombT+=dt; if(bombT>=bombEvery(L.bomb)){ bombT=0; const b=balls[Math.floor(Math.random()*balls.length)], br=bombRadius(L.bomb)*(1+0.12*T("bigboom")); gained+=areaHit(b.x,b.y,br,dps*5); if(!sim){ rings.push({x:b.x,y:b.y,r:0,max:br,t:0.35}); if(S.sound) tick(90,0.08); } } }
   // laser: rotating beam from the centre
-  if(L.laser>0){ laserA+=dt*(1.2+0.25*L.laser); const ca=Math.cos(laserA), sa=Math.sin(laserA), w=4+1.5*L.laser;
-    for(let t=-R;t<R;t+=CELL*0.9){ gained+=areaHit(ca*t,sa*t,w,laserDps(L.laser)*dt); if(T("twin")) gained+=areaHit(-sa*t,ca*t,w,laserDps(L.laser)*dt); } }
+  if(L.laser>0){ laserA+=dt*(0.9+0.1*L.laser); const ca=Math.cos(laserA), sa=Math.sin(laserA), w=3+0.8*L.laser, ld=laserDps(L.laser)*dt, tw=T("twin");
+    for(let k=0;k<cells.length;k++){ const c=cells[k]; if(!c) continue; if(Math.abs(-sa*c.x+ca*c.y)<w||(tw&&Math.abs(ca*c.x+sa*c.y)<w)) gained+=hitCell(k,ld); } }
   // regrowth: blocks come back if nothing touched them for a while
   regrowT+=dt; if(regrowT>0.1){ regrowT=0; const delay=regrowDelay();
     for(const c of cells){ if(c&&!c.alive&&gt-c.touch>delay){ c.alive=true; c.hp=c.max*0.4*(1-0.15*T("frost")); aliveCount++; drawCell(c); } } }
@@ -240,7 +240,7 @@ function render(){
   ctx.clearRect(0,0,cv.width,cv.height);
   ctx.save(); ctx.beginPath(); ctx.arc(cx,cy,(R+6)*scale,0,Math.PI*2); ctx.strokeStyle="rgba(170,255,170,.85)"; ctx.lineWidth=3*scale; ctx.shadowColor="rgba(140,255,140,.8)"; ctx.shadowBlur=22*scale; ctx.stroke(); ctx.restore();
   ctx.drawImage(layer,0,0);
-  if(run.lv.laser>0){ const w=(4+1.5*run.lv.laser)*scale; ctx.save(); ctx.strokeStyle="rgba(255,80,80,.85)"; ctx.lineWidth=w*0.6; ctx.shadowColor="#ff3b3b"; ctx.shadowBlur=16*scale; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(cx-Math.cos(laserA)*R*scale,cy-Math.sin(laserA)*R*scale); ctx.lineTo(cx+Math.cos(laserA)*R*scale,cy+Math.sin(laserA)*R*scale); if(T("twin")){ ctx.moveTo(cx+Math.sin(laserA)*R*scale,cy-Math.cos(laserA)*R*scale); ctx.lineTo(cx-Math.sin(laserA)*R*scale,cy+Math.cos(laserA)*R*scale); } ctx.stroke(); ctx.restore(); }
+  if(run.lv.laser>0){ const w=(3+0.8*run.lv.laser)*scale; ctx.save(); ctx.strokeStyle="rgba(255,80,80,.85)"; ctx.lineWidth=w*0.6; ctx.shadowColor="#ff3b3b"; ctx.shadowBlur=16*scale; ctx.lineCap="round"; ctx.beginPath(); ctx.moveTo(cx-Math.cos(laserA)*R*scale,cy-Math.sin(laserA)*R*scale); ctx.lineTo(cx+Math.cos(laserA)*R*scale,cy+Math.sin(laserA)*R*scale); if(T("twin")){ ctx.moveTo(cx+Math.sin(laserA)*R*scale,cy-Math.cos(laserA)*R*scale); ctx.lineTo(cx-Math.sin(laserA)*R*scale,cy+Math.cos(laserA)*R*scale); } ctx.stroke(); ctx.restore(); }
   for(const f of fires){ ctx.beginPath(); ctx.arc(cx+f.x*scale,cy+f.y*scale,f.r*scale*0.8,0,Math.PI*2); ctx.fillStyle=`rgba(255,${120+Math.round(f.t*80)},40,${Math.min(0.35,f.t*0.4)})`; ctx.fill(); }
   ctx.fillStyle="#bff"; for(const z of shards){ ctx.beginPath(); ctx.arc(cx+z.x*scale,cy+z.y*scale,2.6*scale,0,Math.PI*2); ctx.fill(); }
   for(const z of zaps){ ctx.save(); ctx.strokeStyle=`rgba(190,220,255,${z.t*4})`; ctx.lineWidth=2.5*scale; ctx.shadowColor="#9cf"; ctx.shadowBlur=12*scale; ctx.beginPath(); ctx.moveTo(cx+z.x*scale,cy+(z.y-60)*scale); ctx.lineTo(cx+(z.x+8)*scale,cy+(z.y-30)*scale); ctx.lineTo(cx+(z.x-6)*scale,cy+(z.y-14)*scale); ctx.lineTo(cx+z.x*scale,cy+z.y*scale); ctx.stroke(); ctx.restore(); }

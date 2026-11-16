@@ -1,7 +1,7 @@
 {
-  "web": 5,
+  "web": 6,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/OrbitCrush.apk",
-  "notes": "Rubies + Ascend skill tree"
+  "notes": "Laser nerf"
 }
