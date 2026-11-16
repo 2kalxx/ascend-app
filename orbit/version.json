@@ -1,7 +1,7 @@
 {
-  "web": 1,
+  "web": 2,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/OrbitCrush.apk",
-  "notes": "Orbit Crush 1.0: idle ball-and-blocks game"
+  "notes": "Vibration on/off button"
 }

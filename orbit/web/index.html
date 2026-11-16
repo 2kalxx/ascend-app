@@ -13,7 +13,8 @@ html,body{background:#000;color:#fff;font-family:system-ui,-apple-system,"Segoe 
 .coins{display:flex;align-items:center;gap:10px;font-size:34px;font-weight:900;letter-spacing:.5px}
 .coin{width:34px;height:34px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffe08a,#f5a524 55%,#c97a0a);box-shadow:inset 0 0 0 3px #d98a12;display:grid;place-items:center;font-size:14px;color:#8a4b00;font-weight:900}
 .coin.sm{width:18px;height:18px;font-size:9px;box-shadow:inset 0 0 0 2px #d98a12}
-.icon{width:40px;height:40px;border-radius:12px;background:#151515;border:1px solid #2a2a2a;display:grid;place-items:center;font-size:18px}
+.icon{width:40px;height:40px;border-radius:12px;background:#151515;border:1px solid #2a2a2a;display:grid;place-items:center;font-size:18px;position:relative}
+.icon.off{opacity:.4}.icon.off:after{content:"";position:absolute;width:26px;height:2.5px;background:#ff5a6a;transform:rotate(-45deg);border-radius:2px}
 #stage{text-align:center;margin-top:4px;color:#9aa;font-size:13px;font-weight:700;letter-spacing:1px}
 #pbar{height:5px;width:150px;margin:6px auto 0;background:#1b1b1b;border-radius:9px;overflow:hidden}#pbar i{display:block;height:100%;background:linear-gradient(90deg,#b6f23a,#33e39b);width:0}
 #wrap{flex:1;display:grid;place-items:center;position:relative;min-height:0}
@@ -50,7 +51,7 @@ canvas{display:block;touch-action:none}
 </head>
 <body>
 <div id="game">
-  <div id="top"><button class="icon" id="menuB">☰</button><div class="coins"><div class="coin">◉</div><span id="coinT">0</span></div><button class="icon" id="sndB">🔊</button></div>
+  <div id="top"><button class="icon" id="menuB">☰</button><div class="coins"><div class="coin">◉</div><span id="coinT">0</span></div><div style="display:flex;gap:8px"><button class="icon" id="hapB">📳</button><button class="icon" id="sndB">🔊</button></div></div>
   <div id="stage">STAGE 1</div><div id="pbar"><i></i></div>
   <div id="wrap"><div id="boost">⚡ BOOST</div><canvas id="cv"></canvas><div id="rate"></div></div>
   <div id="cards"></div>
@@ -59,7 +60,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ORBIT_WEB_VERSION = 1; // bump on every web update (the Android app reads this)
+const ORBIT_WEB_VERSION = 2; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 
 /* ================= numbers ================= */
@@ -82,7 +83,7 @@ const ballSpeed=l=>175*(1+0.12*(l-1));
 /* ================= state ================= */
 const LS="orbit_state_v1";
 let S=null;
-function fresh(){ return {coins:0,lv:{size:1,income:1,speed:1,balls:1,power:1},stage:1,cells:null,sound:true,hint:true,last:Date.now(),best:0,total:0,earnLog:[]}; }
+function fresh(){ return {coins:0,lv:{size:1,income:1,speed:1,balls:1,power:1},stage:1,cells:null,sound:true,haptic:true,hint:true,last:Date.now(),best:0,total:0,earnLog:[]}; }
 function load(){ try{ const s=JSON.parse(localStorage.getItem(LS)); if(s&&s.lv) return Object.assign(fresh(),s); }catch(e){} return fresh(); }
 let saveT=0; function save(force){ const now=Date.now(); if(!force&&now-saveT<2000) return; saveT=now; S.last=now; S.cells=packCells(); try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 
@@ -203,29 +204,35 @@ function uiCards(force){
 function buy(id){ const u=UP.find(x=>x.id===id), l=S.lv[id]; if(l>=u.max) return; const c=costOf(u,l);
   if(S.coins<c){ if(S.sound) tick(140,0.05); return; }
   S.coins-=c; S.lv[id]++; S.hint=false; if(id==="balls") syncBalls(); if(S.sound){ tick(660,0.04); setTimeout(()=>tick(990,0.05),70); }
-  try{ NATIVE&&NATIVE.buzz&&NATIVE.buzz(); }catch(e){}
+  buzz();
   floatText("+1 "+u.name, innerWidth/2, innerHeight-170); save(true); uiCards(true); }
+function buzz(){ if(S.haptic===false) return; try{ if(NATIVE&&NATIVE.buzz) NATIVE.buzz(); else if(navigator.vibrate) navigator.vibrate(30); }catch(e){} }
+function syncIcons(){ $("sndB").textContent=S.sound?"🔊":"🔇"; $("hapB").classList.toggle("off",S.haptic===false); }
 function floatText(t,x,y){ const d=document.createElement("div"); d.className="float"; d.textContent=t; d.style.left=(x-30)+"px"; d.style.top=y+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),900); }
 function stageClear(){
   const bonus=Math.round(40*Math.pow(1.55,S.stage-1)*incomePer(S.lv.income));
   S.coins+=bonus; S.stage++; S.best=Math.max(S.best,S.stage); buildStage(S.stage); save(true);
+  buzz();
   if(S.sound){ [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tick(f,0.06),i*90)); }
   popup(`<div style="font-size:52px">🌟</div><h1>Stage cleared!</h1><p style="color:#bbb">Bonus <b style="color:#ffd36a">+${fmt(bonus)}</b> coins<br>Stage ${S.stage}: new shape, tougher blocks, more coins.</p><button class="btn" id="ok">Next stage</button>`);
 }
 function popup(html){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; const ok=L.querySelector("#ok"); if(ok) ok.onclick=()=>{ L.innerHTML=""; }; }
 /* tap the arena = short speed boost */
 cv.addEventListener("pointerdown",e=>{ boostUntil=performance.now()+1500; const r=cv.getBoundingClientRect(); floatText("⚡",e.clientX,e.clientY-10); if(S.sound) tick(880,0.02); });
-$("sndB").onclick=()=>{ S.sound=!S.sound; $("sndB").textContent=S.sound?"🔊":"🔇"; save(true); };
+$("sndB").onclick=()=>{ S.sound=!S.sound; syncIcons(); save(true); };
+$("hapB").onclick=()=>{ S.haptic=S.haptic===false; syncIcons(); save(true); if(S.haptic) buzz(); floatText(S.haptic?"📳 Vibration on":"Vibration off",innerWidth/2-60,90); };
 $("menuB").onclick=()=>{
   const L=$("layer"); L.innerHTML=`<div class="menu"><div class="sh"><h2 style="margin-bottom:6px">Orbit Crush</h2>
     <div class="row"><span>Highest stage</span><b>${S.best||S.stage}</b></div>
     <div class="row"><span>Coins earned in total</span><b>${fmt(S.total)}</b></div>
     <div class="row"><span>Sound</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
+    <div class="row"><span>Vibration</span><button class="tg ${S.haptic!==false?"on":""}" id="th">${S.haptic!==false?"On":"Off"}</button></div>
     <div class="row"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ORBIT_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
     ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
     <button class="btn g" id="rst">Reset game</button><button class="btn" id="cl">Close</button></div></div>`;
   L.querySelector("#cl").onclick=()=>{ L.innerHTML=""; };
-  L.querySelector("#ts").onclick=()=>{ S.sound=!S.sound; $("sndB").textContent=S.sound?"🔊":"🔇"; save(true); $("menuB").onclick(); };
+  L.querySelector("#ts").onclick=()=>{ S.sound=!S.sound; syncIcons(); save(true); $("menuB").onclick(); };
+  L.querySelector("#th").onclick=()=>{ S.haptic=S.haptic===false; syncIcons(); save(true); if(S.haptic) buzz(); $("menuB").onclick(); };
   const up=L.querySelector("#upd"); up&&(up.onclick=()=>{ try{ NATIVE.checkUpdates(); }catch(e){} });
   const ins=L.querySelector("#inst"); ins&&(ins.onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} });
   L.querySelector("#rst").onclick=()=>{ L.innerHTML=`<div class="pop"><h1>Reset everything?</h1><p style="color:#bbb">Coins, upgrades and stages start over.</p><button class="btn" id="y">Reset</button><button class="btn g" id="n">Cancel</button></div>`;
@@ -246,7 +253,7 @@ window.ascendApkUpdate=v=>{ apkUpdate=v; floatText("📦 Update ready – see �
 window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
 /* ================= loop ================= */
 S=load();
-$("sndB").textContent=S.sound?"🔊":"🔇";
+syncIcons();
 buildStage(S.stage,S.cells); syncBalls(); resize(); offlineEarnings();
 window.addEventListener("resize",resize);
 let lastT=performance.now(), uiT=0;
