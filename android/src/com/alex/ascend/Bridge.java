@@ -36,6 +36,14 @@ public class Bridge implements Runnable {
     @Override
     public void run() { act.askNotificationPermission(); }
 
+    /** Health Connect: ask permission + read (called from "Connect" in Settings). */
+    @JavascriptInterface
+    public void healthConnect() { act.runOnUiThread(new HealthTask(act, true)); }
+
+    /** Health Connect: re-read today's data (on open, on resume, every 15 min). */
+    @JavascriptInterface
+    public void healthRefresh() { act.runOnUiThread(new HealthTask(act, false)); }
+
     @JavascriptInterface
     public void checkUpdates() { Updater.start(act, true); }
 

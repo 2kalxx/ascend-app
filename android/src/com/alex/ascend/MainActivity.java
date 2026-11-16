@@ -13,6 +13,7 @@ import android.webkit.WebViewClient;
 
 public class MainActivity extends Activity implements ValueCallback<String> {
     private WebView web;
+    Health health;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,6 +28,7 @@ public class MainActivity extends Activity implements ValueCallback<String> {
         s.setDatabaseEnabled(true);
         s.setAllowFileAccess(true);
         web.setWebViewClient(new WebViewClient());
+        health = new Health(this);
         web.addJavascriptInterface(new Bridge(this), "AscendNative");
         setContentView(web);
         loadPage();
@@ -67,6 +69,11 @@ public class MainActivity extends Activity implements ValueCallback<String> {
                 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
             requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
         }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
+        if (code == Health.REQ) health.onPermissionResult();
     }
 
     @Override

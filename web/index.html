@@ -98,7 +98,7 @@ nav button.on{color:var(--acc2)}
 (function(){
 "use strict";
 /* ---------- constants ---------- */
-const ASCEND_WEB_VERSION = 3; // bump on every web update (read by the Android app too)
+const ASCEND_WEB_VERSION = 4; // bump on every web update (read by the Android app too)
 const PROGRAM_DAYS = 66;
 const LS_KEY = "ascend_state_v1";
 const CATS = {
@@ -167,6 +167,7 @@ function migrate(s){
   s.side.custom = s.side.custom||[]; s.side.off = s.side.off||[];
   if(![1,2,3].includes(s.side.count)) s.side.count=2;
   s.rem = s.rem || {m:{on:false,t:"08:00"}, e:{on:false,t:"20:00"}};
+  s.health = s.health || {on:false};
   return s;
 }
 const NATIVE = (typeof window.AscendNative!=="undefined") ? window.AscendNative : null;
@@ -377,6 +378,7 @@ function renderToday(){
       <div class="stat"><b>${xp}</b><span>Total XP</span></div>
       <div class="stat"><b>${Math.round(Math.min(pd,PROGRAM_DAYS)/PROGRAM_DAYS*100)}%</b><span>Program</span></div>
     </div>
+    ${healthStrip()}
   </div>
   <div class="daynav">
     <button id="prev" ${diffDays(state.start,viewDay)<=0?"disabled":""}>‹</button>
@@ -386,7 +388,7 @@ function renderToday(){
   ${hs.length? hs.map(h=>{ const on=d[h.id]!=null; return `
     <button class="quest ${on?"done":""}" data-h="${h.id}">
       <span class="em">${esc(h.emoji)}</span>
-      <span class="nm"><b>${esc(h.name)}</b><span class="small" style="color:${CATS[h.cat].color}">${CATS[h.cat].label}</span> <span class="xp">+${h.xp} XP</span></span>
+      <span class="nm"><b>${esc(h.name)}</b><span class="small" style="color:${CATS[h.cat].color}">${CATS[h.cat].label}</span> <span class="xp">+${h.xp} XP</span>${h.auto&&HEALTH_OK&&state.health.on?` <span class="small mut">· ❤️ ${on&&(lg.auto||{})[h.id]?"auto":"auto "+esc(AUTO[h.auto.type].txt(h.auto.val))}</span>`:""}</span>
       <span class="ck">${on?"✓":""}</span>
     </button>`;}).join("") : `<div class="card mut" style="text-align:center">No quests scheduled for this day. Add some under <b>Quests</b>.</div>`}
   ${hs.length? `<div class="small mut" style="text-align:center;margin-top:4px">${isPerfect(viewDay)?"🌟 Perfect day! +50 bonus XP":"Complete all quests for a +50 XP perfect-day bonus"}</div>`:""}
@@ -439,7 +441,7 @@ function bindToday(){
     const id=b.dataset.h, h=state.habits.find(x=>x.id===id); if(!h) return;
     const before=levelInfo(totalXP()).lvl, wasPerfect=isPerfect(viewDay);
     const lg = state.log[viewDay] || (state.log[viewDay]={d:{}}); lg.d=lg.d||{};
-    if(lg.d[id]!=null) delete lg.d[id]; else lg.d[id]=h.xp;
+    if(lg.d[id]!=null){ delete lg.d[id]; if(lg.auto&&lg.auto[id]){ delete lg.auto[id]; (lg.noAuto=lg.noAuto||{})[id]=1; } } else lg.d[id]=h.xp;
     save(); render();
     const after=levelInfo(totalXP());
     if(after.lvl>before) toast("⬆️ Level up! You're level "+after.lvl);
@@ -581,6 +583,9 @@ function editHabit(h){
       <div class="field"><label>Icon</label><div class="seg">${EMOJIS.map(e=>`<button data-em="${e}" class="${f.emoji===e?"on":""}">${e}</button>`).join("")}</div></div>
       <div class="field"><label>Attribute</label><div class="seg">${Object.keys(CATS).map(c=>`<button data-c="${c}" class="${f.cat===c?"on":""}">${CATS[c].icon} ${CATS[c].label}</button>`).join("")}</div></div>
       <div class="field"><label>Difficulty</label><div class="seg">${Object.keys(DIFF).map(x=>`<button data-x="${x}" class="${f.xp==x?"on":""}">${DIFF[x]} · ${x} XP</button>`).join("")}</div></div>
+      ${HEALTH_OK?`<div class="field"><label>❤️ Auto-complete from Samsung Health / Health Connect</label><div class="seg">
+        <button data-at="" class="${!f.auto?"on":""}">Off</button>${Object.keys(AUTO).map(k=>`<button data-at="${k}" class="${f.auto&&f.auto.type===k?"on":""}">${AUTO[k].icon} ${AUTO[k].label}</button>`).join("")}</div>
+        ${f.auto?`<div class="row" style="margin-top:8px"><input id="av" ${f.auto.type==="sleep"?'type="time"':'type="number" inputmode="decimal" step="any" min="0"'} value="${esc(f.auto.val)}" style="max-width:150px"><span class="small mut">${f.auto.type==="sleep"?"asleep by":AUTO[f.auto.type].unit}</span></div>`:""}</div>`:""}
       <div class="field"><label>Days (none selected = every day)</label><div class="seg">${[1,2,3,4,5,6,0].map(d=>`<button data-d="${d}" class="${f.days.includes(d)?"on":""}">${dn[d]}</button>`).join("")}</div></div>
       <button class="btn full" id="hs" style="margin-top:6px">${isNew?"Add quest":"Save"}</button>
       ${isNew?"":`<div class="row" style="margin-top:10px"><button class="btn ghost full" id="ha">${f.archived?"Restore":"Archive"}</button><button class="btn danger full" id="hd">Delete</button></div>`}
@@ -589,11 +594,14 @@ function editHabit(h){
       s.querySelectorAll("[data-em]").forEach(b=>b.onclick=()=>{f.emoji=b.dataset.em;draw();});
       s.querySelectorAll("[data-c]").forEach(b=>b.onclick=()=>{f.cat=b.dataset.c;draw();});
       s.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>{f.xp=+b.dataset.x;draw();});
+      s.querySelectorAll("[data-at]").forEach(b=>b.onclick=()=>{ const t=b.dataset.at; f.auto = t? {type:t,val:(f.auto&&f.auto.type===t)?f.auto.val:AUTO[t].def} : null; draw(); });
+      const av=s.querySelector("#av"); av&&(av.oninput=()=>{ if(f.auto) f.auto.val = f.auto.type==="sleep"? av.value : (parseFloat(av.value)||0); });
       s.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{const d=+b.dataset.d; f.days=f.days.includes(d)?f.days.filter(x=>x!==d):[...f.days,d]; draw();});
       s.querySelector("#hs").onclick=()=>{
         if(!f.name.trim()){ toast("Give it a name"); return; }
         f.name=f.name.trim();
-        if(isNew) state.habits.push(f); else Object.assign(h,f);
+        if(!f.auto) delete f.auto;
+        if(isNew) state.habits.push(f); else { Object.assign(h,f); if(!f.auto) delete h.auto; }
         save(); closeSheet(); render(); toast(isNew?"Quest added":"Saved");
       };
       const ha=s.querySelector("#ha"); ha&&(ha.onclick=()=>{ h.archived=!h.archived; save(); closeSheet(); render(); });
@@ -623,6 +631,16 @@ function renderSettings(){
       <button class="btn ${state.rem.e.on?"":"ghost"}" style="padding:7px 14px" data-ron="e">${state.rem.e.on?"On":"Off"}</button></div>
     ${state.rem.e.on?`<input type="time" data-rt="e" value="${esc(state.rem.e.t)}" style="margin-top:10px">`:""}
     <button class="btn ghost full small" id="rtest" style="margin-top:14px">Send a test notification</button>
+  </div>`:""}
+  ${HEALTH_OK?`
+  <h2>❤️ Samsung Health / Health Connect</h2>
+  <div class="card">
+    ${state.health.status==="unsupported"?`<p class="small mut">Needs Android 14 or newer.</p>`:`
+    <div class="row between"><span><b style="font-weight:600">${state.health.on&&state.health.status==="ok"?"Connected":"Auto-complete quests"}</b><br><span class="small mut">${state.health.on&&state.health.status==="ok"?(health&&health.date===todayKey()?"Today: "+(health.steps!=null?Number(health.steps).toLocaleString()+" steps":"no step data yet"):"Waiting for data…"):"Steps, workouts, sleep and water tick your quests automatically."}</span></span>
+      <button class="btn ${state.health.on&&state.health.status==="ok"?"ghost":""}" style="padding:7px 14px" id="hc">${state.health.on&&state.health.status==="ok"?"Refresh":"Connect"}</button></div>
+    ${state.health.on&&state.health.status==="denied"?`<p class="small" style="color:var(--warn);margin-top:10px">Permission not given. Tap Connect and allow Steps, Exercise, Sleep and Hydration.</p>`:""}
+    ${state.health.on?`<p class="small mut" style="margin-top:10px">Set which quests auto-complete in <b>Quests → Edit</b>. In Samsung Health turn on <b>Settings → Health Connect</b> sync so your data shows up here.</p>
+    <button class="btn danger full small" id="hcoff" style="margin-top:10px">Disconnect</button>`:""}`}
   </div>`:""}
   <h2>Updates</h2>
   <div class="card">
@@ -656,6 +674,12 @@ function bindSettings(){
     state.rem[i.dataset.rt].t=i.value; save(); toast("Reminder set for "+i.value);
   });
   const rt=$app.querySelector("#rtest"); rt&&(rt.onclick=()=>{ try{ NATIVE.askPermission(); NATIVE.test(); }catch(e){} });
+  const hc=$app.querySelector("#hc"); hc&&(hc.onclick=()=>{
+    const first=!state.health.on; state.health.on=true;
+    if(first){ const n=guessAuto(); if(n) setTimeout(()=>toast("❤️ "+n+" quests set to auto-complete"),600); }
+    save(); try{ NATIVE.healthConnect(); }catch(e){} render();
+  });
+  const hcoff=$app.querySelector("#hcoff"); hcoff&&(hcoff.onclick=()=>{ state.health.on=false; state.health.status=""; health=null; save(); render(); toast("Disconnected"); });
   const upd=$app.querySelector("#upd"); upd&&(upd.onclick=()=>{ try{ NATIVE.checkUpdates(); toast("Checking for updates…"); }catch(e){} });
   $app.querySelector("#cp").onclick=async()=>{
     const txt=JSON.stringify(state);
@@ -700,6 +724,56 @@ function render(){
   renderSync();
 }
 
+/* ---------- Health Connect (Samsung Health etc.) ---------- */
+const AUTO = {
+  steps:{label:"Steps",icon:"👣",unit:"steps",def:8000,txt:v=>"≥ "+Number(v).toLocaleString()+" steps"},
+  exercise:{label:"Exercise",icon:"🏃",unit:"min",def:30,txt:v=>"≥ "+v+" min exercise"},
+  sleep:{label:"Bedtime",icon:"🛏️",unit:"time",def:"23:00",txt:v=>"asleep by "+v},
+  water:{label:"Water",icon:"💧",unit:"L",def:2,txt:v=>"≥ "+v+" L water"}
+};
+const AUTO_GUESS = [[/steps/i,"steps",8000],[/exercise|workout|train/i,"exercise",30],[/sleep|bed before/i,"sleep","23:00"],[/water|drink 2/i,"water",2]];
+const HEALTH_OK = !!(NATIVE && NATIVE.healthConnect);
+let health = null; // today's numbers from Health Connect
+// minutes after 12:00 noon, so 23:30 < 00:30
+const nightMin = t => { const [h,m]=String(t).split(":").map(Number); return ((h+12)%24)*60+(m||0); };
+function autoMet(a, hd){
+  if(!a||!hd) return false;
+  if(a.type==="steps") return hd.steps!=null && hd.steps >= +a.val;
+  if(a.type==="exercise") return hd.exerciseMin!=null && hd.exerciseMin >= +a.val;
+  if(a.type==="water") return hd.waterL!=null && hd.waterL >= +a.val - 1e-9;
+  if(a.type==="sleep") return !!hd.sleepStart && nightMin(hd.sleepStart) <= nightMin(a.val);
+  return false;
+}
+function guessAuto(){
+  let n=0;
+  state.habits.forEach(h=>{ if(h.auto) return; for(const [re,type,val] of AUTO_GUESS){ if(re.test(h.name)){ h.auto={type,val}; n++; break; } } });
+  return n;
+}
+window.ascendHealth = function(json){
+  let d; try{ d = typeof json==="string" ? JSON.parse(json) : json; }catch(e){ return; }
+  if(!d || !state) return;
+  if(d.status && d.status!=="ok"){ state.health.status=d.status; render(); return; }
+  health = d; state.health.status="ok";
+  const t=todayKey(); if(d.date!==t) { render(); return; }
+  const lg = state.log[t] || (state.log[t]={d:{}}); lg.d=lg.d||{}; lg.auto=lg.auto||{};
+  const before=levelInfo(totalXP()).lvl, done=[];
+  habitsFor(t).forEach(h=>{ if(h.auto && lg.d[h.id]==null && !(lg.noAuto||{})[h.id] && autoMet(h.auto,d)){ lg.d[h.id]=h.xp; lg.auto[h.id]=1; done.push(h.name); } });
+  if(done.length){ save(); }
+  render();
+  const L=levelInfo(totalXP()).lvl;
+  if(done.length) toast("❤️ Auto-completed: "+done.join(", ")+(L>before?" · Level "+L+"!":""));
+};
+function healthRefresh(){ if(HEALTH_OK && state && state.health.on){ try{ NATIVE.healthRefresh(); }catch(e){} } }
+function healthStrip(){
+  if(!health || health.date!==todayKey() || viewDay!==todayKey()) return "";
+  const parts=[];
+  if(health.steps!=null) parts.push("👣 "+Number(health.steps).toLocaleString());
+  if(health.exerciseMin!=null) parts.push("🏃 "+health.exerciseMin+" min");
+  if(health.waterL!=null && health.waterL>0) parts.push("💧 "+(Math.round(health.waterL*10)/10)+" L");
+  if(health.sleepStart) parts.push("🛏️ "+health.sleepStart+(health.sleepHours?" · "+health.sleepHours+"h":""));
+  return parts.length? `<div class="row small" style="justify-content:center;gap:14px;flex-wrap:wrap;margin-top:12px;color:var(--mut)">${parts.map(esc).join("<span>·</span>")}</div>`:"";
+}
+
 /* ---------- update hooks (called by the Android app) ---------- */
 let apkUpdate = null;
 window.ascendApkUpdate = function(ver){ apkUpdate = ver; if(state) render(); };
@@ -712,7 +786,8 @@ function apkBanner(){
 }
 /* roll over to a new day if the app stays open past midnight */
 let lastDay=todayKey();
-function checkDay(){ const t=todayKey(); if(t!==lastDay){ if(viewDay===lastDay) viewDay=t; lastDay=t; if(state) render(); } }
+function checkDay(){ const t=todayKey(); if(t!==lastDay){ if(viewDay===lastDay) viewDay=t; lastDay=t; health=null; if(state) render(); } healthRefresh(); }
+setInterval(healthRefresh, 15*60000);
 setInterval(checkDay,60000);
 window.addEventListener("focus",checkDay);
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden) checkDay(); });
@@ -723,6 +798,7 @@ try{ const seen=+localStorage.getItem("ascend_seen_ver")||0;
   if(state && seen && seen<ASCEND_WEB_VERSION) setTimeout(()=>toast("✨ Ascend updated to v"+ASCEND_WEB_VERSION),400);
   localStorage.setItem("ascend_seen_ver",String(ASCEND_WEB_VERSION)); }catch(e){}
 nativeSync();
+healthRefresh();
 connectCloud();
 })();
 </script>

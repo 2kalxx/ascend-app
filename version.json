@@ -1,7 +1,7 @@
 {
-  "web": 3,
-  "apk": 3,
+  "web": 4,
+  "apk": 4,
   "minApk": 3,
   "apkPath": "apk/Ascend.apk",
-  "notes": "v1.2: automatic updates, side quest rotation, reminders"
+  "notes": "v1.3: Samsung Health / Health Connect auto-complete (steps, exercise, sleep, water)"
 }
