@@ -136,7 +136,7 @@ nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
 <script>
 (function(){
 "use strict";
-const LINGUA_WEB_VERSION = 8; // bump on every web update (the Android app reads this)
+const LINGUA_WEB_VERSION = 9; // bump on every web update (the Android app reads this)
 const NATIVE = (typeof window.LinguaNative!=="undefined") ? window.LinguaNative : null;
 const COURSES = {};
 /* German – 30 units (A1–B1). Words/sentences: [German, English]. */
@@ -1173,32 +1173,37 @@ function renderTutor(){
     $app.querySelectorAll("[data-sc]").forEach(b=>b.onclick=()=>{ tk={scene:TUTOR_SCENES[+b.dataset.sc],msgs:[],busy:false,listening:false,heard:"",showT:false,typing:false,err:""}; render(); tutorTurn(null); });
     return;
   }
+  if(!(NATIVE&&NATIVE.listen)) tk.typing=true;
   const last=[...tk.msgs].reverse().find(m=>m.role==="ai");
   const bubble=tk.busy?`<span class="mut">…</span>`:last?`${esc(last.reply)}${last.r?`<div class="rom" style="color:#556">${esc(last.r)}</div>`:""}${tk.showT&&last.t?`<div class="small" style="color:#556;margin-top:4px;font-weight:500">${esc(last.t)}</div>`:""}`:"";
   $app.innerHTML=`<div class="row between" style="margin:4px 0 10px"><button class="btn ghost" style="padding:6px 12px" id="tb">‹</button><b>${tk.scene[0]} ${esc(tk.scene[1])}</b><span class="chip">${li.flag}</span></div>
     <div class="stage"><div class="sbubble" id="bub">${bubble}</div>${TUTOR_SVG}
       <div class="row" style="justify-content:center;gap:8px;margin:2px 0 4px">${last?`<button class="chip" id="rep">🔁 Repeat</button><button class="chip" id="slow">🐢 Slow</button><button class="chip ${tk.showT?"on":""}" id="tr">🌐 ${tutorBase()==="German"?"Deutsch":"English"}</button>`:""}</div></div>
+    ${NATIVE&&!NATIVE.listen?`<div class="card small" style="margin-top:10px;border-color:var(--blue)"><b>🎤 Voice needs the new app version</b><br>Your Lingua app is ${esc(NATIVE.apkVersion?NATIVE.apkVersion():"old")} – speaking to Mira needs 1.2 or newer. You can type until then.
+      ${NATIVE.installApk?`<button class="btn blue full" id="instv" style="margin-top:10px">📦 Install update</button>`:""}</div>`:""}
     ${tk.err?`<div class="card small" style="margin-top:10px;border-color:var(--warn)">${esc(tk.err)}${tk.retry?`<button class="btn full" id="again" style="margin-top:10px">↻ Try again</button>`:""}</div>`:""}
     <div id="log" style="margin-top:12px">${tk.msgs.filter(m=>m.role==="me").slice(-4).map(m=>`<div class="bubble me">${esc(m.text)}</div>${m.fix?`<div class="fix">✏️ ${esc(m.fix)}</div>`:m.good?`<div class="small" style="color:var(--acc2);text-align:right;margin:-2px 4px 6px">✓ ${esc(m.good)}</div>`:""}`).join("")}</div>
     <div style="height:150px"></div>
     <div class="checkbar"><div class="inner">
       <div class="small mut center" style="min-height:20px;margin-bottom:6px">${tk.listening?(tk.heard?"“"+esc(tk.heard)+"”":"Listening… speak "+esc(li.name)):tk.busy?"Mira is thinking…":"Tap the mic and answer"}</div>
-      ${tk.typing?`<div class="row"><input id="ti" placeholder="Write in ${esc(li.name)}…"><button class="btn" id="ts" style="padding:12px 16px">➤</button><button class="btn ghost" id="kb" style="padding:12px">🎤</button></div>`:
+      ${tk.typing?`<div class="row"><input id="ti" placeholder="Write in ${esc(li.name)}…"><button class="btn" id="ts" style="padding:12px 16px" disabled>➤</button>${NATIVE&&NATIVE.listen?`<button class="btn ghost" id="kb" style="padding:12px">🎤</button>`:""}</div>`:
       `<div class="row" style="justify-content:center;gap:22px"><button class="btn ghost" id="kb" style="padding:12px 14px">⌨️</button><button class="mic ${tk.listening?"on":""}" id="mic" ${tk.busy?"disabled":""}>${tk.listening?"■":"🎤"}</button><button class="btn ghost" id="hint" style="padding:12px 14px">💡</button></div>`}
     </div></div>`;
   Tutor.mount(); Tutor.set(tk.listening?"listen":tk.busy?"think":"idle");
   $app.querySelector("#tb").onclick=()=>{ try{NATIVE&&NATIVE.stopListening&&NATIVE.stopListening();NATIVE&&NATIVE.stopSpeaking&&NATIVE.stopSpeaking();}catch(e){} Tutor.stopMouth(); tk.scene=null; render(); };
+  const iv=$app.querySelector("#instv"); iv&&(iv.onclick=()=>{ try{ NATIVE.installApk(); toast("Downloading update…"); }catch(e){ toast("Open Me → Check for updates"); } });
   const ag=$app.querySelector("#again"); ag&&(ag.onclick=()=>{ const t=tk.retry; tk.retry=null; tutorTurn(t==="__start__"?null:t); });
   const rp=$app.querySelector("#rep"); rp&&(rp.onclick=()=>tutorSay(last.reply));
   const sl=$app.querySelector("#slow"); sl&&(sl.onclick=()=>{ if(nativeVoice(state.cur)){ speak(last.reply,state.cur,true); Tutor.startMouth(); clearTimeout(tutorSpeakT); tutorSpeakT=setTimeout(()=>Tutor.stopMouth(),800+last.reply.length*140);} });
   const trb=$app.querySelector("#tr"); trb&&(trb.onclick=()=>{ tk.showT=!tk.showT; render(); });
   const kb=$app.querySelector("#kb"); kb&&(kb.onclick=()=>{ tk.typing=!tk.typing; render(); if(tk.typing) setTimeout(()=>{const t=$app.querySelector("#ti");t&&t.focus();},50); });
   const ti=$app.querySelector("#ti"), ts=$app.querySelector("#ts");
-  if(ts){ const send=()=>{ const v=ti.value.trim(); if(v&&!tk.busy) tutorTurn(v); }; ts.onclick=send; ti.onkeydown=e=>{ if(e.key==="Enter") send(); }; }
+  if(ts){ const send=()=>{ const v=ti.value.trim(); if(v&&!tk.busy) tutorTurn(v); }; ts.onclick=send; ti.oninput=()=>{ ts.disabled=!ti.value.trim(); }; ti.onkeydown=e=>{ if(e.key==="Enter") send(); }; }
   const mic=$app.querySelector("#mic"); mic&&(mic.onclick=()=>{
     if(tk.listening){ try{NATIVE.stopListening();}catch(e){} return; }
-    if(!(NATIVE&&NATIVE.listen)){ tk.typing=true; tk.err="Voice input needs the newest Lingua app – typing instead."; render(); return; }
-    tk.heard=""; tk.listening=true; tk.err=""; render(); try{ NATIVE.listen((COURSES[state.cur]||{}).tts||state.cur); }catch(e){ tk.listening=false; render(); }
+    if(!(NATIVE&&NATIVE.listen)){ tk.typing=true; render(); toast("Voice needs the app update – type for now"); return; }
+    tk.heard=""; tk.listening=true; tk.err=""; render(); try{ NATIVE.listen((COURSES[state.cur]||{}).tts||state.cur); }catch(e){ tk.listening=false; tk.err="Couldn't start the microphone ("+e+")."; render(); }
+    clearTimeout(tk.micT); tk.micT=setTimeout(()=>{ if(tk.listening&&!tk.heard){ tk.listening=false; tk.err="I couldn't hear anything. Check that Lingua may use the microphone (phone Settings → Apps → Lingua → Permissions) and try again."; render(); } },12000);
   });
   const hint=$app.querySelector("#hint"); hint&&(hint.onclick=()=>{ if(last&&last.hint) toast("💡 "+last.hint); else toast("💡 Answer her question – short sentences are fine!"); });
 }
