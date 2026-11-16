@@ -1,7 +1,7 @@
 {
-  "web": 3,
+  "web": 4,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/OrbitCrush.apk",
-  "notes": "Vibration on/off button"
+  "notes": "Fixed 2s regrow, no regrow upgrade"
 }
