@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ORBIT_WEB_VERSION = 6; // bump on every web update (the Android app reads this)
+const ORBIT_WEB_VERSION = 7; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 function fmt(n){ n=Math.floor(n); if(n<1000) return String(n); const u=["K","M","B","T","Qa","Qi"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+u[i]; }
 const mmss=t=>Math.floor(t/60)+":"+String(Math.floor(t%60)).padStart(2,"0");
@@ -138,7 +138,7 @@ const startLv=u=>u.start+(u.id==="size"?T("bigstart"):u.id==="bomb"?T("bombkit")
 /* ================= persistent data: settings + best times only ================= */
 const LS="orbit_state_v2";
 let S=null, run=null;
-function fresh(){ return {sound:true,haptic:true,unlocked:1,best:{},stars:{},hint:true,cur:null,rubies:0,tree:{},auto:true}; }
+function fresh(){ return {music:true,sound:true,haptic:true,unlocked:1,best:{},stars:{},hint:true,cur:null,rubies:0,tree:{},auto:true}; }
 function load(){ try{ const s=JSON.parse(localStorage.getItem(LS)); if(s&&s.best){ const o=Object.assign(fresh(),s); if(s.rubies==null) o.rubies=Object.values(o.stars).reduce((a,b)=>a+b,0); return o; } }catch(e){}
   const f=fresh(); try{ const old=JSON.parse(localStorage.getItem("orbit_state_v1")); if(old){ f.sound=old.sound!==false; f.haptic=old.haptic!==false; f.unlocked=Math.max(1,old.stage||1); } }catch(e){} return f; }
 let saveT=0; function save(force){ const now=Date.now(); if(!force&&now-saveT<2500) return; saveT=now; if(run) S.cur=packRun(); try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
@@ -253,7 +253,42 @@ function render(){
     ctx.lineWidth=Math.max(2,r*0.16); ctx.strokeStyle=boosted?"#ffd36a":"#fff"; ctx.shadowColor=boosted?"#ffb020":"rgba(255,255,255,.9)"; ctx.shadowBlur=14*scale; ctx.stroke(); ctx.shadowBlur=0; }
 }
 /* ================= sound / vibration ================= */
-let AC=null; function tick(f,len){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), g=AC.createGain(); o.type="triangle"; o.frequency.value=f; g.gain.value=0.035; g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+len*4); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+len*4); }catch(e){} }
+let AC=null;
+/* ================= generative lo-fi music (made in code, no samples → no copyright) ================= */
+const MUSIC=(()=>{ let on=false, mg=null, lp=null, timer=null, nextT=0, step=0, bar=0, noiseBuf=null, crackle=null, prog=0;
+  const BPM=76, SPB=60/BPM/2; // 8th notes
+  const PROGS=[[[53,57,60,64],[52,55,59,62],[50,53,57,60],[48,52,55,59]],   // Fmaj7 Em7 Dm7 Cmaj7
+               [[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]],   // Am7 Fmaj7 Cmaj7 G7
+               [[50,53,57,60],[55,59,62,65],[48,52,55,59],[57,60,64,67]]];  // Dm7 G7 Cmaj7 Am7
+  const PENTA=[72,74,76,79,81,84];
+  const hz=m=>440*Math.pow(2,(m-69)/12);
+  function noise(){ if(noiseBuf) return noiseBuf; const b=AC.createBuffer(1,AC.sampleRate,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return noiseBuf=b; }
+  function env(node,t,a,peak,dec){ node.gain.setValueAtTime(0.0001,t); node.gain.linearRampToValueAtTime(peak,t+a); node.gain.exponentialRampToValueAtTime(0.0001,t+a+dec); }
+  function keys(m,t,len,vol){ for(const det of [-4,4]){ const o=AC.createOscillator(), g=AC.createGain(); o.type="triangle"; o.frequency.value=hz(m); o.detune.value=det; env(g,t,0.02,vol,len); o.connect(g).connect(lp); o.start(t); o.stop(t+len+0.1); } }
+  function bass(m,t,len){ const o=AC.createOscillator(), g=AC.createGain(); o.type="sine"; o.frequency.value=hz(m-24); env(g,t,0.01,0.22,len); o.connect(g).connect(mg); o.start(t); o.stop(t+len+0.1); }
+  function kick(t){ const o=AC.createOscillator(), g=AC.createGain(); o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(42,t+0.12); env(g,t,0.003,0.5,0.25); o.connect(g).connect(mg); o.start(t); o.stop(t+0.35); }
+  function hiss(t,freq,q,vol,len){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); n.buffer=noise(); f.type="bandpass"; f.frequency.value=freq; f.Q.value=q; env(g,t,0.003,vol,len); n.connect(f).connect(g).connect(mg); n.start(t,Math.random()*0.5); n.stop(t+len+0.05); }
+  function schedule(){ while(nextT<AC.currentTime+0.35){ const t=nextT+(step%2?SPB*0.18:0); // swing
+      const P=PROGS[prog], ch=P[bar%4];
+      if(step===0){ ch.forEach((m,i)=>keys(m,t+i*0.025,SPB*7,0.045)); bass(ch[0],t,SPB*3); }
+      if(step===5) bass(ch[0]+(Math.random()<0.5?7:12),t,SPB*2);
+      if(step===0||step===5&&Math.random()<0.6||step===3&&Math.random()<0.25) kick(t);
+      if(step===2||step===6) hiss(t,1800,0.8,0.16,0.18);
+      if(step%2===0||Math.random()<0.3) hiss(t,8000,1.2,step%2?0.025:0.045,0.05);
+      if(step%2===0&&Math.random()<0.28) keys(PENTA[(Math.random()*PENTA.length)|0],t,SPB*3,0.035);
+      step++; if(step>=8){ step=0; bar++; if(bar%8===0) prog=(Math.random()*PROGS.length)|0; } nextT+=SPB; } }
+  function startCrackle(){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); const len=AC.sampleRate*2, b=AC.createBuffer(1,len,AC.sampleRate), d=b.getChannelData(0);
+    for(let i=0;i<len;i++) d[i]=Math.random()<0.0007?(Math.random()*2-1):(Math.random()*2-1)*0.012; n.buffer=b; n.loop=true; f.type="highpass"; f.frequency.value=1500; g.gain.value=0.25; n.connect(f).connect(g).connect(mg); n.start(); crackle=n; }
+  return {
+    get on(){ return on; },
+    start(){ if(on) return; try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); if(AC.state==="suspended") AC.resume();
+      mg=AC.createGain(); mg.gain.setValueAtTime(0.0001,AC.currentTime); mg.gain.linearRampToValueAtTime(0.8,AC.currentTime+1.5); mg.connect(AC.destination);
+      lp=AC.createBiquadFilter(); lp.type="lowpass"; lp.frequency.value=1400; lp.Q.value=0.6; lp.connect(mg);
+      nextT=AC.currentTime+0.1; step=0; startCrackle(); timer=setInterval(schedule,90); on=true; }catch(e){} },
+    stop(){ if(!on) return; on=false; clearInterval(timer); try{ const g=mg; g.gain.setTargetAtTime(0.0001,AC.currentTime,0.2); setTimeout(()=>{ try{ g.disconnect(); crackle&&crackle.stop(); }catch(e){} },900); }catch(e){} }
+  }; })();
+function syncMusic(){ if(S.music&&!document.hidden) MUSIC.start(); else MUSIC.stop(); }
+function tick(f,len){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), g=AC.createGain(); o.type="triangle"; o.frequency.value=f; g.gain.value=0.035; g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+len*4); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+len*4); }catch(e){} }
 function buzz(){ if(S.haptic===false) return; try{ if(NATIVE&&NATIVE.buzz) NATIVE.buzz(); else if(navigator.vibrate) navigator.vibrate(30); }catch(e){} }
 
 /* ================= UI ================= */
@@ -307,13 +342,15 @@ function openMenu(){
   L.innerHTML=`<div class="menu"><div class="sh"><div style="display:flex;justify-content:space-between;align-items:center"><h2>Levels</h2><span style="color:#ffd36a;font-weight:800">⭐ ${totalStars}</span></div>
     <p style="color:#888;font-size:12px;margin:4px 0 8px">Every level starts fresh: 0 coins, basic upgrades. Tap a level to (re)play it.</p>
     <div class="lvgrid">${grid}</div>
-    <div class="row"><span>Sound</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
+    <div class="row"><span>🎵 Lo-fi music</span><button class="tg ${S.music?"on":""}" id="tm">${S.music?"On":"Off"}</button></div>
+    <div class="row"><span>Sound effects</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
     ${T("auto")?`<div class="row"><span>🤖 Auto-Buyer</span><button class="tg ${S.auto?"on":""}" id="ta">${S.auto?"On":"Off"}</button></div>`:""}<div class="row"><span>Vibration</span><button class="tg ${S.haptic!==false?"on":""}" id="th">${S.haptic!==false?"On":"Off"}</button></div>
     <div class="row"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ORBIT_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
     ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
     <button class="btn g" id="rst">Restart this level</button><button class="btn" id="cl">Close</button></div></div>`;
   L.querySelector("#cl").onclick=()=>{ L.innerHTML=""; };
   L.querySelector("#ts").onclick=()=>{ S.sound=!S.sound; syncIcons(); save(true); openMenu(); };
+  L.querySelector("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); openMenu(); };
   const ta=L.querySelector("#ta"); ta&&(ta.onclick=()=>{ S.auto=!S.auto; save(true); openMenu(); });
   L.querySelector("#th").onclick=()=>{ S.haptic=S.haptic===false; syncIcons(); save(true); if(S.haptic) buzz(); openMenu(); };
   L.querySelectorAll("[data-lv]").forEach(b=>b.onclick=()=>{ const lv=+b.dataset.lv; L.innerHTML=""; cleared=false; startLevel(lv); floatText("Level "+lv+" – fresh start!",innerWidth/2-70,120); });
@@ -348,15 +385,16 @@ S=load(); syncIcons();
 resize();
 if(S.cur&&S.cur.level) startLevel(S.cur.level,S.cur); else startLevel(Math.min(S.unlocked,S.unlocked));
 window.addEventListener("resize",resize);
+window.addEventListener("pointerdown",()=>{ if(S.music&&!MUSIC.on) syncMusic(); },{capture:true});
 let lastT=performance.now(), uiT=0;
 function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; if(run&&!document.querySelector(".pop,.menu,.tree")) step(dt); if(run){ render(); uiT+=dt; if(uiT>0.12){ uiT=0; uiTop(); uiCards(); save(); } } requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
-document.addEventListener("visibilitychange",()=>{ if(document.hidden) save(true); else lastT=performance.now(); });
+document.addEventListener("visibilitychange",()=>{ syncMusic(); try{ if(AC){ document.hidden?AC.suspend():AC.resume(); } }catch(e){}  if(document.hidden) save(true); else lastT=performance.now(); });
 window.addEventListener("pagehide",()=>save(true));
-try{ const seen=+localStorage.getItem("orbit_seen_ver")||0; if(seen&&seen<ORBIT_WEB_VERSION) setTimeout(()=>popup(`<div style="font-size:44px">✨</div><h1>New: Rubies & Ascend tree!</h1><p style="color:#bbb">Clear levels to earn 💎 rubies (1 per star). Spend them in the Ascend tree (💎 button, top left) on permanent upgrades and new play styles: Fire Trail, Homing Ball, Detonator, Twin Laser, Shards, Zap, Auto-Buyer and more. You already got rubies for the stars you have.</p><button class="btn" id="ok">Let's go</button>`),400); localStorage.setItem("orbit_seen_ver",String(ORBIT_WEB_VERSION)); }catch(e){}
+try{ const seen=+localStorage.getItem("orbit_seen_ver")||0; if(seen&&seen<ORBIT_WEB_VERSION) setTimeout(()=>popup(`<div style="font-size:44px">✨</div><h1>New: Lo-fi music 🎵</h1><p style="color:#bbb">Chill background music, made by the game itself (no copyright). Turn it on/off in ☰.</p><h1 style="font-size:18px;margin-top:12px">Also new: Rubies & Ascend tree</h1><p style="color:#bbb">Clear levels to earn 💎 rubies (1 per star). Spend them in the Ascend tree (💎 button, top left) on permanent upgrades and new play styles: Fire Trail, Homing Ball, Detonator, Twin Laser, Shards, Zap, Auto-Buyer and more. You already got rubies for the stars you have.</p><button class="btn" id="ok">Let's go</button>`),400); localStorage.setItem("orbit_seen_ver",String(ORBIT_WEB_VERSION)); }catch(e){}
 /* test hooks */
 let simResult=null;
-window.__oc={TREE,openTree,applyTree,get run(){return run;},get S(){return S;},get alive(){return aliveCount;},buy,startLevel,
+window.__oc={MUSIC,openTree,applyTree,get run(){return run;},get S(){return S;},get alive(){return aliveCount;},buy,startLevel,
   sim(seconds,autobuy){ simResult=null; const dt=1/30; for(let t=0;t<seconds;t+=dt){ step(dt,true); if(autobuy){ const c=cheapestUp(); if(c&&run.coins>=costOf(c,run.lv[c.id])){ run.coins-=costOf(c,run.lv[c.id]); run.lv[c.id]++; } } if(simResult) return simResult; } return {notCleared:true,alive:aliveCount,total:totalCells,lv:JSON.stringify(run.lv)}; }};
 })();
 </script>
