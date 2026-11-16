@@ -970,7 +970,8 @@ function tutorSay(text){
   else { Tutor.startMouth(); clearTimeout(tutorSpeakT); tutorSpeakT=setTimeout(()=>Tutor.stopMouth(),Math.min(9000,500+text.length*60)); }
 }
 /* ---------- Gemini (user's own free API key) ---------- */
-const AI_MODELS=["gemini-flash-latest","gemini-2.5-flash","gemini-2.0-flash"];
+const AI_MODELS=["gemini-flash-latest","gemini-2.5-flash","gemini-flash-lite-latest","gemini-2.5-flash-lite","gemini-2.0-flash"];
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const aiWait={};
 window.linguaAI=function(id,status,body){ const w=aiWait[id]; if(!w) return; delete aiWait[id]; w({status,body}); };
 function aiPost(model,payload){
@@ -980,16 +981,24 @@ function aiPost(model,payload){
 }
 async function aiChat(system,turns){
   const payload={systemInstruction:{parts:[{text:system}]},contents:turns,generationConfig:{temperature:0.8,maxOutputTokens:500,responseMimeType:"application/json"}};
-  let last=null;
-  for(const m of [state.aiModel].filter(Boolean).concat(AI_MODELS)){
-    const r=await aiPost(m,payload); last=r;
+  let last=null, sawLimit=false, sawBusy=false;
+  const models=[...new Set([state.aiModel].filter(Boolean).concat(AI_MODELS))];
+  for(const m of models){
+    let r=await aiPost(m,payload);
+    // Google overloaded (503/500): wait a moment and retry the same model once, then try the next model
+    if(r.status===503||r.status===500){ sawBusy=true; await sleep(1500); r=await aiPost(m,payload); }
+    last=r;
     if(r.status===404||(r.status===400&&/not found|not supported/i.test(r.body))) continue;
+    if(r.status===503||r.status===500){ sawBusy=true; continue; }
+    if(r.status===429){ sawLimit=true; continue; }   // free limits are per model – another model may still have quota
     if(r.status===200){ state.aiModel=m;
       try{ const j=JSON.parse(r.body), t=j.candidates[0].content.parts.map(p=>p.text||"").join(""); const a=t.indexOf("{"), b=t.lastIndexOf("}"); return JSON.parse(t.slice(a,b+1)); }
       catch(e){ throw {code:"parse"}; } }
     break;
   }
-  if(last&&last.status===429) throw {code:"limit"};
+  if(last&&(last.status===400||last.status===403)&&/key|permission|API_KEY/i.test(last.body)) throw {code:"key"};
+  if(sawBusy) throw {code:"busy"};
+  if(sawLimit) throw {code:"limit"};
   if(last&&(last.status===400||last.status===403)&&/key|permission|API_KEY/i.test(last.body)) throw {code:"key"};
   throw {code:"net",detail:last&&last.status};
 }
@@ -1014,7 +1023,7 @@ function renderTutor(){
   $app.innerHTML=`<div class="row between" style="margin:4px 0 10px"><button class="btn ghost" style="padding:6px 12px" id="tb">‹</button><b>${tk.scene[0]} ${esc(tk.scene[1])}</b><span class="chip">${li.flag}</span></div>
     <div class="stage"><div class="sbubble" id="bub">${bubble}</div>${TUTOR_SVG}
       <div class="row" style="justify-content:center;gap:8px;margin:2px 0 4px">${last?`<button class="chip" id="rep">🔁 Repeat</button><button class="chip" id="slow">🐢 Slow</button><button class="chip ${tk.showT?"on":""}" id="tr">🌐 ${tutorBase()==="German"?"Deutsch":"English"}</button>`:""}</div></div>
-    ${tk.err?`<div class="card small" style="margin-top:10px;border-color:var(--warn)">${esc(tk.err)}</div>`:""}
+    ${tk.err?`<div class="card small" style="margin-top:10px;border-color:var(--warn)">${esc(tk.err)}${tk.retry?`<button class="btn full" id="again" style="margin-top:10px">↻ Try again</button>`:""}</div>`:""}
     <div id="log" style="margin-top:12px">${tk.msgs.filter(m=>m.role==="me").slice(-4).map(m=>`<div class="bubble me">${esc(m.text)}</div>${m.fix?`<div class="fix">✏️ ${esc(m.fix)}</div>`:m.good?`<div class="small" style="color:var(--acc2);text-align:right;margin:-2px 4px 6px">✓ ${esc(m.good)}</div>`:""}`).join("")}</div>
     <div style="height:150px"></div>
     <div class="checkbar"><div class="inner">
@@ -1024,6 +1033,7 @@ function renderTutor(){
     </div></div>`;
   Tutor.mount(); Tutor.set(tk.listening?"listen":tk.busy?"think":"idle");
   $app.querySelector("#tb").onclick=()=>{ try{NATIVE&&NATIVE.stopListening&&NATIVE.stopListening();NATIVE&&NATIVE.stopSpeaking&&NATIVE.stopSpeaking();}catch(e){} Tutor.stopMouth(); tk.scene=null; render(); };
+  const ag=$app.querySelector("#again"); ag&&(ag.onclick=()=>{ const t=tk.retry; tk.retry=null; tutorTurn(t==="__start__"?null:t); });
   const rp=$app.querySelector("#rep"); rp&&(rp.onclick=()=>tutorSay(last.reply));
   const sl=$app.querySelector("#slow"); sl&&(sl.onclick=()=>{ if(nativeVoice(state.cur)){ speak(last.reply,state.cur,true); Tutor.startMouth(); clearTimeout(tutorSpeakT); tutorSpeakT=setTimeout(()=>Tutor.stopMouth(),800+last.reply.length*140);} });
   const trb=$app.querySelector("#tr"); trb&&(trb.onclick=()=>{ tk.showT=!tk.showT; render(); });
@@ -1066,7 +1076,8 @@ Reply with ONLY JSON: {"reply":"...", "r":"${C&&C.nospace?"romaji of reply":""}"
     tutorSay(String(res.reply||""));
   }catch(e){
     tk.busy=false;
-    tk.err=e.code==="limit"?"Today's free Gemini limit is used up. Try again tomorrow – or keep learning in Practice.":e.code==="key"?"Your Gemini key doesn't work. Check it under Me → Voice tutor.":e.code==="parse"?"Mira got confused – try saying it again.":"No connection to Gemini"+(e.detail?" (error "+e.detail+")":"")+". Check your internet and try again.";
+    tk.retry=text||"__start__";
+    tk.err=e.code==="busy"?"Google's AI servers are overloaded right now (this happens on the free tier). Wait a few seconds and tap Try again.":e.code==="limit"?"Today's free Gemini limit is used up. Try again tomorrow – or keep learning in Practice.":e.code==="key"?"Your Gemini key doesn't work. Check it under Me → Voice tutor.":e.code==="parse"?"Mira got confused – try saying it again.":"No connection to Gemini"+(e.detail?" (error "+e.detail+")":"")+". Check your internet and try again.";
     if(text) tk.msgs.pop();
     render();
   }
