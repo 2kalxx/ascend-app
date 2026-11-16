@@ -1,7 +1,7 @@
 {
-  "web": 4,
-  "apk": 4,
+  "web": 5,
+  "apk": 5,
   "minApk": 3,
   "apkPath": "apk/Ascend.apk",
-  "notes": "v1.3: Samsung Health / Health Connect auto-complete (steps, exercise, sleep, water)"
+  "notes": "v1.4: Health Connect on Android 9-16 (Samsung Galaxy S20 FE etc.)"
 }

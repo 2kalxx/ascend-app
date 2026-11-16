@@ -72,6 +72,12 @@ public class MainActivity extends Activity implements ValueCallback<String> {
     }
 
     @Override
+    protected void onActivityResult(int code, int result, android.content.Intent data) {
+        super.onActivityResult(code, result, data);
+        if (code == Health.REQ_COMPAT) HcCompat.read(this);
+    }
+
+    @Override
     public void onRequestPermissionsResult(int code, String[] perms, int[] results) {
         if (code == Health.REQ) health.onPermissionResult();
     }

@@ -44,6 +44,10 @@ public class Bridge implements Runnable {
     @JavascriptInterface
     public void healthRefresh() { act.runOnUiThread(new HealthTask(act, false)); }
 
+    /** Opens the Play Store to install/update the Health Connect app (Android 13 and older). */
+    @JavascriptInterface
+    public void healthInstall() { HcCompat.openStore(act); }
+
     @JavascriptInterface
     public void checkUpdates() { Updater.start(act, true); }
 

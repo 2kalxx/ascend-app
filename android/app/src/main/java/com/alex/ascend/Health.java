@@ -36,6 +36,7 @@ public class Health {
         "android.permission.health.READ_HYDRATION"
     };
     static final int REQ = 7;
+    static final int REQ_COMPAT = 8;
 
     private final MainActivity act;
     private JSONObject out;
@@ -43,6 +44,7 @@ public class Health {
 
     Health(MainActivity act) { this.act = act; }
 
+    /** true = Health Connect built into Android (14+); false = separate app via HcCompat. */
     static boolean supported() { return Build.VERSION.SDK_INT >= 34; }
 
     boolean anyGranted() {
@@ -52,7 +54,13 @@ public class Health {
 
     /** "Connect" button: ask for permission (Health Connect's own screen), then read. */
     void connect() {
-        if (!supported()) { send("{\"status\":\"unsupported\"}"); return; }
+        if (!supported()) {
+            String a = HcCompat.availability(act);
+            if (!"ok".equals(a)) { send("{\"status\":\"" + a + "\"}"); return; }
+            try { act.startActivityForResult(HcCompat.permissionIntent(act), REQ_COMPAT); }
+            catch (Exception e) { send("{\"status\":\"error\"}"); }
+            return;
+        }
         boolean all = true;
         for (String p : PERMS) if (act.checkSelfPermission(p) != PackageManager.PERMISSION_GRANTED) all = false;
         if (all) refresh(); else act.requestPermissions(PERMS, REQ);
@@ -64,7 +72,7 @@ public class Health {
 
     /** Read everything for today; results arrive asynchronously and are sent once all are in. */
     void refresh() {
-        if (!supported()) { send("{\"status\":\"unsupported\"}"); return; }
+        if (!supported()) { HcCompat.read(act); return; }
         if (!anyGranted()) { send("{\"status\":\"denied\"}"); return; }
         try {
             HealthConnectManager hc = act.getSystemService(HealthConnectManager.class);

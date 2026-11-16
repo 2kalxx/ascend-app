@@ -8,8 +8,14 @@ My personal, paywall-free 66-day habit app (daily quests, XP, levels, streaks, r
 - `minApk` – the oldest APK that can run the current `web/index.html`.
 
 ## Building the APK
-Needs Android SDK (platform 34, build-tools 35). The signing key is `android/keystore.enc`
-(decrypt: `openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in android/keystore.enc -out ~/ascend.keystore`; passphrase kept privately).
-Then `KS_PASS=… android/build.sh`. Every APK **must** be signed with this same key or it can't update the installed app.
+Gradle project in `android/` (AGP 8.12, Kotlin 2.1, compileSdk 36, androidx Health Connect 1.1.0). Needs JDK 17+ and the Android SDK.
+
+```
+openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in android/keystore.enc -out ~/ascend.keystore   # passphrase kept privately
+mkdir -p android/app/src/main/assets && cp web/index.html android/app/src/main/assets/
+cd android && KS_PASS=… gradle assembleRelease
+cp app/build/outputs/apk/release/app-release.apk ../apk/Ascend.apk
+```
+Bump `versionCode` in `android/app/build.gradle.kts` and `"apk"` in `version.json`. Every APK **must** be signed with this same key or it can't update the installed app.
 
 Install link: https://raw.githubusercontent.com/2kalxx/ascend-app/main/apk/Ascend.apk

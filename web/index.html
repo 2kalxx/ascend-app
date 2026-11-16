@@ -98,7 +98,7 @@ nav button.on{color:var(--acc2)}
 (function(){
 "use strict";
 /* ---------- constants ---------- */
-const ASCEND_WEB_VERSION = 4; // bump on every web update (read by the Android app too)
+const ASCEND_WEB_VERSION = 5; // bump on every web update (read by the Android app too)
 const PROGRAM_DAYS = 66;
 const LS_KEY = "ascend_state_v1";
 const CATS = {
@@ -635,9 +635,14 @@ function renderSettings(){
   ${HEALTH_OK?`
   <h2>❤️ Samsung Health / Health Connect</h2>
   <div class="card">
-    ${state.health.status==="unsupported"?`<p class="small mut">Needs Android 14 or newer.</p>`:`
+    ${state.health.status==="unsupported"?`<p class="small mut">Your app version needs an update for this – install the latest Ascend (banner on the Today screen).</p>`:
+      (state.health.on&&(state.health.status==="install"||state.health.status==="update"))?`
+    <p class="small" style="margin-bottom:10px">${state.health.status==="install"?"Your phone needs Google's free <b>Health Connect</b> app first (Android 13 and older). Install it, then come back and tap Connect.":"Health Connect needs an update. Update it, then tap Connect."}</p>
+    <div class="row"><button class="btn full" id="hcget">${state.health.status==="install"?"Get Health Connect":"Update Health Connect"}</button><button class="btn ghost full" id="hc">Connect</button></div>
+    <button class="btn danger full small" id="hcoff" style="margin-top:10px">Cancel</button>`:`
     <div class="row between"><span><b style="font-weight:600">${state.health.on&&state.health.status==="ok"?"Connected":"Auto-complete quests"}</b><br><span class="small mut">${state.health.on&&state.health.status==="ok"?(health&&health.date===todayKey()?"Today: "+(health.steps!=null?Number(health.steps).toLocaleString()+" steps":"no step data yet"):"Waiting for data…"):"Steps, workouts, sleep and water tick your quests automatically."}</span></span>
       <button class="btn ${state.health.on&&state.health.status==="ok"?"ghost":""}" style="padding:7px 14px" id="hc">${state.health.on&&state.health.status==="ok"?"Refresh":"Connect"}</button></div>
+    ${state.health.on&&state.health.status==="error"?`<p class="small" style="color:var(--warn);margin-top:10px">Couldn't read Health Connect. Open Health Connect once, then tap Connect again.</p>`:""}
     ${state.health.on&&state.health.status==="denied"?`<p class="small" style="color:var(--warn);margin-top:10px">Permission not given. Tap Connect and allow Steps, Exercise, Sleep and Hydration.</p>`:""}
     ${state.health.on?`<p class="small mut" style="margin-top:10px">Set which quests auto-complete in <b>Quests → Edit</b>. In Samsung Health turn on <b>Settings → Health Connect</b> sync so your data shows up here.</p>
     <button class="btn danger full small" id="hcoff" style="margin-top:10px">Disconnect</button>`:""}`}
@@ -679,6 +684,7 @@ function bindSettings(){
     if(first){ const n=guessAuto(); if(n) setTimeout(()=>toast("❤️ "+n+" quests set to auto-complete"),600); }
     save(); try{ NATIVE.healthConnect(); }catch(e){} render();
   });
+  const hcget=$app.querySelector("#hcget"); hcget&&(hcget.onclick=()=>{ try{ NATIVE.healthInstall(); }catch(e){ toast("Search 'Health Connect' in the Play Store"); } });
   const hcoff=$app.querySelector("#hcoff"); hcoff&&(hcoff.onclick=()=>{ state.health.on=false; state.health.status=""; health=null; save(); render(); toast("Disconnected"); });
   const upd=$app.querySelector("#upd"); upd&&(upd.onclick=()=>{ try{ NATIVE.checkUpdates(); toast("Checking for updates…"); }catch(e){} });
   $app.querySelector("#cp").onclick=async()=>{
