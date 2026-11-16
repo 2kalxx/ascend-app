@@ -440,11 +440,11 @@ const AI_URL="https://claude.ai/artifact/V4pUg8SHuyfe84SE2cxdbw";
 function langPickerHTML(title){
   const q=norm(ob.q), match=l=>!q||norm(l[1]+" "+l[2]+" "+l[0]).includes(q);
   const avail=LANGS.filter(l=>COURSES[l[0]]&&match(l)), rest=LANGS.filter(l=>!COURSES[l[0]]&&match(l)), nC=Object.keys(COURSES).length;
-  return `<div class="center" style="margin:26px 0 14px"><div style="font-size:48px">🌍</div><h1 style="font-size:24px;margin-top:6px">${esc(title)}</h1><p class="mut small">${nC} offline course${nC>1?"s":""} · new ones arrive every night</p></div>
+  return `<div class="center" style="margin:26px 0 14px"><div style="font-size:48px">🌍</div><h1 style="font-size:24px;margin-top:6px">${esc(title)}</h1><p class="mut small">${nC} offline course${nC>1?"s":""} · more on the way</p></div>
     <input id="lq" placeholder="Search any language…" value="${esc(ob.q)}" style="margin-bottom:12px">
     ${avail.length?`<div class="zone" style="color:var(--acc2)">✅ Offline course</div>`:""}
     ${avail.map(l=>`<button class="langbtn" data-l="${l[0]}"><span class="fl">${l[3]}</span><span style="flex:1"><b>${esc(l[1])}</b> <span class="small mut">${esc(l[2])} · 30 units</span></span>${state&&state.langs[l[0]]?'<span class="chip">'+(state.langs[l[0]].xp||0)+' XP</span>':""}</button>`).join("")}
-    ${rest.length?`<div class="zone" style="color:var(--pur);margin-top:14px">✨ Learn now with AI in Claude · offline course coming</div>`:""}
+    ${rest.length?`<div class="zone" style="color:var(--pur);margin-top:14px">✨ Learn now with AI in Claude</div>`:""}
     ${rest.map(l=>`<button class="langbtn" data-ai="${l[0]}" style="opacity:.8"><span class="fl">${l[3]}</span><span style="flex:1"><b>${esc(l[1])}</b> <span class="small mut">${esc(l[2])}</span></span><span class="tiny" style="color:var(--pur)">AI ↗</span></button>`).join("")}
     ${q?`<button class="langbtn" data-ai="other"><span class="fl">🌐</span><span style="flex:1"><b>Learn "${esc(ob.q)}" with AI</b><br><span class="small mut">Any language or dialect – opens Lingua in Claude</span></span></button>`:""}
     <p class="tiny mut center" style="margin:14px 0 20px">AI languages open the Claude version of Lingua (uses your Claude account, needs internet).</p>`;
