@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0b0b10">
+<title>LiftRank</title>
+<style>
+:root{--bg:#0b0b10;--card:#16151d;--card2:#1f1d28;--line:#2c2a37;--txt:#f2f0f7;--mut:#8f8aa3;--acc:#ff8a1f;--acc2:#ffb44d;--ok:#3ddc84;--bad:#ff5a6a;--blue:#4cc3ff}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding:env(safe-area-inset-top) env(safe-area-inset-right) calc(76px + env(safe-area-inset-bottom)) env(safe-area-inset-left);min-height:100vh}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+input,select{font:inherit;color:var(--txt);background:var(--card2);border:1px solid var(--line);border-radius:12px;padding:11px 12px;width:100%;outline:none}
+input:focus{border-color:var(--acc)}
+.wrap{max-width:560px;margin:0 auto;padding:14px 16px}
+h1{font-size:22px;font-weight:800}h2{font-size:16px;font-weight:700;margin:22px 0 10px}
+.mut{color:var(--mut)}.small{font-size:13px}.tiny{font-size:11px}.center{text-align:center}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:16px}
+.row{display:flex;align-items:center;gap:10px}.between{justify-content:space-between}
+.btn{background:linear-gradient(180deg,var(--acc2),var(--acc));color:#2a1300;border-radius:14px;padding:13px 16px;font-weight:800}
+.btn.ghost{background:var(--card2);color:var(--txt);border:1px solid var(--line)}
+.btn.full{width:100%}.btn:disabled{opacity:.4}
+.btn.bad{background:transparent;border:1px solid #5a2430;color:var(--bad)}
+.chip{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;border-radius:999px;background:var(--card2);border:1px solid var(--line);font-size:13px;font-weight:600}
+.chip.on{background:#3a2410;border-color:var(--acc);color:var(--acc2)}
+.bar{height:7px;background:#0a0a0e;border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;border-radius:99px}
+nav{position:fixed;left:0;right:0;bottom:0;background:rgba(11,11,16,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);display:flex;justify-content:space-around;padding:6px 0 calc(6px + env(safe-area-inset-bottom));z-index:10}
+nav button{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--mut);padding:4px 12px}
+nav button .i{font-size:21px}nav button.on{color:var(--acc2)}
+.muscle{display:flex;align-items:center;gap:12px;background:var(--card);border:1.5px solid var(--line);border-radius:16px;padding:12px;margin-bottom:9px;width:100%;text-align:left}
+.badge{width:44px;height:44px;flex:none;display:grid;place-items:center}
+.tag{font-size:10px;font-weight:800;letter-spacing:.5px;padding:2px 7px;border-radius:6px;background:#3a2410;color:var(--acc2)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;justify-content:center;margin-top:10px}
+.legend span{display:flex;align-items:center;gap:5px;font-size:12px;color:var(--mut)}
+.dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.set{display:grid;grid-template-columns:34px 1fr 1fr 44px;gap:8px;align-items:center;margin-bottom:7px}
+.set input{padding:9px;text-align:center}
+.set .ck{height:40px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-weight:800}
+.set .ck.on{background:var(--ok);color:#03210f;border-color:var(--ok)}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top));transform:translateX(-50%);background:#2a1a0c;border:1px solid var(--acc);padding:10px 16px;border-radius:12px;font-weight:700;z-index:60;animation:pop .25s;max-width:92vw;text-align:center}
+@keyframes pop{from{opacity:0;transform:translate(-50%,-8px)}}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.65);display:flex;align-items:flex-end;justify-content:center;z-index:40}
+.sheet{background:var(--card);border:1px solid var(--line);border-radius:22px 22px 0 0;width:100%;max-width:560px;padding:18px 16px calc(20px + env(safe-area-inset-bottom));max-height:88vh;overflow:auto}
+.exrow{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:11px 4px;border-bottom:1px solid var(--line)}
+.timer{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(84px + env(safe-area-inset-bottom));background:#14202a;border:1px solid var(--blue);border-radius:999px;padding:8px 14px;font-weight:800;z-index:30;display:flex;gap:10px;align-items:center}
+.rankup{position:fixed;inset:0;background:radial-gradient(circle at 50% 40%,rgba(255,138,31,.35),rgba(0,0,0,.85));display:grid;place-items:center;z-index:70;animation:fade .3s}
+@keyframes fade{from{opacity:0}}
+.glow{animation:glow 1.6s infinite}@keyframes glow{50%{filter:drop-shadow(0 0 14px var(--acc))}}
+.seg{display:flex;gap:6px;flex-wrap:wrap}.seg button{padding:8px 12px;border-radius:10px;background:var(--card2);border:1px solid var(--line);font-size:13px}.seg button.on{border-color:var(--acc);background:#3a2410}
+svg .m{transition:fill .4s}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<nav id="nav"></nav>
+<div id="layer"></div>
+<div id="tm"></div>
+<script>
+(function(){
+"use strict";
+const LIFTRANK_WEB_VERSION = 1; // bump on every web update (the Android app reads this)
+const NATIVE = (typeof window.AppNative!=="undefined") ? window.AppNative : null;
+
+/* ================= ranks ================= */
+const TIERS=[["Untrained","#4a4658"],["Bronze","#d0773a"],["Silver","#b9c6d8"],["Gold","#f5b92e"],["Platinum","#3fd6c6"],["Diamond","#5ab8ff"],["Master","#ff4f72"],["Legend","#c56cff"]];
+const SUB=["III","II","I"];
+function rankOf(level){ // level 0..8
+  const l=Math.max(0,Math.min(7.999,level||0)), t=Math.floor(l), f=l-t;
+  return {tier:t,name:TIERS[t][0],color:TIERS[t][1],sub:t===0?"":SUB[Math.min(2,Math.floor(f*3))],label:TIERS[t][0]+(t===0?"":" "+SUB[Math.min(2,Math.floor(f*3))]),pts:Math.round(level*155),frac:f};
+}
+function badge(level,size){
+  const r=rankOf(level), s=size||40, c=r.color, n=r.tier;
+  const gem=n>=5?`<path d="M20 9l6 7-6 13-6-13z" fill="#fff" opacity=".55"/>`:"";
+  const stars=n>0?`<text x="20" y="26" text-anchor="middle" font-size="10" font-weight="900" fill="#1a1020">${r.sub}</text>`:`<text x="20" y="25" text-anchor="middle" font-size="12" font-weight="900" fill="#c9c4d8">–</text>`;
+  return `<svg width="${s}" height="${s}" viewBox="0 0 40 40"><path d="M20 2l15 6v11c0 9-6.5 15.5-15 19C11.5 34.5 5 28 5 19V8z" fill="${c}"/><path d="M20 2l15 6v11c0 9-6.5 15.5-15 19z" fill="#000" opacity=".15"/>${gem}${n>=5?"":stars}</svg>`;
+}
+
+/* ================= muscles & exercises ================= */
+const MUSCLES=[
+ ["chest","Chest","upper"],["shoulders","Shoulders","upper"],["biceps","Biceps","upper"],["triceps","Triceps","upper"],["forearms","Forearms","upper"],
+ ["traps","Traps","upper"],["upperback","Upper back","upper"],["lats","Lats","upper"],
+ ["abs","Abs","core"],["obliques","Obliques","core"],["lowerback","Lower back","core"],
+ ["glutes","Glutes","lower"],["quads","Quads","lower"],["hamstrings","Hamstrings","lower"],["calves","Calves","lower"]];
+const MNAME=Object.fromEntries(MUSCLES.map(m=>[m[0],m[1]]));
+/* kind: w = weight×reps (ratio of 1RM to bodyweight), d = dumbbell weight per hand, r = bodyweight reps, t = seconds
+   std: thresholds Bronze, Silver, Gold, Platinum, Diamond (male); prim / sec muscles; lower: lower-body lift (female factor) */
+const EX=[
+ ["bench","Bench press","w",[.5,.75,1,1.5,2],["chest"],["shoulders","triceps"]],
+ ["incline","Incline bench press","w",[.4,.6,.85,1.2,1.6],["chest","shoulders"],["triceps"]],
+ ["dbbench","Dumbbell bench press","d",[.2,.3,.45,.65,.85],["chest"],["shoulders","triceps"]],
+ ["fly","Machine chest fly","w",[.25,.45,.7,1,1.3],["chest"],[]],
+ ["pushup","Push-ups","r",[5,15,30,50,75],["chest"],["triceps","shoulders"]],
+ ["dips","Dips","r",[1,6,13,25,40],["triceps","chest"],["shoulders"]],
+ ["ohp","Overhead press","w",[.35,.5,.7,.9,1.15],["shoulders"],["triceps"]],
+ ["dbpress","Dumbbell shoulder press","d",[.12,.2,.3,.42,.55],["shoulders"],["triceps"]],
+ ["lateral","Lateral raise","d",[.05,.1,.15,.25,.35],["shoulders"],[]],
+ ["reardelt","Rear delt fly","d",[.05,.1,.15,.22,.3],["shoulders","upperback"],[]],
+ ["curl","Barbell curl","w",[.2,.4,.6,.85,1.15],["biceps"],["forearms"]],
+ ["dbcurl","Dumbbell curl","d",[.1,.15,.25,.37,.5],["biceps"],["forearms"]],
+ ["hammer","Hammer curl","d",[.1,.17,.27,.4,.52],["biceps","forearms"],[]],
+ ["pushdown","Triceps pushdown","w",[.25,.4,.6,.85,1.1],["triceps"],[]],
+ ["skull","Skull crusher","w",[.15,.3,.5,.75,1],["triceps"],[]],
+ ["pullup","Pull-ups","r",[1,4,10,18,25],["lats"],["biceps","upperback"]],
+ ["chinup","Chin-ups","r",[1,5,11,19,26],["lats","biceps"],["upperback"]],
+ ["pulldown","Lat pulldown","w",[.5,.75,1,1.3,1.65],["lats"],["biceps"]],
+ ["row","Barbell row","w",[.4,.6,.85,1.15,1.5],["upperback","lats"],["biceps","lowerback"]],
+ ["cablerow","Seated cable row","w",[.4,.6,.85,1.15,1.45],["upperback"],["lats","biceps"]],
+ ["dbrow","Dumbbell row","d",[.2,.35,.55,.8,1.05],["lats","upperback"],["biceps"]],
+ ["deadlift","Deadlift","w",[1,1.25,1.75,2.5,3],["lowerback","glutes","hamstrings"],["traps","forearms","quads"],1],
+ ["shrug","Barbell shrug","w",[.6,.9,1.3,1.8,2.3],["traps"],["forearms"]],
+ ["squat","Squat","w",[.75,1,1.5,2,2.75],["quads","glutes"],["lowerback","hamstrings"],1],
+ ["legpress","Leg press","w",[1.25,2,3,4.25,5.5],["quads"],["glutes"],1],
+ ["rdl","Romanian deadlift","w",[.6,.9,1.25,1.75,2.25],["hamstrings"],["glutes","lowerback"],1],
+ ["legcurl","Leg curl","w",[.25,.4,.65,.9,1.2],["hamstrings"],[],1],
+ ["legext","Leg extension","w",[.4,.65,1,1.4,1.85],["quads"],[],1],
+ ["hipthrust","Hip thrust","w",[.5,1,1.5,2.25,3],["glutes"],["hamstrings"],1],
+ ["bulgarian","Bulgarian split squat","d",[.1,.25,.4,.6,.85],["quads","glutes"],[],1],
+ ["calf","Standing calf raise","w",[.6,1,1.5,2.1,2.8],["calves"],[],1],
+ ["cablecrunch","Cable crunch","w",[.3,.5,.8,1.1,1.5],["abs"],["obliques"]],
+ ["legraise","Hanging leg raise","r",[1,5,12,20,30],["abs"],["obliques","forearms"]],
+ ["plank","Plank","t",[20,45,90,150,240],["abs"],["obliques","lowerback"]],
+ ["sideplank","Side plank","t",[15,30,60,90,150],["obliques"],["abs"]],
+ ["backext","Back extension","r",[5,12,20,30,45],["lowerback"],["glutes","hamstrings"]],
+ ["wristcurl","Wrist curl","w",[.15,.3,.45,.6,.8],["forearms"],[]]
+].map(([id,name,kind,std,prim,sec,lower])=>({id,name,kind,std,prim,sec,lower:!!lower}));
+const EXB=Object.fromEntries(EX.map(e=>[e.id,e]));
+const QUICK=["bench","squat","deadlift","ohp","pullup","row","curl","pushdown","hipthrust","rdl","calf","legraise","plank","lateral","shrug"];
+
+/* ================= helpers ================= */
+const $app=document.getElementById("app"),$nav=document.getElementById("nav"),$layer=document.getElementById("layer");
+const pad=n=>String(n).padStart(2,"0");
+const keyOf=d=>d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+const todayKey=()=>keyOf(new Date());
+const esc=s=>String(s==null?"":s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+function toast(m){const t=document.createElement("div");t.className="toast";t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),2200);}
+function sheet(html,bind){$layer.innerHTML='<div class="modal"><div class="sheet">'+html+'</div></div>';const m=$layer.querySelector(".modal");m.onclick=e=>{if(e.target===m)closeSheet();};bind&&bind($layer.querySelector(".sheet"));}
+function closeSheet(){$layer.innerHTML="";}
+const fmtDate=k=>new Date(k).toLocaleDateString(undefined,{weekday:"short",day:"numeric",month:"short"});
+
+/* ================= state ================= */
+const LS="liftrank_state_v1";
+let state=null, view="rank", filter="all", side="front", workout=null;
+function lsGet(){try{const s=localStorage.getItem(LS);return s?JSON.parse(s):null;}catch(e){return null;}}
+function save(){state.updatedAt=Date.now();try{localStorage.setItem(LS,JSON.stringify(state));}catch(e){}nativeSync();}
+function U(){return state.unit==="lb"?2.20462:1;}               // kg → display unit
+const toKg=v=>+v/U(), showW=kg=>Math.round(kg*U()*10)/10;
+const unitL=()=>state.unit==="lb"?"lb":"kg";
+
+/* ================= ranking engine ================= */
+const e1rm=(w,r)=>r<=1?w:w*(1+Math.min(r,12)/30);
+function stdFor(ex){
+  const f=state.sex==="f"?(ex.kind==="r"?0.45:ex.kind==="t"?0.85:ex.lower?0.7:0.55):1;
+  return ex.std.map(x=>x*f);
+}
+function exValue(ex,set){ // value used for ranking
+  if(ex.kind==="r") return +set.reps||0;
+  if(ex.kind==="t") return +set.reps||0;          // seconds stored in reps
+  return e1rm(+set.kg||0,+set.reps||0)/Math.max(30,state.bw||75);
+}
+function levelFor(ex,v){
+  const s=stdFor(ex), top=s[4], t=[s[0],s[1],s[2],s[3],s[4],top*(ex.kind==="w"||ex.kind==="d"?1.12:1.3),top*(ex.kind==="w"||ex.kind==="d"?1.25:1.6),top*(ex.kind==="w"||ex.kind==="d"?1.4:2)];
+  if(!(v>0)) return 0;
+  if(v<t[0]) return v/t[0];
+  for(let i=0;i<t.length-1;i++) if(v<t[i+1]) return 1+i+(v-t[i])/(t[i+1]-t[i]);
+  return 7.999;
+}
+function valueForLevel(ex,L){ // inverse of levelFor (used for "next rank" targets)
+  const s=stdFor(ex), top=s[4], m=ex.kind==="w"||ex.kind==="d";
+  const t=[s[0],s[1],s[2],s[3],s[4],top*(m?1.12:1.3),top*(m?1.25:1.6),top*(m?1.4:2)];
+  if(L<=1) return t[0]*L; const i=Math.min(6,Math.floor(L)-1), f=L-1-i; return t[i]+(t[i+1]-t[i])*f;
+}
+function bestPerExercise(){
+  const best={};
+  const consider=(exId,set,date)=>{ const ex=EXB[exId]; if(!ex) return; const v=exValue(ex,set); if(!(v>0)) return;
+    if(!best[exId]||v>best[exId].v) best[exId]={v,set,date}; };
+  (state.baseline||[]).forEach(b=>consider(b.ex,b,b.date));
+  state.workouts.forEach(w=>w.ex.forEach(e=>e.sets.forEach(st=>{ if(st.done) consider(e.id,st,w.date); })));
+  if(workout) workout.ex.forEach(e=>e.sets.forEach(st=>{ if(st.done) consider(e.id,st,workout.date); }));   // live sets count right away
+  return best;
+}
+function muscleLevels(best){
+  best=best||bestPerExercise();
+  const lv={}, src={}; MUSCLES.forEach(m=>{lv[m[0]]=0;});
+  for(const id in best){ const ex=EXB[id], L=levelFor(ex,best[id].v);
+    ex.prim.forEach(m=>{ if(L>lv[m]){lv[m]=L;src[m]=id;} });
+    ex.sec.forEach(m=>{ const s=L*0.8; if(s>lv[m]){lv[m]=s;src[m]=id+"*";} }); }
+  return {lv,src};
+}
+const overall=lv=>MUSCLES.reduce((a,m)=>a+lv[m[0]],0)/MUSCLES.length;
+
+/* ================= body map ================= */
+const FRONT={
+ chest:"M102,80 L132,77 Q141,93 133,111 Q117,119 102,113 Z",
+ shoulders:"M131,73 Q150,74 153,95 L141,104 Q138,86 131,79 Z",
+ biceps:"M141,106 Q154,119 151,146 L139,147 Q133,124 137,107 Z",
+ forearms:"M139,151 L152,150 Q159,179 153,206 L145,207 Q137,181 139,151 Z",
+ abs:"M102,117 L118,117 L118,178 Q110,187 102,187 Z",
+ obliques:"M120,116 L133,113 Q137,150 129,181 L120,179 Z",
+ quads:"M102,199 L127,192 Q139,240 131,290 L111,292 Q101,250 102,199 Z",
+ calves:"M112,305 L128,303 Q134,340 126,380 L116,380 Q108,340 112,305 Z",
+ traps:"M107,62 L124,70 L108,74 Z"};
+const BACK={
+ traps:"M100,58 L125,71 L117,97 L100,111 Z",
+ shoulders:"M127,74 Q150,74 153,95 L141,104 Q137,86 127,80 Z",
+ upperback:"M104,100 L126,93 L131,113 L106,119 Z",
+ lats:"M106,121 L133,109 Q137,141 121,168 L106,161 Z",
+ triceps:"M141,106 Q155,121 151,148 L139,148 Q133,124 137,107 Z",
+ forearms:"M139,152 L152,151 Q159,180 153,206 L145,207 Q137,181 139,152 Z",
+ lowerback:"M101,163 L120,170 L119,188 L101,188 Z",
+ glutes:"M101,191 Q131,186 133,214 Q121,233 101,227 Z",
+ hamstrings:"M104,233 L129,227 Q135,261 129,292 L110,292 Q102,262 104,233 Z",
+ calves:"M110,305 Q133,300 133,331 Q128,366 120,380 L114,380 Q103,340 110,305 Z"};
+function bodySVG(lv,which){
+  const P=which==="back"?BACK:FRONT, base="#2a2733";
+  const half=Object.entries(P).map(([m,d])=>{ const vis=filter==="all"||(MUSCLES.find(x=>x[0]===m)||[])[2]===filter;
+    const c=vis?rankOf(lv[m]).color:"#25222d"; return `<path class="m" data-m="${m}" d="${d}" fill="${c}" stroke="#0b0b10" stroke-width="1.2"/>`; }).join("");
+  const sil=`<ellipse cx="100" cy="32" rx="17" ry="21" fill="${base}"/><rect x="92" y="50" width="16" height="16" rx="5" fill="${base}"/>
+    <path d="M100,66 L131,72 Q150,74 155,98 Q160,150 157,206 L144,214 Q136,180 136,140 L133,182 L130,196 Q141,250 133,296 Q138,340 128,382 L132,396 L106,396 L109,380 Q103,330 106,300 L100,240 L94,300 Q97,330 91,380 L94,396 L68,396 L72,382 Q62,340 67,296 Q59,250 70,196 L67,182 L64,140 Q64,180 56,214 L43,206 Q40,150 45,98 Q50,74 69,72 Z" fill="${base}"/>`;
+  return `<svg viewBox="30 0 140 405" style="width:100%;max-width:170px;display:block;margin:0 auto">${sil}<g>${half}</g><g transform="translate(200,0) scale(-1,1)">${half}</g></svg>`;
+}
+
+/* ================= views ================= */
+function render(){
+  if(!state||!state.setup) return renderOnboarding();
+  $nav.style.display="flex";
+  const tabs=[["rank","🏆","Rankings"],["train","🏋️","Workout"],["history","📈","History"],["me","👤","Profile"]];
+  $nav.innerHTML=tabs.map(([k,i,l])=>`<button data-v="${k}" class="${view===k?"on":""}"><span class="i">${i}</span>${l}${k==="train"&&workout?" •":""}</button>`).join("");
+  $nav.querySelectorAll("button").forEach(b=>b.onclick=()=>{view=b.dataset.v;render();window.scrollTo(0,0);});
+  ({rank:renderRank,train:renderTrain,history:renderHistory,me:renderMe})[view]();
+  renderTimer();
+}
+
+/* ---------- rankings ---------- */
+function renderRank(){
+  const best=bestPerExercise(), {lv,src}=muscleLevels(best), ov=overall(lv), R=rankOf(ov);
+  const list=MUSCLES.filter(m=>filter==="all"||m[2]===filter);
+  const focus=MUSCLES.slice().sort((a,b)=>lv[a[0]]-lv[b[0]]).slice(0,3).map(m=>m[0]);
+  const nextLv=Math.floor(ov*3+1)/3;
+  $app.innerHTML=`
+    <div class="row between" style="margin:4px 0 12px"><h1>Muscle rankings</h1>${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="chip on" id="apkgo">📦 Update</button>`:""}</div>
+    <div class="card" style="background:radial-gradient(circle at 50% 0%,#2b1a10,var(--card) 60%)">
+      <div class="row" style="justify-content:center;gap:8px;margin-bottom:6px">${["front","back"].map(s=>`<button class="chip ${side===s?"on":""}" data-side="${s}">${s==="front"?"Front":"Back"}</button>`).join("")}<button class="chip" id="both">Both</button></div>
+      ${side==="both"?`<div class="row" style="gap:0">${["front","back"].map(s=>`<div style="flex:1">${bodySVG(lv,s)}</div>`).join("")}</div>`:bodySVG(lv,side)}
+      <div class="legend">${TIERS.map(t=>`<span><i class="dot" style="background:${t[1]}"></i>${t[0]}</span>`).join("")}</div>
+      <div class="center" style="margin-top:14px"><div class="small mut">Overall rank</div>
+        <div class="row" style="justify-content:center;gap:8px;margin-top:4px"><span class="glow">${badge(ov,46)}</span><div style="text-align:left"><div style="font-size:24px;font-weight:900;color:${R.color}">${R.label}</div><div class="small mut">${R.pts} points</div></div></div>
+        <div class="bar" style="margin:10px auto 0;max-width:240px"><i style="width:${Math.round(((ov*3)%1)*100)}%;background:${R.color}"></i></div>
+        <div class="tiny mut" style="margin-top:4px">${ov>=7.99?"Maxed out 👑":"Next: "+rankOf(nextLv).label}</div></div>
+    </div>
+    <div class="row" style="gap:8px;margin:16px 0 12px;overflow-x:auto">${[["all","All"],["upper","Upper body"],["lower","Lower body"],["core","Core"]].map(([k,l])=>`<button class="chip ${filter===k?"on":""}" data-f="${k}">${l}</button>`).join("")}</div>
+    ${list.slice().sort((a,b)=>lv[b[0]]-lv[a[0]]).map(m=>{ const L=lv[m[0]], r=rankOf(L); return `
+      <button class="muscle" data-mu="${m[0]}" style="border-color:${r.tier?r.color+"88":"var(--line)"}">
+        <div class="badge">${badge(L,40)}</div>
+        <div style="flex:1;min-width:0"><div class="row" style="gap:7px"><b style="font-size:16px">${esc(m[1])}</b>${focus.includes(m[0])?`<span class="tag">FOCUS</span>`:""}</div>
+          <div class="bar" style="margin-top:7px"><i style="width:${Math.round(r.frac*100)}%;background:${r.color}"></i></div>
+          <div class="tiny mut" style="margin-top:4px">${src[m[0]]?"from "+esc(EXB[src[m[0]].replace("*","")].name)+(src[m[0]].endsWith("*")?" (assist)":""):"no lifts logged yet"}</div></div>
+        <div style="text-align:right"><div style="font-weight:800;color:${r.color}">${r.label}</div><div class="small mut">${r.pts}</div></div>
+      </button>`; }).join("")}
+    <p class="tiny mut center" style="margin:10px 0 20px">Ranks compare your best lift (estimated 1-rep max) to your bodyweight (${showW(state.bw)} ${unitL()}) using common strength standards${state.sex==="f"?" for women":""}.</p>`;
+  $app.querySelectorAll("[data-side]").forEach(b=>b.onclick=()=>{side=b.dataset.side;render();});
+  $app.querySelector("#both").onclick=()=>{side="both";render();};
+  $app.querySelectorAll("[data-f]").forEach(b=>b.onclick=()=>{filter=b.dataset.f;render();});
+  $app.querySelectorAll("[data-mu],[data-m]").forEach(b=>b.onclick=()=>openMuscle(b.dataset.mu||b.dataset.m));
+  const ag=$app.querySelector("#apkgo"); ag&&(ag.onclick=()=>{ try{NATIVE.installApk();toast("Downloading update…");}catch(e){} });
+}
+function openMuscle(m){
+  const best=bestPerExercise(), {lv}=muscleLevels(best), L=lv[m], r=rankOf(L);
+  const exs=EX.filter(e=>e.prim.includes(m)||e.sec.includes(m)).sort((a,b)=>(b.prim.includes(m)?1:0)-(a.prim.includes(m)?1:0));
+  const nextL=Math.min(7.999,Math.floor(L*3+1)/3+0.0001);
+  sheet(`<div class="row"><div class="badge" style="width:56px;height:56px">${badge(L,54)}</div><div><h1>${esc(MNAME[m])}</h1><div style="color:${r.color};font-weight:800">${r.label} · ${r.pts} pts</div></div></div>
+    <p class="small mut" style="margin:10px 0 4px">Next rank: <b style="color:${rankOf(nextL).color}">${rankOf(nextL).label}</b>. Hit one of these:</p>
+    ${exs.map(e=>{ const b=best[e.id], cur=b?levelFor(e,b.v):0, prim=e.prim.includes(m), need=prim?nextL:nextL/0.8, tv=valueForLevel(e,Math.min(7.999,need));
+      const target=e.kind==="r"?Math.ceil(tv)+" reps":e.kind==="t"?Math.ceil(tv)+" s":showW(tv*state.bw/(1+5/30))+" "+unitL()+(e.kind==="d"?" per dumbbell":"")+" × 5";
+      const now=b?(e.kind==="r"?b.set.reps+" reps":e.kind==="t"?b.set.reps+" s":showW(b.set.kg)+" "+unitL()+" × "+b.set.reps):"—";
+      return `<div class="exrow" style="cursor:default"><div style="flex:1"><b>${esc(e.name)}</b>${prim?"":` <span class="tiny mut">assist</span>`}<div class="tiny mut">Best: ${now} · ${rankOf(cur).label}</div></div><div class="small" style="text-align:right;color:var(--acc2)">${need>7.999?"max":target}</div></div>`; }).join("")}
+    <button class="btn full" id="tr" style="margin-top:16px">Train ${esc(MNAME[m])} now</button>`,s=>{
+    s.querySelector("#tr").onclick=()=>{ closeSheet(); if(!workout) startWorkout(); exs.filter(e=>e.prim.includes(m)).slice(0,2).forEach(e=>addExercise(e.id)); view="train"; render(); };
+  });
+}
+
+/* ---------- workout ---------- */
+function startWorkout(){ workout={id:uid(),date:todayKey(),start:Date.now(),ex:[]}; state.active=workout; save(); }
+function lastSetsFor(id){ for(let i=state.workouts.length-1;i>=0;i--){ const e=state.workouts[i].ex.find(x=>x.id===id); if(e) return e.sets.filter(s=>s.done); } return []; }
+function addExercise(id){ if(workout.ex.some(e=>e.id===id)) return; const last=lastSetsFor(id);
+  workout.ex.push({id,sets:(last.length?last:[{kg:"",reps:""}]).slice(0,4).map(s=>({kg:s.kg,reps:s.reps,done:false}))}); save(); }
+let timer=null;
+function renderTimer(){
+  const el=document.getElementById("tm"); if(!timer){ el.innerHTML=""; return; }
+  const left=Math.max(0,Math.round((timer.end-Date.now())/1000));
+  el.innerHTML=`<div class="timer">⏱ Rest ${Math.floor(left/60)}:${pad(left%60)} <button id="tp" class="chip">+30</button><button id="tx" class="chip">✕</button></div>`;
+  el.querySelector("#tp").onclick=()=>{timer.end+=30000;renderTimer();};
+  el.querySelector("#tx").onclick=()=>{timer=null;renderTimer();};
+  if(left===0){ timer=null; try{navigator.vibrate&&navigator.vibrate([200,100,200]);}catch(e){} try{NATIVE&&NATIVE.buzz&&NATIVE.buzz();}catch(e){} toast("💪 Rest over – next set!"); renderTimer(); }
+}
+setInterval(()=>{ if(timer) renderTimer(); },1000);
+function renderTrain(){
+  if(!workout){
+    const recent=[...new Set(state.workouts.slice().reverse().flatMap(w=>w.ex.map(e=>e.id)))].slice(0,6);
+    $app.innerHTML=`<h1 style="margin:4px 0 12px">Workout</h1>
+      <button class="btn full" id="st" style="padding:18px;font-size:17px">▶ Start workout</button>
+      ${state.workouts.length?`<h2>Repeat a workout</h2>${state.workouts.slice(-3).reverse().map(w=>`<button class="exrow" data-rep="${w.id}"><div style="flex:1"><b>${fmtDate(w.date)}</b><div class="tiny mut">${w.ex.map(e=>esc(EXB[e.id]?EXB[e.id].name:e.id)).join(" · ")}</div></div><span class="mut">↻</span></button>`).join("")}`:""}
+      <p class="small mut center" style="margin-top:20px">Log your sets – every new best lift updates your muscle ranks.</p>`;
+    $app.querySelector("#st").onclick=()=>{startWorkout();render();};
+    $app.querySelectorAll("[data-rep]").forEach(b=>b.onclick=()=>{ const w=state.workouts.find(x=>x.id===b.dataset.rep); startWorkout(); w.ex.forEach(e=>addExercise(e.id)); render(); });
+    return;
+  }
+  const mins=Math.floor((Date.now()-workout.start)/60000);
+  $app.innerHTML=`<div class="row between" style="margin:4px 0 12px"><div><h1>Workout</h1><div class="small mut">${mins} min · ${workout.ex.reduce((a,e)=>a+e.sets.filter(s=>s.done).length,0)} sets done</div></div><button class="btn" id="fin" style="padding:10px 16px">Finish</button></div>
+    ${workout.ex.map((e,ei)=>{ const ex=EXB[e.id], lbl=ex.kind==="r"?["+"+unitL(),"reps"]:ex.kind==="t"?["","seconds"]:[unitL()+(ex.kind==="d"?" / hand":""),"reps"];
+      return `<div class="card" style="margin-bottom:12px"><div class="row between" style="margin-bottom:10px"><b style="font-size:16px">${esc(ex.name)}</b><button class="tiny mut" data-rm="${ei}">Remove</button></div>
+      <div class="set tiny mut"><span>SET</span><span class="center">${lbl[0]||"–"}</span><span class="center">${lbl[1]}</span><span></span></div>
+      ${e.sets.map((st,si)=>`<div class="set"><span class="center mut">${si+1}</span>
+        ${ex.kind==="t"?`<span class="center mut">–</span>`:`<input inputmode="decimal" data-kg="${ei}-${si}" value="${st.kg===""?"":showW(+st.kg)}" placeholder="${ex.kind==="r"?"0":"0"}">`}
+        <input inputmode="numeric" data-rp="${ei}-${si}" value="${esc(st.reps)}" placeholder="0">
+        <button class="ck ${st.done?"on":""}" data-dn="${ei}-${si}">✓</button></div>`).join("")}
+      <div class="row" style="gap:8px;margin-top:4px"><button class="chip" data-add="${ei}">+ Set</button>${e.sets.length>1?`<button class="chip" data-del="${ei}">− Set</button>`:""}<span class="tiny mut" style="margin-left:auto">${prText(e.id)}</span></div></div>`; }).join("")}
+    <button class="btn ghost full" id="addx">+ Add exercise</button>
+    <div class="row" style="gap:6px;margin-top:12px;justify-content:center"><span class="small mut">Rest timer:</span>${[60,90,120,180].map(s=>`<button class="chip ${state.rest===s?"on":""}" data-rest="${s}">${s<120?s+"s":(s/60)+"m"}</button>`).join("")}</div>
+    <button class="btn bad full" id="cancel" style="margin:18px 0 10px">Discard workout</button>`;
+  $app.querySelector("#fin").onclick=finishWorkout;
+  $app.querySelector("#addx").onclick=pickExercise;
+  $app.querySelector("#cancel").onclick=()=>sheet(`<p style="margin-bottom:14px">Discard this workout? Nothing will be saved.</p><div class="row"><button class="btn ghost full" id="k">Keep</button><button class="btn bad full" id="d">Discard</button></div>`,s=>{s.querySelector("#k").onclick=closeSheet;s.querySelector("#d").onclick=()=>{closeSheet();workout=null;state.active=null;timer=null;save();render();};});
+  $app.querySelectorAll("[data-rest]").forEach(b=>b.onclick=()=>{state.rest=+b.dataset.rest;save();render();});
+  $app.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{workout.ex.splice(+b.dataset.rm,1);save();render();});
+  $app.querySelectorAll("[data-add]").forEach(b=>b.onclick=()=>{const e=workout.ex[+b.dataset.add],l=e.sets[e.sets.length-1];e.sets.push({kg:l?l.kg:"",reps:l?l.reps:"",done:false});save();render();});
+  $app.querySelectorAll("[data-del]").forEach(b=>b.onclick=()=>{workout.ex[+b.dataset.del].sets.pop();save();render();});
+  $app.querySelectorAll("[data-kg]").forEach(i=>i.onchange=()=>{const [a,b]=i.dataset.kg.split("-").map(Number);workout.ex[a].sets[b].kg=i.value===""?"":Math.round(toKg(parseFloat(i.value.replace(",","."))||0)*100)/100;save();});
+  $app.querySelectorAll("[data-rp]").forEach(i=>i.onchange=()=>{const [a,b]=i.dataset.rp.split("-").map(Number);workout.ex[a].sets[b].reps=i.value===""?"":parseInt(i.value)||0;save();});
+  $app.querySelectorAll("[data-dn]").forEach(b=>b.onclick=()=>{
+    document.activeElement&&document.activeElement.blur&&document.activeElement.blur();
+    const [a,c]=b.dataset.dn.split("-").map(Number), e=workout.ex[a], st=e.sets[c], ex=EXB[e.id];
+    // read values straight from the inputs (onchange may not have fired yet)
+    const ki=$app.querySelector(`[data-kg="${a}-${c}"]`), ri=$app.querySelector(`[data-rp="${a}-${c}"]`);
+    if(ki&&ki.value!=="") st.kg=Math.round(toKg(parseFloat(ki.value.replace(",","."))||0)*100)/100; if(ri) st.reps=ri.value===""?"":parseInt(ri.value)||0;
+    if(!st.done && !(+st.reps>0)){ toast(ex.kind==="t"?"Enter the seconds first":"Enter your reps first"); return; }
+    if(!st.done && (ex.kind==="w"||ex.kind==="d") && !(+st.kg>0)){ toast("Enter the weight first"); return; }
+    const before=muscleLevels().lv;
+    st.done=!st.done; save();
+    if(st.done){ timer={end:Date.now()+(state.rest||90)*1000};
+      const after=muscleLevels().lv, ups=MUSCLES.filter(m=>rankOf(after[m[0]]).label!==rankOf(before[m[0]]).label&&after[m[0]]>before[m[0]]);
+      if(ups.length) showRankUp(ups.map(m=>[m[1],after[m[0]]]).sort((x,y)=>y[1]-x[1]));
+      else if(isPR(e.id,st)) toast("🔥 New personal record!"); }
+    render();
+  });
+}
+function isPR(id,st){ const ex=EXB[id], v=exValue(ex,st); let best=0;
+  if(workout) workout.ex.forEach(e=>{ if(e.id===id) e.sets.forEach(s=>{ if(s.done&&s!==st) best=Math.max(best,exValue(ex,s)); }); }); (state.baseline||[]).forEach(b=>{if(b.ex===id)best=Math.max(best,exValue(ex,b));});
+  state.workouts.forEach(w=>w.ex.forEach(e=>{ if(e.id===id) e.sets.forEach(s=>{ if(s.done) best=Math.max(best,exValue(ex,s)); }); })); return v>best; }
+function prText(id){ const b=bestPerExercise()[id]; if(!b) return "No record yet"; const ex=EXB[id]; return "Best: "+(ex.kind==="r"?b.set.reps+" reps":ex.kind==="t"?b.set.reps+" s":showW(b.set.kg)+"×"+b.set.reps); }
+function pickExercise(){
+  let q="", mf="all";
+  const draw=s=>{ const list=EX.filter(e=>(mf==="all"||e.prim.includes(mf)||e.sec.includes(mf))&&e.name.toLowerCase().includes(q.toLowerCase()));
+    s.innerHTML=`<h2 style="margin-top:0">Add exercise</h2><input id="q" placeholder="Search…" value="${esc(q)}">
+      <div class="row" style="gap:6px;overflow-x:auto;margin:10px 0">${[["all","All"]].concat(MUSCLES.map(m=>[m[0],m[1]])).map(([k,l])=>`<button class="chip ${mf===k?"on":""}" data-mf="${k}" style="flex:none">${l}</button>`).join("")}</div>
+      ${list.map(e=>`<button class="exrow" data-pick="${e.id}"><div style="flex:1"><b>${esc(e.name)}</b><div class="tiny mut">${e.prim.map(m=>MNAME[m]).join(", ")}${e.sec.length?" · also "+e.sec.map(m=>MNAME[m]).join(", "):""}</div></div><span style="color:var(--acc2);font-size:20px">＋</span></button>`).join("")}`;
+    const qi=s.querySelector("#q"); qi.oninput=()=>{q=qi.value;draw(s);const n=s.querySelector("#q");n.focus();n.setSelectionRange(q.length,q.length);};
+    s.querySelectorAll("[data-mf]").forEach(b=>b.onclick=()=>{mf=b.dataset.mf;draw(s);});
+    s.querySelectorAll("[data-pick]").forEach(b=>b.onclick=()=>{addExercise(b.dataset.pick);closeSheet();render();});
+  };
+  sheet(`<div id="pk"></div>`,s=>draw(s.querySelector("#pk")));
+}
+function finishWorkout(){
+  const done=workout.ex.map(e=>({id:e.id,sets:e.sets.filter(s=>s.done)})).filter(e=>e.sets.length);
+  if(!done.length){ toast("Tick ✓ at least one set first"); return; }
+  const w={id:workout.id,date:workout.date,mins:Math.max(1,Math.round((Date.now()-workout.start)/60000)),ex:done.map(e=>({id:e.id,sets:e.sets}))};
+  const vol=w.ex.reduce((a,e)=>a+e.sets.reduce((b,s)=>b+(+s.kg||0)*(+s.reps||0),0),0);
+  state.workouts.push(w); workout=null; state.active=null; timer=null; save();
+  const t=todayKey(); if(state.lastTrain!==t){ state.streakW=(state.streakW||0)+1; state.lastTrain=t; save(); }
+  view="history"; render();
+  sheet(`<div class="center"><div style="font-size:56px">💪</div><h1 style="margin:6px 0">Workout saved!</h1>
+    <p class="mut">${w.mins} min · ${w.ex.reduce((a,e)=>a+e.sets.length,0)} sets · ${Math.round(showW(vol)).toLocaleString()} ${unitL()} volume</p>
+    <button class="btn full" id="ok" style="margin-top:16px">See my ranks</button></div>`,s=>s.querySelector("#ok").onclick=()=>{closeSheet();view="rank";render();});
+}
+function showRankUp(list){
+  const el=document.createElement("div"); el.className="rankup";
+  el.innerHTML=`<div class="center"><div class="glow" style="display:inline-block">${badge(list[0][1],120)}</div><div style="font-size:15px;color:var(--acc2);font-weight:800;letter-spacing:2px;margin-top:10px">RANK UP!</div>
+    ${list.map(([n,l])=>`<div style="font-size:22px;font-weight:900;margin-top:6px">${esc(n)} → <span style="color:${rankOf(l).color}">${rankOf(l).label}</span></div>`).join("")}
+    <button class="btn" style="margin-top:22px;padding:12px 30px">Let's go</button></div>`;
+  document.body.appendChild(el); try{NATIVE&&NATIVE.buzz&&NATIVE.buzz();}catch(e){}
+  el.querySelector("button").onclick=()=>el.remove(); setTimeout(()=>el.remove(),6000);
+}
+
+/* ---------- history ---------- */
+function renderHistory(){
+  const ws=state.workouts.slice().reverse(), best=bestPerExercise();
+  const weeks={}; state.workouts.forEach(w=>{ const d=new Date(w.date); const k=keyOf(new Date(d.getFullYear(),d.getMonth(),d.getDate()-((d.getDay()+6)%7))); weeks[k]=(weeks[k]||0)+1; });
+  const wk=[];for(let i=7;i>=0;i--){const d=new Date();d.setDate(d.getDate()-((d.getDay()+6)%7)-i*7);const k=keyOf(d);wk.push([k,weeks[k]||0]);}
+  const mx=Math.max(3,...wk.map(x=>x[1]));
+  $app.innerHTML=`<h1 style="margin:4px 0 12px">History</h1>
+    <div class="row" style="gap:8px"><div class="card center" style="flex:1;padding:12px"><b style="font-size:22px">${state.workouts.length}</b><div class="tiny mut">WORKOUTS</div></div>
+      <div class="card center" style="flex:1;padding:12px"><b style="font-size:22px">${Object.keys(best).length}</b><div class="tiny mut">EXERCISES</div></div>
+      <div class="card center" style="flex:1;padding:12px"><b style="font-size:22px">${wk[wk.length-1][1]}</b><div class="tiny mut">THIS WEEK</div></div></div>
+    <h2>Workouts per week</h2><div class="card"><div class="row" style="align-items:flex-end;gap:6px;height:100px">${wk.map(([k,v],i)=>`<div style="flex:1;text-align:center"><div style="height:${Math.round(v/mx*76)}px;min-height:3px;background:${i===wk.length-1?"var(--acc)":"#3a3546"};border-radius:6px 6px 2px 2px"></div><div class="tiny mut" style="margin-top:3px">${new Date(k).getDate()}.${new Date(k).getMonth()+1}</div></div>`).join("")}</div></div>
+    <h2>Personal records</h2><div class="card" style="padding:4px 14px">${Object.keys(best).length?Object.entries(best).sort((a,b)=>levelFor(EXB[b[0]],b[1].v)-levelFor(EXB[a[0]],a[1].v)).map(([id,b])=>{ const ex=EXB[id], L=levelFor(ex,b.v);
+      return `<div class="exrow" style="cursor:default">${badge(L,30)}<div style="flex:1"><b>${esc(ex.name)}</b><div class="tiny mut">${ex.kind==="r"?b.set.reps+" reps":ex.kind==="t"?b.set.reps+" s":showW(b.set.kg)+" "+unitL()+" × "+b.set.reps+" · 1RM ≈ "+showW(e1rm(+b.set.kg,+b.set.reps))+" "+unitL()}</div></div><span class="small" style="color:${rankOf(L).color};font-weight:800">${rankOf(L).label}</span></div>`; }).join(""):'<p class="small mut" style="padding:12px 0">No records yet.</p>'}</div>
+    <h2>Past workouts</h2>${ws.length?ws.map(w=>`<div class="card" style="margin-bottom:9px;padding:12px 14px"><div class="row between"><b>${fmtDate(w.date)}</b><span class="tiny mut">${w.mins} min</span></div>
+      ${w.ex.map(e=>`<div class="small" style="margin-top:4px"><span class="mut">${esc(EXB[e.id]?EXB[e.id].name:e.id)}:</span> ${e.sets.map(s=>EXB[e.id]&&EXB[e.id].kind==="t"?s.reps+"s":(+s.kg?showW(+s.kg)+"×":"")+s.reps).join(", ")}</div>`).join("")}
+      <button class="tiny mut" data-delw="${w.id}" style="margin-top:6px">Delete</button></div>`).join(""):'<p class="small mut">No workouts yet.</p>'}`;
+  $app.querySelectorAll("[data-delw]").forEach(b=>b.onclick=()=>sheet(`<p style="margin-bottom:14px">Delete this workout? Ranks are recalculated.</p><div class="row"><button class="btn ghost full" id="k">Keep</button><button class="btn bad full" id="d">Delete</button></div>`,s=>{s.querySelector("#k").onclick=closeSheet;s.querySelector("#d").onclick=()=>{state.workouts=state.workouts.filter(w=>w.id!==b.dataset.delw);save();closeSheet();render();};}));
+}
+
+/* ---------- profile ---------- */
+function renderMe(){
+  $app.innerHTML=`<h1 style="margin:4px 0 12px">Profile</h1>
+    <div class="card">
+      <label class="small mut">Name</label><input id="nm" value="${esc(state.name||"")}" maxlength="24" style="margin:4px 0 12px">
+      <label class="small mut">Bodyweight (${unitL()})</label><input id="bw" inputmode="decimal" value="${showW(state.bw)}" style="margin:4px 0 12px">
+      <label class="small mut">Strength standards</label><div class="seg" style="margin:6px 0 12px">${[["m","Male"],["f","Female"]].map(([k,l])=>`<button data-sex="${k}" class="${state.sex===k?"on":""}">${l}</button>`).join("")}</div>
+      <label class="small mut">Units</label><div class="seg" style="margin-top:6px">${["kg","lb"].map(k=>`<button data-unit="${k}" class="${state.unit===k?"on":""}">${k}</button>`).join("")}</div>
+    </div>
+    <h2>Known lifts</h2><div class="card"><p class="small mut" style="margin-bottom:10px">Lifts you entered at the start (count toward your ranks).</p><button class="btn ghost full" id="base">Edit known lifts</button></div>
+    ${NATIVE?`<h2>🔔 Training reminder</h2><div class="card"><div class="row between"><span><b>Remind me to train</b><br><span class="small mut">Only on days you haven't logged a workout</span></span><button class="btn ${state.rem&&state.rem.on?"":"ghost"}" style="padding:7px 14px" id="remon">${state.rem&&state.rem.on?"On":"Off"}</button></div>
+      ${state.rem&&state.rem.on?`<input type="time" id="remt" value="${esc(state.rem.t)}" style="margin-top:10px">`:""}</div>`:""}
+    <h2>Backup</h2><div class="card"><div class="row"><button class="btn ghost full" id="cp">Copy backup</button><button class="btn ghost full" id="rs">Restore…</button></div></div>
+    <p class="tiny mut center" style="margin:16px 0">LiftRank ${esc(NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web")} · content v${LIFTRANK_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?' · <button id="upd" style="color:var(--blue)">Check for updates</button>':""}</p>`;
+  const nm=$app.querySelector("#nm"); nm.onchange=()=>{state.name=nm.value.trim();save();toast("Saved");};
+  const bw=$app.querySelector("#bw"); bw.onchange=()=>{const v=toKg(parseFloat(bw.value.replace(",","."))||0); if(v>=30&&v<=300){state.bw=Math.round(v*10)/10;save();toast("Bodyweight updated – ranks recalculated");} else toast("Enter a realistic bodyweight");};
+  $app.querySelectorAll("[data-sex]").forEach(b=>b.onclick=()=>{state.sex=b.dataset.sex;save();render();});
+  $app.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>{state.unit=b.dataset.unit;save();render();});
+  $app.querySelector("#base").onclick=()=>editBaseline(false);
+  const ro=$app.querySelector("#remon"); ro&&(ro.onclick=()=>{state.rem=state.rem||{on:false,t:"18:00"};state.rem.on=!state.rem.on;if(state.rem.on){try{NATIVE.askPermission();}catch(e){}toast("Reminder at "+state.rem.t);}save();render();});
+  const rt=$app.querySelector("#remt"); rt&&(rt.onchange=()=>{if(/^\d\d:\d\d$/.test(rt.value)){state.rem.t=rt.value;save();toast("Reminder at "+rt.value);}});
+  const up=$app.querySelector("#upd"); up&&(up.onclick=()=>{try{NATIVE.checkUpdates();toast("Checking for updates…");}catch(e){}});
+  $app.querySelector("#cp").onclick=async()=>{const txt=JSON.stringify(state);try{await navigator.clipboard.writeText(txt);toast("Backup copied");}catch(e){sheet('<h2 style="margin-top:0">Your backup</h2><textarea rows="8" readonly style="width:100%;background:var(--card2);color:var(--txt);border-radius:12px;padding:10px">'+esc(txt)+'</textarea><button class="btn full" style="margin-top:10px" id="dn">Done</button>',s=>{s.querySelector("#dn").onclick=closeSheet;});}};
+  $app.querySelector("#rs").onclick=()=>sheet('<h2 style="margin-top:0">Restore backup</h2><textarea id="rt2" rows="8" style="width:100%;background:var(--card2);color:var(--txt);border-radius:12px;padding:10px" placeholder="Paste backup"></textarea><button class="btn full" style="margin-top:10px" id="rok">Restore</button>',s=>{s.querySelector("#rok").onclick=()=>{try{const d=JSON.parse(s.querySelector("#rt2").value);if(!d||!Array.isArray(d.workouts))throw 0;state=fix(d);save();closeSheet();render();toast("Restored ✓");}catch(e){toast("Not a LiftRank backup");}};});
+}
+
+/* ---------- onboarding ---------- */
+let ob={step:0,name:"",sex:"m",bw:"",unit:"kg"};
+function renderOnboarding(){
+  $nav.style.display="none";
+  if(ob.step===0){
+    $app.innerHTML=`<div class="center" style="margin:44px 0 24px"><div style="font-size:60px">🏋️</div><h1 style="font-size:30px">LiftRank</h1><p class="mut" style="margin-top:6px">Rank every muscle from Untrained to Legend – based on your real lifts.</p></div>
+      <label class="small mut">Your name</label><input id="nm" maxlength="24" value="${esc(ob.name)}" style="margin:4px 0 12px">
+      <label class="small mut">Strength standards</label><div class="seg" style="margin:6px 0 12px">${[["m","Male"],["f","Female"]].map(([k,l])=>`<button data-sex="${k}" class="${ob.sex===k?"on":""}">${l}</button>`).join("")}</div>
+      <label class="small mut">Units</label><div class="seg" style="margin:6px 0 12px">${["kg","lb"].map(k=>`<button data-unit="${k}" class="${ob.unit===k?"on":""}">${k}</button>`).join("")}</div>
+      <label class="small mut">Bodyweight (${ob.unit})</label><input id="bw" inputmode="decimal" value="${esc(ob.bw)}" placeholder="e.g. ${ob.unit==="kg"?75:165}" style="margin:4px 0 18px">
+      <button class="btn full" id="go">Continue</button>`;
+    const keep=()=>{ob.name=$app.querySelector("#nm").value;ob.bw=$app.querySelector("#bw").value;};
+    $app.querySelectorAll("[data-sex]").forEach(b=>b.onclick=()=>{keep();ob.sex=b.dataset.sex;render();});
+    $app.querySelectorAll("[data-unit]").forEach(b=>b.onclick=()=>{keep();ob.unit=b.dataset.unit;render();});
+    $app.querySelector("#go").onclick=()=>{ keep(); let bw=parseFloat(String(ob.bw).replace(",","."));
+      if(!(bw>0)){ toast("Enter your bodyweight"); return; } if(ob.unit==="lb") bw=bw/2.20462; if(bw<30||bw>300){ toast("Enter a realistic bodyweight"); return; }
+      state={v:1,name:ob.name.trim(),sex:ob.sex,unit:ob.unit,bw:Math.round(bw*10)/10,workouts:[],baseline:[],rest:90,rem:{on:false,t:"18:00"},created:Date.now(),setup:false};
+      ob.step=1; save(); render(); };
+    return;
+  }
+  editBaseline(true);
+}
+function editBaseline(first){
+  const vals={}; (state.baseline||[]).forEach(b=>vals[b.ex]=b);
+  const html=`<h1 style="margin:${first?"24px":"0"} 0 4px">Your best lifts</h1><p class="small mut" style="margin-bottom:12px">Enter what you can do right now (a recent best set). Skip anything you don't know – you can also just start logging workouts.</p>
+    ${QUICK.map(id=>{ const ex=EXB[id], v=vals[id]||{}; return `<div class="row" style="margin-bottom:8px"><div style="flex:1"><b class="small">${esc(ex.name)}</b><div class="tiny mut">${ex.prim.map(m=>MNAME[m]).join(", ")}</div></div>
+      ${ex.kind==="w"||ex.kind==="d"?`<input data-bk="${id}" inputmode="decimal" placeholder="${unitL()}" value="${v.kg?showW(v.kg):""}" style="width:76px;padding:9px">`:""}<input data-br="${id}" inputmode="numeric" placeholder="${ex.kind==="t"?"sec":"reps"}" value="${v.reps||""}" style="width:${ex.kind==="w"||ex.kind==="d"?62:110}px;padding:9px"></div>`; }).join("")}
+    <button class="btn full" id="sv" style="margin-top:12px">${first?"Show my ranks 🏆":"Save"}</button>${first?`<button class="btn ghost full small" id="skip" style="margin-top:8px">Skip for now</button>`:""}`;
+  const apply=root=>{ const out=[], t=todayKey();
+    QUICK.forEach(id=>{ const ex=EXB[id], k=root.querySelector(`[data-bk="${id}"]`), r=root.querySelector(`[data-br="${id}"]`);
+      const kg=k&&k.value!==""?toKg(parseFloat(k.value.replace(",","."))||0):0, reps=r&&r.value!==""?parseInt(r.value)||0:0;
+      if((ex.kind==="w"||ex.kind==="d")?(kg>0&&reps>0):reps>0) out.push({ex:id,kg:Math.round(kg*100)/100,reps:reps||1,date:t}); });
+    state.baseline=out; };
+  if(first){
+    $app.innerHTML=html;
+    $app.querySelector("#sv").onclick=()=>{ apply($app); state.setup=true; save(); view="rank"; render(); window.scrollTo(0,0); toast(state.baseline.length?"Here are your ranks!":"Log a workout to get ranked"); };
+    $app.querySelector("#skip").onclick=()=>{ state.setup=true; save(); view="rank"; render(); };
+  } else sheet(html,s=>{ s.querySelector("#sv").onclick=()=>{ apply(s); save(); closeSheet(); render(); toast("Saved – ranks updated"); }; });
+}
+
+/* ================= Android bridge ================= */
+let apkUpdate=null;
+window.ascendApkUpdate=function(v){ apkUpdate=v; if(state&&state.setup&&view==="rank") render(); };
+window.ascendToast=function(m){ toast(m); };
+function nativeSync(){
+  if(!NATIVE||!state||!state.setup) return;
+  try{ const t=todayKey(), trained=state.workouts.some(w=>w.date===t)?1:0;
+    NATIVE.report(t,trained,1,state.streakW||0,state.name||"");
+    const r=state.rem||{on:false,t:"18:00"}; NATIVE.setReminders(JSON.stringify({m:{on:false,t:"08:00"},e:{on:!!r.on,t:r.t}})); }catch(e){}
+}
+function fix(s){ s.workouts=s.workouts||[]; s.baseline=s.baseline||[]; s.rest=s.rest||90; s.rem=s.rem||{on:false,t:"18:00"}; s.unit=s.unit||"kg"; s.sex=s.sex||"m"; return s; }
+
+/* ================= boot ================= */
+state=lsGet(); if(state) fix(state);
+if(state&&state.active){ workout=state.active; }
+render(); nativeSync();
+try{ const seen=+localStorage.getItem("liftrank_seen_ver")||0; if(state&&seen&&seen<LIFTRANK_WEB_VERSION) setTimeout(()=>toast("✨ LiftRank updated"),400); localStorage.setItem("liftrank_seen_ver",String(LIFTRANK_WEB_VERSION)); }catch(e){}
+window.addEventListener("focus",()=>{ if(state&&state.setup) render(); });
+window.__lr={get state(){return state;},muscleLevels,levelFor,EXB,rankOf,valueForLevel};
+})();
+</script>
+</body>
+</html>
