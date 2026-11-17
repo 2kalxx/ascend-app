@@ -1,7 +1,7 @@
 {
-  "web": 5,
+  "web": 6,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Moving obstacles: spinning crosses & triangles, sliding beams; denser stages"
+  "notes": "Gates slide left/right with 0.5s pauses, never cross obstacles"
 }

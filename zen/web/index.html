@@ -80,7 +80,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 5; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 6; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -159,11 +159,16 @@ function spinEdges(s){ const L=s.len, a=s.a;
   const e=[{x1:s.x-Math.cos(a)*L,y1:s.y-Math.sin(a)*L,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:8}];
   if(s.kind==="cross") e.push({x1:s.x+Math.sin(a)*L,y1:s.y-Math.cos(a)*L,x2:s.x-Math.sin(a)*L,y2:s.y+Math.cos(a)*L,w:8});
   return e; }
+// gates slide to one side, wait 0.5 s, slide back, wait 0.5 s …
+function moveGate(q,t){ const d=q.xb-q.xa, run=d/q.sp, per=2*run+1; let u=(t+q.ph)%per, x;
+  if(u<run) x=q.xa+d*(u/run); else if(u<run+0.5) x=q.xb; else if(u<2*run+0.5) x=q.xb-d*((u-run-0.5)/run); else x=q.xa;
+  q.x1=x; q.x2=x+q.w; }
 function sliderSeg(s){ return {x1:s.x-s.len,y1:s.y,x2:s.x+s.len,y2:s.y,w:8}; }
 function moveSlider(s,t){ s.x=s.x0+Math.sin(t*s.sp+s.ph)*s.amp; s.vx=Math.cos(t*s.sp+s.ph)*s.sp*s.amp; }
 // is a round area free of everything already placed?
 function areaFree(b,x,y,rad){
   if(x-rad<28||x+rad>W-28||y-rad<70||y+rad>H-40) return false;
+  for(const g of b.gates||[]) if(Math.abs(g.y-y)<rad+22&&x+rad>g.xa-10&&x-rad<g.xb+g.w+10) return false;
   for(const c of b.circ) if(Math.hypot(c.x-x,c.y-y)<c.r+rad+30) return false;
   for(const m of b.movers) if(Math.abs(m.cy-y)<m.ay+m.r+rad+30&&Math.abs(m.cx-x)<m.ax+m.r+rad+30) return false;
   for(const sg of b.segs) if(ptSeg(x,y,sg)<rad+30) return false;
@@ -188,11 +193,14 @@ function placeGates(b,ng,wdt,r){
       for(const s of b.spins) for(const e of spinEdges(s)) h+=segHit(q,e,0.4); for(const s of b.sliders) h+=segHit(q,sliderSeg(s),0.3); hitsSum+=h;
       const ci=Math.max(0,Math.min(cols-1,(q.x/CW)|0)), ri=Math.max(0,Math.min(rows-1,(q.y/CH)|0)); dens[ri*cols+ci]+=1; } }
   b.bf=4/Math.max(0.8,hitsSum/24); // bounce bonus scaled so every stage pays about the same
+  // moving gates: find a lane (line + label space) with no obstacle along the whole way the gate slides
   const cand=[];
-  for(let y=110;y<=H-60;y+=10) for(let x1=12;x1+wdt<=W-12;x1+=10){ const x2=x1+wdt; if(!gateFree(b,y,x1,x2)) continue;
-    let d=0; const ri=(y/CH)|0; for(let ci=(x1/CW)|0;ci<=(x2/CW|0)&&ci<cols;ci++) d+=dens[ri*cols+ci]; cand.push({y,x1,x2,d:d+r()*0.5}); }
+  for(let y=110;y<=H-60;y+=10){ const ri=(y/CH)|0; let start=null;
+    const flush=(end)=>{ if(start===null) return; const len=end-start; if(len>=wdt+(wdt<60?4:40)){ let d=0,n=0; for(let ci=(start/CW)|0;ci<=(end/CW|0)&&ci<cols;ci++){ d+=dens[ri*cols+ci]; n++; } cand.push({y,a:start,b:end,d:d/Math.max(1,n)*Math.min(1,len/200)+r()*0.05}); } start=null; };
+    for(let x=12;x<=W-12;x+=5){ const free=gateFree(b,y,x,x+5)&&gateFree(b,y-13,x,x+5); if(free){ if(start===null) start=x; } else flush(x); }
+    flush(W-12); }
   cand.sort((a,c)=>c.d-a.d);
-  for(const c of cand){ if(b.gates.length>=ng) break; if(b.gates.every(g=>Math.abs(g.y-c.y)>=70)) b.gates.push({y:c.y,x1:c.x1,x2:c.x2,lit:0}); }
+  for(const c of cand){ if(b.gates.length>=ng) break; if(b.gates.every(g=>Math.abs(g.y-c.y)>=70)){ const w=Math.min(wdt,c.b-c.a-50); b.gates.push({y:c.y,w,xa:c.a,xb:c.b-w,sp:55+r()*35,ph:r()*20,x1:c.a,x2:c.a+w,lit:0}); } }
   b.gates.sort((a,c)=>a.y-c.y);
 }
 let B=null;
@@ -205,7 +213,7 @@ function buildStage(L){
   switch(lay){
     case "start": for(let row=0;row<4;row++){ const n=row%2?3:4; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*92,150+row*105,26); } break;
     case "dots": b.spawn=[40,W-40]; for(let row=0;row<6;row++){ const n=row%2?4:5; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*76,120+row*78,big*0.85); } break;
-    case "path": b.spawn=[30,90]; for(let i=0;i<5;i++){ const y=110+i*95; if(i%2===0) S_(10,y,W-70,y+45); else S_(W-10,y,70,y+45); C_(i%2?60:W-60,y+70,14); } break;
+    case "path": b.spawn=[30,90]; for(let i=0;i<5;i++){ const y=110+i*95; if(i%2===0) S_(10,y,W-80,y+45); else S_(W-10,y,80,y+45); } break;
     case "funnel": b.spawn=[30,W-30]; S_(10,110,W/2-34,210); S_(W-10,110,W/2+34,210); for(let row=0;row<3;row++) for(let i=0;i<4;i++) C_(60+i*80+(row%2)*40,290+row*90,big*0.8); break;
     case "cross": b.spawn=[60,W-60]; for(const [cx,cy] of [[110,180],[250,180],[180,330],[100,470],[260,470]]){ S_(cx-40,cy+30,cx,cy-20); S_(cx,cy-20,cx+40,cy+30); } break;
     case "pyramid": for(let row=0;row<6;row++){ const n=row+1; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*62,120+row*72,big*0.75); } break;
@@ -240,12 +248,12 @@ function buildStage(L){
         if(k==="tri"){ const h=24; S_(x,y-h,x+h,y+h*0.7); S_(x+h,y+h*0.7,x-h,y+h*0.7); S_(x-h,y+h*0.7,x,y-h); b.segs.slice(-3).forEach(sg=>sg.tri=1); }
         if(k==="mover") b.movers.push({cx:x,cy:y,ax:30+r()*20,ay:0,r:14+r()*6,ph:r()*6,sp:0.8+r()*0.7,x,y,lit:0});
         break; } } }
+  const ng=L<3?1:L<10?2:3; placeGates(b,ng,Math.max(90,200-L*2),r); if(b.gates.length<ng) placeGates(b,ng,70,r); if(!b.gates.length) placeGates(b,1,56,r);
   // fill empty space with small round obstacles so every stage is dense
   { const want=8+Math.min(10,Math.floor(L/4)); let added=0;
     for(let tries=0;tries<400&&added<want;tries++){ const rad=9+r()*7, x=40+r()*(W-80), y=100+r()*(H-160); if(areaFree(b,x,y,rad)){ C_(x,y,rad); added++; } } }
   // gates: horizontal bands that multiply a ball's value once
-  const ng=L<3?1:L<10?2:3;
-  placeGates(b,ng,Math.max(90,200-L*2),r);
+  placeGates(b,0,90,r); // re-measure bounces with the filler in place
   return b;
 }
 
@@ -253,7 +261,7 @@ function buildStage(L){
 /* ================= the tower: every stage stacked, offset by its height ================= */
 const STG=[null];
 function buildTower(){ STG.length=1; for(let L=1;L<=NST;L++){ const b=buildStage(L), oy=(L-1)*HS; b.oy=oy;
-  for(const c of b.circ) c.y+=oy; for(const s of b.segs){ s.y1+=oy; s.y2+=oy; } for(const s of b.spins) s.y+=oy; for(const m of b.movers){ m.cy+=oy; m.x=m.cx; m.y=m.cy; } for(const g of b.gates){ g.y+=oy; g.lit=0; } for(const s of b.sliders) s.y+=oy;
+  for(const c of b.circ) c.y+=oy; for(const s of b.segs){ s.y1+=oy; s.y2+=oy; } for(const s of b.spins) s.y+=oy; for(const m of b.movers){ m.cy+=oy; m.x=m.cx; m.y=m.cy; } for(const g of b.gates){ g.y+=oy; g.lit=0; moveGate(g,0); } for(const s of b.sliders) s.y+=oy;
   STG.push(b); } }
 
 /* ================= physics ================= */
@@ -279,7 +287,7 @@ function step(dt,sim){
   gt+=dt; if(fever>0) fever-=dt;
   const rm=rateMult()*(fever>0?2:1);
   for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); } }
-  for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; for(const sp of s.spins) sp.a+=sp.w*dt; for(const sl of s.sliders) moveSlider(sl,gt); for(const m of s.movers){ const ox=m.x, oy=m.y; m.x=m.cx+Math.sin(gt*m.sp+m.ph)*m.ax; m.y=m.cy+Math.sin(gt*m.sp*1.3+m.ph)*m.ay; m.vx=(m.x-ox)/dt; m.vy=(m.y-oy)/dt; } }
+  for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; for(const sp of s.spins) sp.a+=sp.w*dt; for(const sl of s.sliders) moveSlider(sl,gt); for(const q of s.gates) moveGate(q,gt); for(const m of s.movers){ const ox=m.x, oy=m.y; m.x=m.cx+Math.sin(gt*m.sp+m.ph)*m.ax; m.y=m.cy+Math.sin(gt*m.sp*1.3+m.ph)*m.ay; m.vx=(m.x-ox)/dt; m.vy=(m.y-oy)/dt; } }
   const g=G0*(1-0.05*C("gw")), EY=exitY();
   grid.clear(); for(const b of balls){ const k=((b.x/BG)|0)+","+((b.y/BG)|0); let a=grid.get(k); if(!a) grid.set(k,a=[]); a.push(b); }
   for(const b of balls){ const cx=(b.x/BG)|0, cy=(b.y/BG)|0;
@@ -360,7 +368,7 @@ function render(){
     ctx.globalAlpha=locked?0.28:1; ctx.fillStyle=L%2?"#3a3c43":"#383a41"; ctx.fillRect(0,oy,W,HS);
     // gates
     const gmv=gateMult(L); ctx.font="900 11px system-ui"; ctx.textAlign="center";
-    for(const q of s.gates){ ctx.fillStyle=`rgba(255,212,0,${0.16+0.3*Math.max(0,q.lit)})`; ctx.fillRect(q.x1,q.y-5,q.x2-q.x1,10); ctx.fillStyle="#ffd400"; ctx.fillRect(q.x1,q.y-1,q.x2-q.x1,2); ctx.fillText("+"+(gmv-1).toFixed(2).replace(/\.?0+$/,"")+"×",(q.x1+q.x2)/2,q.y-8); }
+    for(const q of s.gates){ ctx.fillStyle="rgba(255,212,0,.08)"; ctx.fillRect(q.xa,q.y-1,q.xb+q.w-q.xa,2); ctx.fillStyle=`rgba(255,212,0,${0.16+0.3*Math.max(0,q.lit)})`; ctx.fillRect(q.x1,q.y-5,q.x2-q.x1,10); ctx.fillStyle="#ffd400"; ctx.fillRect(q.x1,q.y-1,q.x2-q.x1,2); ctx.fillText("+"+(gmv-1).toFixed(2).replace(/\.?0+$/,"")+"×",(q.x1+q.x2)/2,q.y-8); }
     ctx.fillStyle="#141518"; for(const c of s.circ){ ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill(); if(c.lit>0&&!locked){ ctx.strokeStyle=`rgba(255,255,255,${c.lit*0.5})`; ctx.lineWidth=2; ctx.stroke(); } }
     for(const m of s.movers){ ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,Math.PI*2); ctx.fill(); }
     ctx.fillStyle="#141518"; for(let i=0;i<s.segs.length;i++){ const g=s.segs[i]; if(g.tri&&s.segs[i+2]&&s.segs[i+2].tri){ ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(s.segs[i+1].x1,s.segs[i+1].y1); ctx.lineTo(s.segs[i+2].x1,s.segs[i+2].y1); ctx.closePath(); ctx.fill(); i+=2; } }
