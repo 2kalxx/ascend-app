@@ -1,7 +1,7 @@
 {
-  "web": 4,
+  "web": 5,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Hide/show the upgrade panel"
+  "notes": "Moving obstacles: spinning crosses & triangles, sliding beams; denser stages"
 }
