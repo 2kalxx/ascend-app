@@ -1,7 +1,7 @@
 {
-  "web": 7,
+  "web": 8,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Auto-buy cheapest upgrade"
+  "notes": "Auto also unlocks the next stage"
 }
