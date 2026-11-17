@@ -1,7 +1,7 @@
 {
-  "web": 1,
+  "web": 2,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "First version"
+  "notes": "One scrollable tower with all 50 stages, buy stages with money, gates placed in open space"
 }
