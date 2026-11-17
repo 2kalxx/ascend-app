@@ -56,6 +56,9 @@ canvas{display:block;touch-action:none}
 .lvls button.done{background:#29505a;color:#3fd6e8}.lvls button.cur{background:#ffd400;color:#222}.lvls button:disabled{opacity:.3}
 .float{position:fixed;font-weight:900;color:#ffd400;pointer-events:none;font-size:15px;animation:fl 1s ease-out forwards;z-index:50;text-shadow:0 1px 4px #000}
 @keyframes fl{to{transform:translateY(-34px);opacity:0}}
+#panel.hid{display:none}
+#hideB{width:34px;height:30px;border-radius:8px;border:0;background:#2f3137;color:#ffd400;font-size:15px;font-weight:900;margin-left:4px;flex:none}
+#showB{display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:3;padding:9px 18px;border-radius:12px;border:0;background:#ffd400;color:#222;font:inherit;font-weight:900;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 #unlockBar{display:flex;align-items:center;gap:8px;padding:6px 10px 2px}
 #unlockB{flex:1;padding:9px 10px;border-radius:10px;border:0;font:inherit;font-weight:900;font-size:14px;background:#3a3c43;color:#888}
 #unlockB.ok{background:#ffd400;color:#222;animation:pulse 1.1s ease-in-out infinite}
@@ -70,14 +73,14 @@ canvas{display:block;touch-action:none}
   <div id="top"><button class="icon" id="menuB">☰</button><div class="money"><b id="coinT">$0</b><small id="rateT">$0/s</small></div>
     <button class="icon" id="cardB">🃏<span class="badge" id="cardN" style="display:none"></span></button><button class="icon" id="perkB">⭐</button><button class="icon" id="musB">🎵</button><button class="icon" id="sndB">🔔</button></div>
   <div id="unlockBar"><button id="unlockB"></button></div>
-  <div id="wrap"><canvas id="cv"></canvas><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
-  <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button></div></div><div id="list"></div></div>
+  <div id="wrap"><canvas id="cv"></canvas><button id="showB">▲ Upgrades</button><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
+  <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
 </div>
 <div id="layer"></div>
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 3; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 4; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -136,7 +139,7 @@ const gateMult=L=>(1.5+0.35*stOf(L).g+0.25*P("gates"))*(1+0.1*C("gm"));
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {coins:0,unlocked:1,rate:[1,0,0,0,0,0,0,0],val:[1,1,1,1,1,1,1,1],st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0}; }
+function fresh(){ return {coins:0,unlocked:1,rate:[1,0,0,0,0,0,0,0],val:[1,1,1,1,1,1,1,1],st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
 let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) return; saveT=n; S.last=n; S.cam=cam; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 
@@ -310,7 +313,7 @@ function syncMusic(){ if(S.music&&!document.hidden) MUSIC.start(); else MUSIC.st
 /* ================= camera & render ================= */
 const cv=$("cv"), ctx=cv.getContext("2d"); let sc=1, viewH=HS, cam=+S.cam||0, camV=0, dragging=false;
 function resize(){ const w=$("wrap").clientWidth, h=$("wrap").clientHeight; const s=Math.min(w/W,h/(HS*0.85)); const dpr=Math.min(2.5,devicePixelRatio||1);
-  const cw=Math.floor(W*s), ch=Math.floor(Math.min(h,HS*s)); cv.style.width=cw+"px"; cv.style.height=ch+"px"; cv.width=Math.floor(cw*dpr); cv.height=Math.floor(ch*dpr); sc=cv.width/W; viewH=cv.height/sc; clampCam(); }
+  const cw=Math.floor(W*s), ch=Math.floor(h); cv.style.width=cw+"px"; cv.style.height=ch+"px"; cv.width=Math.floor(cw*dpr); cv.height=Math.floor(ch*dpr); sc=cv.width/W; viewH=cv.height/sc; clampCam(); }
 function clampCam(){ const max=NST*HS-viewH+40; cam=Math.max(-10,Math.min(max,cam)); }
 function render(){
   ctx.setTransform(sc,0,0,sc,0,-cam*sc); ctx.fillStyle="#2a2c31"; ctx.fillRect(0,cam,W,viewH);
@@ -395,6 +398,9 @@ $("cardB").onclick=()=>{ S.newCards=0; uiTop(); save(true);
   popup(`<h1>Cards 🃏</h1><p>You get a card for every stage you unlock. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):["","Common","Rare","Epic"][c.r]}</small></div>`; }).join("")}</div><button class="btn" id="ok">Close</button>`); };
 $("musB").onclick=()=>{ S.music=!S.music; syncMusic(); uiTop(); save(true); };
 $("sndB").onclick=()=>{ S.sound=!S.sound; uiTop(); save(true); };
+function syncPanel(){ $("panel").classList.toggle("hid",!!S.panelHidden); $("showB").style.display=S.panelHidden?"block":"none"; resize(); }
+$("hideB").onclick=()=>{ S.panelHidden=true; syncPanel(); save(true); };
+$("showB").onclick=()=>{ S.panelHidden=false; syncPanel(); save(true); uiList(true); };
 $("jTop").onclick=()=>goTo(1); $("jEnd").onclick=()=>goTo(Math.min(NST,S.unlocked));
 // drag to scroll, tap to drop a ball / unlock
 let pd=null, lastY=0, lastTime=0;
@@ -431,6 +437,7 @@ window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
 /* ================= boot ================= */
 buildTower(); uiTop(); uiList(true); resize();
 try{ new ResizeObserver(()=>resize()).observe($("wrap")); }catch(e){}
+syncPanel();
 document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x.dataset.t===S.tab)); document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x.dataset.m===S.mode));
 // players of the first version keep their progress: stages they reached become owned stages
 try{ const old=JSON.parse(localStorage.getItem("zen_state_v2")); if(old&&!localStorage.getItem(LS)){ S.coins=old.coins||0; S.rate=old.rate||S.rate; S.val=old.val||S.val; S.perks=old.perks||{}; S.cards=old.cards||{}; S.copies=old.copies||{}; S.unlocked=Math.max(1,Math.min(NST,(old.max||1)-0)); S.seen=1; S.total=old.total||0; save(true); uiList(true); uiTop(); } }catch(e){}

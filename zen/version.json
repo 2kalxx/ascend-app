@@ -1,7 +1,7 @@
 {
-  "web": 3,
+  "web": 4,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Board no longer overlaps the panel, slower balls"
+  "notes": "Hide/show the upgrade panel"
 }
