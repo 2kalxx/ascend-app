@@ -57,6 +57,7 @@ canvas{display:block;touch-action:none}
 .float{position:fixed;font-weight:900;color:#ffd400;pointer-events:none;font-size:15px;animation:fl 1s ease-out forwards;z-index:50;text-shadow:0 1px 4px #000}
 @keyframes fl{to{transform:translateY(-34px);opacity:0}}
 #panel.hid{display:none}
+#autoB{padding:5px 7px;border-radius:7px;border:0;background:#2f3137;color:#aaa;font:inherit;font-weight:900;font-size:11px}#autoB.on{background:#3fd6e8;color:#10343a}
 #hideB{width:34px;height:30px;border-radius:8px;border:0;background:#2f3137;color:#ffd400;font-size:15px;font-weight:900;margin-left:4px;flex:none}
 #showB{display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:3;padding:9px 18px;border-radius:12px;border:0;background:#ffd400;color:#222;font:inherit;font-weight:900;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 #unlockBar{display:flex;align-items:center;gap:8px;padding:6px 10px 2px}
@@ -74,13 +75,13 @@ canvas{display:block;touch-action:none}
     <button class="icon" id="cardB">🃏<span class="badge" id="cardN" style="display:none"></span></button><button class="icon" id="perkB">⭐</button><button class="icon" id="musB">🎵</button><button class="icon" id="sndB">🔔</button></div>
   <div id="unlockBar"><button id="unlockB"></button></div>
   <div id="wrap"><canvas id="cv"></canvas><button id="showB">▲ Upgrades</button><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
-  <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
+  <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button><button id="autoB">AUTO</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
 </div>
 <div id="layer"></div>
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 6; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 7; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -139,7 +140,7 @@ const gateMult=L=>(1.5+0.35*stOf(L).g+0.25*P("gates"))*(1+0.1*C("gm"));
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {coins:0,unlocked:1,rate:[1,0,0,0,0,0,0,0],val:[1,1,1,1,1,1,1,1],st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0}; }
+function fresh(){ return {coins:0,unlocked:1,rate:[1,0,0,0,0,0,0,0],val:[1,1,1,1,1,1,1,1],st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
 let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) return; saveT=n; S.last=n; S.cam=cam; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 
@@ -446,6 +447,12 @@ $("cardB").onclick=()=>{ S.newCards=0; uiTop(); save(true);
   popup(`<h1>Cards 🃏</h1><p>You get a card for every stage you unlock. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):["","Common","Rare","Epic"][c.r]}</small></div>`; }).join("")}</div><button class="btn" id="ok">Close</button>`); };
 $("musB").onclick=()=>{ S.music=!S.music; syncMusic(); uiTop(); save(true); };
 $("sndB").onclick=()=>{ S.sound=!S.sound; uiTop(); save(true); };
+function syncAuto(){ $("autoB").classList.toggle("on",!!S.auto); $("autoB").textContent=S.auto?"AUTO ✓":"AUTO"; }
+$("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.auto?"🤖 Auto-buy on: cheapest upgrade first":"Auto-buy off",innerWidth/2-110,innerHeight-260); };
+let autoT=0;
+function autoBuy(dt){ if(!S.auto) return; autoT+=dt; if(autoT<0.5) return; autoT=0; let n=0;
+  for(let q=0;q<25;q++){ const o=simOpts().sort((a,b)=>a[1]-b[1])[0]; if(o&&S.coins>=o[1]&&buy(o[0],true)) n++; else break; }
+  if(n){ uiList(true); uiTop(); } }
 function syncPanel(){ $("panel").classList.toggle("hid",!!S.panelHidden); $("showB").style.display=S.panelHidden?"block":"none"; resize(); }
 $("hideB").onclick=()=>{ S.panelHidden=true; syncPanel(); save(true); };
 $("showB").onclick=()=>{ S.panelHidden=false; syncPanel(); save(true); uiList(true); };
@@ -485,7 +492,7 @@ window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
 /* ================= boot ================= */
 buildTower(); uiTop(); uiList(true); resize();
 try{ new ResizeObserver(()=>resize()).observe($("wrap")); }catch(e){}
-syncPanel();
+syncPanel(); syncAuto();
 document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x.dataset.t===S.tab)); document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x.dataset.m===S.mode));
 // players of the first version keep their progress: stages they reached become owned stages
 try{ const old=JSON.parse(localStorage.getItem("zen_state_v2")); if(old&&!localStorage.getItem(LS)){ S.coins=old.coins||0; S.rate=old.rate||S.rate; S.val=old.val||S.val; S.perks=old.perks||{}; S.cards=old.cards||{}; S.copies=old.copies||{}; S.unlocked=Math.max(1,Math.min(NST,(old.max||1)-0)); S.seen=1; S.total=old.total||0; save(true); uiList(true); uiTop(); } }catch(e){}
@@ -498,7 +505,7 @@ window.addEventListener("pointerdown",()=>{ if(S.music&&!MUSIC.on) syncMusic(); 
 document.addEventListener("visibilitychange",()=>{ syncMusic(); try{ if(AC){ document.hidden?AC.suspend():AC.resume(); } }catch(e){} if(document.hidden) save(true); else lastT=performance.now(); });
 window.addEventListener("pagehide",()=>save(true));
 let lastT=performance.now(), uiT=0;
-function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const n=dt>0.025?4:3; for(let i=0;i<n;i++) step(dt/n); render(); uiT+=dt; if(uiT>0.25){ uiT=0; uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
+function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const n=dt>0.025?4:3; for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); uiT+=dt; if(uiT>0.25){ uiT=0; uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 /* test hooks */
 const simOpts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(S.unlocked>=GATE[k]) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); }

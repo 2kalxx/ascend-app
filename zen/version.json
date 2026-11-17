@@ -1,7 +1,7 @@
 {
-  "web": 6,
+  "web": 7,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Gates slide left/right with 0.5s pauses, never cross obstacles"
+  "notes": "Auto-buy cheapest upgrade"
 }
