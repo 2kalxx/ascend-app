@@ -1,7 +1,7 @@
 {
-  "web": 16,
+  "web": 17,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "150 tall stages like the Zen Idle video, red gates, tips"
+  "notes": "Balls spawn in the middle"
 }
