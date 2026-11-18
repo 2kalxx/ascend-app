@@ -1,7 +1,7 @@
 {
-  "web": 19,
+  "web": 20,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "20 ball colours"
+  "notes": "Cups stages: no more free fall through the middle"
 }

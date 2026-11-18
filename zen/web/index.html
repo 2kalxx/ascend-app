@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 19; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 20; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -212,7 +212,7 @@ function buildStage(L){
       case "tri": for(let y=y0+30;y<=y1-150;y+=250){ S_(0,y,90,y+55,14); S_(W,y,W-90,y+55,14); tri(W/2,y+95,62); POLY([[0,y+150],[78*k,y+185],[0,y+220]]); POLY([[W,y+150],[W-78*k,y+185],[W,y+220]]); } break;
       case "spikes": for(let y=y0+20,i=0;y<=y1-20;y+=Math.max(58,70/dens),i++) for(let x=(i%2?33:0)-0;x<=W+20;x+=66) tri(x,y,15); break;
       case "shelves": { S_(60,y0+60,W/2,y0+10,14); S_(W/2,y0+10,W-60,y0+60,14); for(let y=y0+140,i=0;y<=y1-20;y+=95,i++){ if(i%2) S_(W-200,y,W-60,y,14); else S_(60,y,200,y,14); } break; }
-      case "cups": for(let y=y0+20,i=0;y<=y1-50;y+=130,i++){ const L_=i%2===0; if(L_){ S_(0,y,44,y+34,12); S_(44,y+34,118,y+44,12); } else { S_(W,y,W-44,y+34,12); S_(W-44,y+34,W-118,y+44,12); } } break;
+      case "cups": for(let y=y0+20,i=0;y<=y1-80;y+=120,i++){ if(i%2===0){ S_(0,y,44,y+30,12); S_(44,y+30,212,y+72,12); C_(300,y+50,13); } else { S_(W,y,W-44,y+30,12); S_(W-44,y+30,W-212,y+72,12); C_(60,y+50,13); } } break;
       case "green": { let cnt=0; for(let y=y0+20,i=0;y<=y1-20;y+=70,i++){ if(i%5===4&&y+130<y1){ b.spins.push({x:MX(i%10===4?150:210),y:oy+y+50,len:80*k,a:r()*6,w:(r()<.5?-1:1)*0.5,kind:"xballs",br:20*k}); y+=110; continue; }
           const dx=Math.max(80,80/dens), o=i%2?dx/2:0; for(let x=W/2-Math.ceil((W/2)/dx)*dx+o;x<=W+dx/2;x+=dx){ const rad=(cnt++%3===0)?22:14; C_(x,y,rad,{bump:1}); } } break; }
       case "diamonds": for(let y=y0+50,i=0;y<=y1-50;y+=150,i++) for(const x of (i%2?[180]:[90,270])) diamond(x,y,42,42); break;
