@@ -1,7 +1,7 @@
 {
-  "web": 22,
+  "web": 23,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Auto waits 15 s after each purchase"
+  "notes": "Lanes: side ramps into a tank whose floor opens when full"
 }
