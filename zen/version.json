@@ -1,7 +1,7 @@
 {
-  "web": 15,
+  "web": 16,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Slower falling balls"
+  "notes": "150 tall stages like the Zen Idle video, red gates, tips"
 }
