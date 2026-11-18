@@ -81,7 +81,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 9; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 10; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -156,7 +156,8 @@ const stageName=L=>L===1?"Start":NAMES[1+((L-2)%(NAMES.length-1))]+(L>NAMES.leng
 function ptSeg(px,py,s){ const dx=s.x2-s.x1, dy=s.y2-s.y1, t=Math.max(0,Math.min(1,((px-s.x1)*dx+(py-s.y1)*dy)/(dx*dx+dy*dy))); return Math.hypot(px-(s.x1+dx*t),py-(s.y1+dy*t)); }
 // rotating shapes: bar, cross (2 bars) or triangle; sliders: horizontal beams moving left/right
 function spinEdges(s){ const L=s.len, a=s.a;
-  if(s.kind==="tri"){ const v=[0,1,2].map(i=>[s.x+Math.cos(a+i*2.0944)*L,s.y+Math.sin(a+i*2.0944)*L]); return [0,1,2].map(i=>({x1:v[i][0],y1:v[i][1],x2:v[(i+1)%3][0],y2:v[(i+1)%3][1],w:7})); }
+  if(s.kind==="tri"||s.kind==="sq"){ const n=s.kind==="tri"?3:4, v=[]; for(let i=0;i<n;i++) v.push([s.x+Math.cos(a+i*Math.PI*2/n)*L,s.y+Math.sin(a+i*Math.PI*2/n)*L]); return v.map((p,i)=>({x1:p[0],y1:p[1],x2:v[(i+1)%n][0],y2:v[(i+1)%n][1],w:7})); }
+  if(s.kind==="star"){ const e=[]; for(let i=0;i<3;i++){ const b=a+i*Math.PI/3; e.push({x1:s.x-Math.cos(b)*L,y1:s.y-Math.sin(b)*L,x2:s.x+Math.cos(b)*L,y2:s.y+Math.sin(b)*L,w:7}); } return e; }
   const e=[{x1:s.x-Math.cos(a)*L,y1:s.y-Math.sin(a)*L,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:8}];
   if(s.kind==="cross") e.push({x1:s.x+Math.sin(a)*L,y1:s.y-Math.cos(a)*L,x2:s.x-Math.sin(a)*L,y2:s.y+Math.cos(a)*L,w:8});
   return e; }
@@ -236,6 +237,12 @@ function buildStage(L){
   b.circ=b.circ.filter(c=>c.x-c.r>=26&&c.x+c.r<=W-26);
   for(const sg of b.segs) for(const e of ["1","2"]){ const x=sg["x"+e]; if(x>10&&x<36) sg["x"+e]=36; if(x<W-10&&x>W-36) sg["x"+e]=W-36; }
   for(const s of b.spins) s.kind=s.kind||"bar";
+  // spinning objects on every stage: bars, crosses, stars, triangles, squares (more on later stages)
+  { const KINDS=[["bar",42],["cross",38],["star",36],["tri",30],["sq",28]], want=2+Math.min(4,Math.floor(L/10))+(r()<0.5?1:0); let placed=0;
+    for(let tries=0;tries<120&&placed<want;tries++){ const [kind,len]=KINDS[Math.floor(r()*KINDS.length)], x=70+r()*(W-140), y=110+r()*(H-200);
+      let ok=areaFree(b,x,y,len);
+      if(!ok&&tries>=40){ const keep=b.circ; b.circ=[]; ok=areaFree(b,x,y,len); b.circ=keep; if(ok) b.circ=b.circ.filter(c=>Math.hypot(c.x-x,c.y-y)>=c.r+len+30); } // make room by removing round obstacles
+      if(!ok) continue; b.spins.push({x,y,len,a:r()*6,w:(r()<.5?-1:1)*(0.9+r()*1.1),kind}); placed++; } }
   // extra moving obstacles: spinning crosses, triangles, sliding beams (more of them on later stages)
   if(L>=2){ const kinds=["xspin","slider","tri","trispin","mover"], n=1+Math.min(3,Math.floor(L/8))+(r()<0.5?1:0);
     for(let i=0;i<n;i++){ const k=kinds[Math.floor(r()*kinds.length)];
@@ -381,7 +388,7 @@ function render(){
     for(const m of s.movers){ ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,Math.PI*2); ctx.fill(); }
     ctx.fillStyle="#141518"; for(let i=0;i<s.segs.length;i++){ const g=s.segs[i]; if(g.tri&&s.segs[i+2]&&s.segs[i+2].tri){ ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(s.segs[i+1].x1,s.segs[i+1].y1); ctx.lineTo(s.segs[i+2].x1,s.segs[i+2].y1); ctx.closePath(); ctx.fill(); i+=2; } }
     ctx.strokeStyle="#141518"; ctx.lineCap="round"; for(const g of s.segs){ ctx.lineWidth=g.w; ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); ctx.stroke(); }
-    for(const p of s.spins){ const ed=spinEdges(p); if(p.kind==="tri"){ ctx.fillStyle="#141518"; ctx.beginPath(); ctx.moveTo(ed[0].x1,ed[0].y1); ctx.lineTo(ed[1].x1,ed[1].y1); ctx.lineTo(ed[2].x1,ed[2].y1); ctx.closePath(); ctx.fill(); } else { ctx.lineWidth=8; for(const e of ed){ ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke(); } } }
+    for(const p of s.spins){ const ed=spinEdges(p); if(p.kind==="tri"||p.kind==="sq"){ ctx.fillStyle="#141518"; ctx.beginPath(); ctx.moveTo(ed[0].x1,ed[0].y1); for(let i=1;i<ed.length;i++) ctx.lineTo(ed[i].x1,ed[i].y1); ctx.closePath(); ctx.fill(); } else { ctx.lineWidth=8; for(const e of ed){ ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke(); } } }
     ctx.lineWidth=8; for(const sl of s.sliders){ ctx.beginPath(); ctx.moveTo(sl.x-sl.len,sl.y); ctx.lineTo(sl.x+sl.len,sl.y); ctx.stroke(); ctx.fillStyle="rgba(20,21,24,.35)"; ctx.fillRect(sl.x0-sl.amp-sl.len,sl.y-1,2*(sl.amp+sl.len),2); }
     ctx.globalAlpha=1; ctx.textAlign="left"; ctx.font="900 12px system-ui"; ctx.fillStyle=locked?"#777":"#ffd400"; ctx.fillText(L+" · "+s.name.toUpperCase(),8,oy+18);
     if(!locked){ ctx.font="700 10px system-ui"; ctx.fillStyle="#9aa0aa"; ctx.fillText("+"+(hitPct(L)*100).toFixed(0)+"% per bounce",8,oy+32); }

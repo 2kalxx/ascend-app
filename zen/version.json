@@ -1,7 +1,7 @@
 {
-  "web": 9,
+  "web": 10,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Up to 5000 balls on screen"
+  "notes": "More spinning objects on every stage"
 }
