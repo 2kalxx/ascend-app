@@ -1,7 +1,7 @@
 {
-  "web": 10,
+  "web": 11,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "More spinning objects on every stage"
+  "notes": "Wall deflectors, balls can jam, ball counter"
 }

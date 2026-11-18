@@ -58,6 +58,7 @@ canvas{display:block;touch-action:none}
 @keyframes fl{to{transform:translateY(-34px);opacity:0}}
 #panel.hid{display:none}
 #autoB{padding:5px 7px;border-radius:7px;border:0;background:#2f3137;color:#aaa;font:inherit;font-weight:900;font-size:11px}#autoB.on{background:#3fd6e8;color:#10343a}
+#ballCount{position:absolute;top:6px;left:50%;transform:translateX(-50%);background:rgba(20,21,24,.85);color:#fff;font-weight:900;font-size:13px;padding:4px 12px;border-radius:10px;pointer-events:none;z-index:3}
 #hideB{width:34px;height:30px;border-radius:8px;border:0;background:#2f3137;color:#ffd400;font-size:15px;font-weight:900;margin-left:4px;flex:none}
 #showB{display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:3;padding:9px 18px;border-radius:12px;border:0;background:#ffd400;color:#222;font:inherit;font-weight:900;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 #unlockBar{display:flex;align-items:center;gap:8px;padding:6px 10px 2px}
@@ -74,14 +75,14 @@ canvas{display:block;touch-action:none}
   <div id="top"><button class="icon" id="menuB">☰</button><div class="money"><b id="coinT">$0</b><small id="rateT">$0/s</small></div>
     <button class="icon" id="cardB">🃏<span class="badge" id="cardN" style="display:none"></span></button><button class="icon" id="perkB">⭐</button><button class="icon" id="musB">🎵</button><button class="icon" id="sndB">🔔</button></div>
   <div id="unlockBar"><button id="unlockB"></button></div>
-  <div id="wrap"><canvas id="cv"></canvas><button id="showB">▲ Upgrades</button><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
+  <div id="wrap"><canvas id="cv"></canvas><div id="ballCount"></div><button id="showB">▲ Upgrades</button><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
   <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button><button id="autoB">AUTO</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
 </div>
 <div id="layer"></div>
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 10; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 11; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -257,6 +258,14 @@ function buildStage(L){
         if(k==="mover") b.movers.push({cx:x,cy:y,ax:30+r()*20,ay:0,r:14+r()*6,ph:r()*6,sp:0.8+r()*0.7,x,y,lit:0});
         break; } } }
   const ng=L<3?1:L<10?2:3; placeGates(b,ng,Math.max(90,200-L*2),r); if(b.gates.length<ng) placeGates(b,ng,70,r); if(!b.gates.length) placeGates(b,1,56,r);
+  // wall deflectors: short ramps attached to both walls push balls back into the middle,
+  // so no ball can slide down the edges through several stages
+  { const free=(x,y)=>{ for(const c of b.circ) if(Math.hypot(c.x-x,c.y-y)<c.r+28) return false; for(const sg of b.segs) if(ptSeg(x,y,sg)<30) return false;
+      for(const sp of b.spins) if(Math.hypot(sp.x-x,sp.y-y)<sp.len+28) return false; for(const m of b.movers) if(Math.abs(m.cy-y)<m.ay+m.r+18&&Math.abs(m.cx-x)<m.ax+m.r+18) return false;
+      for(const sl of b.sliders) if(Math.abs(sl.y-y)<22&&Math.abs(sl.x0-x)<sl.amp+sl.len+18) return false; for(const g of b.gates) if(Math.abs(g.y-y)<24&&x>g.xa-12&&x<g.xb+g.w+12) return false; return true; };
+    for(const side of [0,1]) for(let y=60+r()*30;y<H-60;y+=62+r()*26){ const len=34+r()*14, dy=24+r()*10, x0=side?W:0, x1=side?W-len:len;
+      let ok=true; for(let t=0;t<=1.0001;t+=0.25) if(!free(x0+(x1-x0)*t,y+dy*t)) { ok=false; break; }
+      if(ok) S_(x0,y,x1,y+dy); } }
   // fill empty space with small round obstacles so every stage is dense
   { const want=8+Math.min(10,Math.floor(L/4)); let added=0;
     for(let tries=0;tries<400&&added<want;tries++){ const rad=9+r()*7, x=40+r()*(W-80), y=100+r()*(H-160); if(areaFree(b,x,y,rad)){ C_(x,y,rad); added++; } } }
@@ -319,7 +328,7 @@ function step(dt,sim){
     if(sp<25) b.slow+=dt; else b.slow=0;
     if(b.slow>2&&((b.slow*120)|0)%240===0){ b.vx+=(Math.random()<.5?-1:1)*140; b.vy=-90; }
     if(b.st!==L){ b.st=L; b.stT=0; } else b.stT+=dt;
-    if(b.slow>6||b.stT>12){ b.y=L*HS+2; b.vy=60; b.slow=0; b.stT=0; } // never let a ball get stuck in a pocket
+    if(b.slow>15||b.stT>25){ b.y=L*HS+2; b.vy=60; b.slow=0; b.stT=0; } // never let a ball get stuck in a pocket
     if(b.y>EY){ const base=ballVal(b.k), v=base*(1+b.bonus)*b.gm; pay(v); avgRatio=avgRatio*0.98+0.02*(v/base);
       if(!sim&&Math.random()<0.3) pops.push({x:b.x,y:EY-12,t:1,txt:money(v)}); balls.splice(i,1); }
   }
@@ -445,7 +454,7 @@ $("unlockB").onclick=()=>{ if(!unlockNext()){ goTo(Math.min(NST,S.unlocked+1)); 
 document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.t; document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 function uiTop(){
-  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages";
+  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"; $("ballCount").textContent="● "+balls.length.toLocaleString("de-DE")+" balls";
   const L=S.unlocked+1, u=$("unlockB");
   if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L)); u.className=S.coins>=priceOf(L)?"ok":""; }
   $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);
