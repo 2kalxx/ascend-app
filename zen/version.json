@@ -1,7 +1,7 @@
 {
-  "web": 11,
+  "web": 12,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Wall deflectors, balls can jam, ball counter"
+  "notes": "New bold Zen-Idle-style obstacles"
 }

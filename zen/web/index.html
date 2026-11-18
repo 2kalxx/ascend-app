@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 11; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 12; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -147,26 +147,26 @@ let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) 
 
 /* ================= stages ================= */
 const W=360, H=620, HS=620, G0=520;
-const NAMES=["Start","Dots","Path","Funnel","Roofs","Pyramid","Pillars","Rings","Zigzag","Spinners","Hourglass","Scatter","Stairs","Orbit","Comb","Diamonds","Twister","Lanes","Bubbles","Chevrons"];
+const NAMES=["Start","Dots","Big Dots","Crosses","Funnel","Diamonds","Triangles","Bars","Pyramid","Hourglass","Spinners","Pins","Zigzag","Mixed","Orbit","Rain","Chevrons","Wedges","Lanes","Bubbles"];
 function rng(seed){ let a=seed>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
 // average bounces per ball on each layout (measured) → bounce bonus is scaled so every stage pays about the same
 const AVGHITS={start:3.5,dots:4.2,path:10,funnel:2.9,cross:1.6,pyramid:2.8,pillars:2,rings:3.8,zigzag:3,spinners:2.2,hourglass:2.3,scatter:2.5,stairs:3.9,orbit:0.8,comb:2.1,diamonds:1.2,twister:3.7,lanes:2.5,bubbles:5.3,chevrons:9.1};
-const LAYS=["dots","path","funnel","cross","pyramid","pillars","rings","zigzag","spinners","hourglass","scatter","stairs","orbit","comb","diamonds","twister","lanes","bubbles","chevrons"];
+const LAYS=["dots","bigdots","crosses","funnel","diamonds","triangles","bars","pyramid","hourglass","spinners","pins","zigzag","mixed","orbit","rain","chevrons","wedges","lanes","bubbles"];
 const stageName=L=>L===1?"Start":NAMES[1+((L-2)%(NAMES.length-1))]+(L>NAMES.length?" "+["II","III","IV","V"][Math.floor((L-2)/(NAMES.length-1))-1]:"");
 // gates go into open space (never through obstacles) where balls actually fall
 function ptSeg(px,py,s){ const dx=s.x2-s.x1, dy=s.y2-s.y1, t=Math.max(0,Math.min(1,((px-s.x1)*dx+(py-s.y1)*dy)/(dx*dx+dy*dy))); return Math.hypot(px-(s.x1+dx*t),py-(s.y1+dy*t)); }
 // rotating shapes: bar, cross (2 bars) or triangle; sliders: horizontal beams moving left/right
 function spinEdges(s){ const L=s.len, a=s.a;
   if(s.kind==="tri"||s.kind==="sq"){ const n=s.kind==="tri"?3:4, v=[]; for(let i=0;i<n;i++) v.push([s.x+Math.cos(a+i*Math.PI*2/n)*L,s.y+Math.sin(a+i*Math.PI*2/n)*L]); return v.map((p,i)=>({x1:p[0],y1:p[1],x2:v[(i+1)%n][0],y2:v[(i+1)%n][1],w:7})); }
-  if(s.kind==="star"){ const e=[]; for(let i=0;i<3;i++){ const b=a+i*Math.PI/3; e.push({x1:s.x-Math.cos(b)*L,y1:s.y-Math.sin(b)*L,x2:s.x+Math.cos(b)*L,y2:s.y+Math.sin(b)*L,w:7}); } return e; }
-  const e=[{x1:s.x-Math.cos(a)*L,y1:s.y-Math.sin(a)*L,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:8}];
-  if(s.kind==="cross") e.push({x1:s.x+Math.sin(a)*L,y1:s.y-Math.cos(a)*L,x2:s.x-Math.sin(a)*L,y2:s.y+Math.cos(a)*L,w:8});
+  if(s.kind==="star"){ const e=[]; for(let i=0;i<3;i++){ const b=a+i*Math.PI/3; e.push({x1:s.x-Math.cos(b)*L,y1:s.y-Math.sin(b)*L,x2:s.x+Math.cos(b)*L,y2:s.y+Math.sin(b)*L,w:12}); } return e; }
+  const e=[{x1:s.x-Math.cos(a)*L,y1:s.y-Math.sin(a)*L,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:14}];
+  if(s.kind==="cross") e.push({x1:s.x+Math.sin(a)*L,y1:s.y-Math.cos(a)*L,x2:s.x-Math.sin(a)*L,y2:s.y+Math.cos(a)*L,w:14});
   return e; }
 // gates slide to one side, wait 0.5 s, slide back, wait 0.5 s …
 function moveGate(q,t){ const d=q.xb-q.xa, run=d/q.sp, per=2*run+1; let u=(t+q.ph)%per, x;
   if(u<run) x=q.xa+d*(u/run); else if(u<run+0.5) x=q.xb; else if(u<2*run+0.5) x=q.xb-d*((u-run-0.5)/run); else x=q.xa;
   q.x1=x; q.x2=x+q.w; }
-function sliderSeg(s){ return {x1:s.x-s.len,y1:s.y,x2:s.x+s.len,y2:s.y,w:8}; }
+function sliderSeg(s){ return {x1:s.x-s.len,y1:s.y,x2:s.x+s.len,y2:s.y,w:14}; }
 function moveSlider(s,t){ s.x=s.x0+Math.sin(t*s.sp+s.ph)*s.amp; s.vx=Math.cos(t*s.sp+s.ph)*s.sp*s.amp; }
 // is a round area free of everything already placed?
 function areaFree(b,x,y,rad){
@@ -174,13 +174,13 @@ function areaFree(b,x,y,rad){
   for(const g of b.gates||[]) if(Math.abs(g.y-y)<rad+22&&x+rad>g.xa-10&&x-rad<g.xb+g.w+10) return false;
   for(const c of b.circ) if(Math.hypot(c.x-x,c.y-y)<c.r+rad+30) return false;
   for(const m of b.movers) if(Math.abs(m.cy-y)<m.ay+m.r+rad+30&&Math.abs(m.cx-x)<m.ax+m.r+rad+30) return false;
-  for(const sg of b.segs) if(ptSeg(x,y,sg)<rad+30) return false;
+  for(const sg of b.segs) if(ptSeg(x,y,sg)<rad+30+sg.w/2) return false;
   for(const s of b.spins) if(Math.hypot(s.x-x,s.y-y)<s.len+rad+30) return false;
   for(const s of b.sliders) if(Math.abs(s.y-y)<rad+34&&Math.abs(s.x0-x)<s.amp+s.len+rad+30) return false;
   return true; }
 function gateFree(b,y,x1,x2){
   for(const s of b.sliders) if(Math.abs(s.y-y)<20&&s.x0+s.amp+s.len+8>x1&&s.x0-s.amp-s.len-8<x2) return false;
-  for(let x=x1;x<=x2;x+=5){ for(const sg of b.segs) if(ptSeg(x,y,sg)<16) return false; }
+  for(let x=x1;x<=x2;x+=5){ for(const sg of b.segs) if(ptSeg(x,y,sg)<12+sg.w/2) return false; }
   for(const c of b.circ) if(Math.abs(c.y-y)<c.r+14&&c.x+c.r+8>x1&&c.x-c.r-8<x2) return false;
   for(const s of b.spins) if(Math.abs(s.y-y)<s.len+14&&s.x+s.len+8>x1&&s.x-s.len-8<x2) return false;
   for(const m of b.movers) if(Math.abs(m.cy-y)<m.ay+m.r+14&&m.cx+m.ax+m.r+8>x1&&m.cx-m.ax-m.r-8<x2) return false;
@@ -208,35 +208,42 @@ function placeGates(b,ng,wdt,r){
 }
 let B=null;
 function buildStage(L){
-  const r=rng(L*1013+7), b={L,lay:null,sliders:[],name:stageName(L),circ:[],segs:[],spins:[],movers:[],gates:[],spawn:[W/2-30,W/2+30]};
-  const lay=L===1?"start":LAYS[(L-2)%LAYS.length]; b.lay=lay; b.bf=4/AVGHITS[lay];
+  const r=rng(L*1013+7), b={L,lay:null,sliders:[],polys:[],name:stageName(L),circ:[],segs:[],spins:[],movers:[],gates:[],spawn:[W/2-30,W/2+30]};
+  const lay=L===1?"start":LAYS[(L-2)%LAYS.length]; b.lay=lay; b.bf=1;
   const C_=(x,y,rad,o)=>b.circ.push(Object.assign({x,y,r:rad,lit:0},o||{}));
-  const S_=(x1,y1,x2,y2)=>b.segs.push({x1,y1,x2,y2,w:7,lit:0});
+  const S_=(x1,y1,x2,y2,w)=>b.segs.push({x1,y1,x2,y2,w:w||16,lit:0});
+  const POLY=pts=>{ b.polys.push({pts}); for(let i=0;i<pts.length;i++){ const a=pts[i], c=pts[(i+1)%pts.length]; b.segs.push({x1:a[0],y1:a[1],x2:c[0],y2:c[1],w:6,lit:0,poly:1}); } };
+  const SPIN=(x,y,len,kind,w)=>b.spins.push({x,y,len,a:r()*6,w:w||(r()<.5?-1:1)*(0.6+r()*0.6),kind});
+  // staggered rows of round obstacles (Zen Idle style): gaps stay wider than a ball
+  const stag=(rad,dx,dy,y0,y1,off)=>{ for(let y=y0,i=0;y<=y1;y+=dy,i++){ const o=(i+(off||0))%2?dx/2:0; for(let x=W/2-Math.floor((W/2)/dx)*dx+o;x<=W;x+=dx) if(x-rad>=26&&x+rad<=W-26) C_(x,y,rad); } };
+  const diamond=(cx,cy,h)=>POLY([[cx,cy-h],[cx+h,cy],[cx,cy+h],[cx-h,cy]]);
+  const tri=(cx,cy,h)=>POLY([[cx,cy-h],[cx+h,cy+h*0.75],[cx-h,cy+h*0.75]]);
   const big=20+Math.min(10,Math.floor(L/5));
   switch(lay){
-    case "start": for(let row=0;row<4;row++){ const n=row%2?3:4; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*92,150+row*105,26); } break;
-    case "dots": b.spawn=[40,W-40]; for(let row=0;row<6;row++){ const n=row%2?4:5; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*76,120+row*78,big*0.85); } break;
-    case "path": b.spawn=[30,90]; for(let i=0;i<5;i++){ const y=110+i*95; if(i%2===0) S_(10,y,W-80,y+45); else S_(W-10,y,80,y+45); } break;
-    case "funnel": b.spawn=[30,W-30]; S_(10,110,W/2-34,210); S_(W-10,110,W/2+34,210); for(let row=0;row<3;row++) for(let i=0;i<4;i++) C_(60+i*80+(row%2)*40,290+row*90,big*0.8); break;
-    case "cross": b.spawn=[60,W-60]; for(const [cx,cy] of [[110,180],[250,180],[180,330],[100,470],[260,470]]){ S_(cx-40,cy+30,cx,cy-20); S_(cx,cy-20,cx+40,cy+30); } break;
-    case "pyramid": for(let row=0;row<6;row++){ const n=row+1; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*62,120+row*72,big*0.75); } break;
-    case "pillars": b.spawn=[30,W-30]; for(let i=0;i<5;i++){ const x=40+i*70; S_(x,140+(i%2)*70,x,260+(i%2)*70); C_(x+35,400+(i%2)*60,18); } break;
-    case "rings": for(const [cx,cy,rad] of [[W/2,220,90],[W/2,440,70]]) for(let a=0;a<Math.PI*2;a+=Math.PI/4) C_(cx+Math.cos(a+0.39)*rad,cy+Math.sin(a+0.39)*rad,big*0.6); C_(W/2,220,26); C_(W/2,440,22); break;
-    case "zigzag": b.spawn=[30,W-30]; for(let i=0;i<7;i++){ const y=110+i*70, x=i%2?90:W-90; S_(x-50,y+(i%2?0:28),x+50,y+(i%2?28:0)); C_(i%2?W-90:90,y+20,18); } break;
-    case "spinners": b.spawn=[40,W-40]; for(let i=0;i<5;i++) b.spins.push({x:i%2?250:110,y:130+i*95,len:52,a:r()*6,w:(i%2?-1:1)*(1.3+r()*0.6)}); break;
-    case "hourglass": b.spawn=[30,W-30]; S_(10,110,W/2-30,250); S_(W-10,110,W/2+30,250); C_(W/2,300,22); S_(W/2-50,350,50,450); S_(W/2+50,350,W-50,450); C_(W/2,520,24); break;
-    case "scatter": b.spawn=[30,W-30]; for(let i=0;i<14;i++) C_(40+r()*(W-80),110+r()*(H-200),10+r()*18); break;
-    case "stairs": b.spawn=[W-90,W-30]; for(let i=0;i<6;i++){ const x=W-80-i*44, y=110+i*80; S_(Math.max(40,x-46),y+14,x+40,y); } break;
-    case "orbit": for(let i=0;i<4;i++) b.movers.push({cx:W/2,cy:150+i*110,ax:110,ay:0,r:big*0.8,ph:i*1.6,sp:0.9+0.15*i,x:0,y:0,lit:0}); break;
-    case "comb": b.spawn=[30,W-30]; for(let i=0;i<8;i++) S_(30+i*43,200,30+i*43,260); for(let i=0;i<7;i++) S_(52+i*43,380,52+i*43,440); break;
-    case "diamonds": b.spawn=[30,W-30]; for(const [cx,cy] of [[100,180],[260,180],[180,320],[100,460],[260,460]]){ S_(cx,cy-36,cx+36,cy); S_(cx+36,cy,cx,cy+36); S_(cx,cy+36,cx-36,cy); S_(cx-36,cy,cx,cy-36); } break;
-    case "twister": for(let i=0;i<3;i++){ b.spins.push({x:W/2,y:170+i*160,len:80,a:i,w:i%2?-0.9:0.9}); C_(50,250+i*120,16); C_(W-50,250+i*120,16); } break;
-    case "lanes": b.spawn=[30,W-30]; for(let i=1;i<5;i++) S_(i*72,130,i*72,330); for(let i=0;i<4;i++) C_(72*i+108,420,20); for(let i=0;i<5;i++) C_(72*i+36,520,14); break;
-    case "bubbles": b.spawn=[30,W-30]; for(let i=0;i<10;i++) b.movers.push({cx:50+(i%5)*65,cy:150+Math.floor(i/5)*190,ax:0,ay:28,r:16+r()*12,ph:r()*6,sp:0.8+r()*0.8,x:0,y:0,lit:0}); for(let i=0;i<4;i++) C_(80+i*67,480,14); break;
-    case "chevrons": b.spawn=[30,W-30]; for(let i=0;i<4;i++){ const y=130+i*115; S_(30,y,W/2-30,y+40); S_(W-30,y,W/2+30,y+40); C_(W/2,y+70,14); } break;
+    case "start": stag(30,120,110,150,480); break;
+    case "dots": b.spawn=[40,W-40]; stag(24,96,88,120,540); break;
+    case "bigdots": b.spawn=[40,W-40]; stag(46,150,140,150,520); break;
+    case "crosses": b.spawn=[40,W-40]; for(let i=0;i<5;i++){ const y=140+i*95; for(const x of (i%2?[120,240]:[60,180,300])) if(x>=60&&x<=300) SPIN(x,y,34,"cross",(i%2?-1:1)*0.7); } break;
+    case "funnel": b.spawn=[30,W-30]; S_(0,120,W/2-38,235,18); S_(W,120,W/2+38,235,18); C_(W/2,330,34); stag(20,90,80,420,540,1); break;
+    case "diamonds": b.spawn=[40,W-40]; for(let i=0;i<4;i++){ const y=150+i*115; for(const x of (i%2?[120,240]:[70,180,290])) diamond(x,y,34); } break;
+    case "triangles": b.spawn=[40,W-40]; for(let i=0;i<4;i++){ const y=150+i*115; for(const x of (i%2?[120,240]:[70,180,290])) tri(x,y,36); } break;
+    case "bars": b.spawn=[40,W-40]; for(let i=0;i<5;i++){ const y=120+i*95; if(i%2) S_(W,y,110,y+26,18); else S_(0,y,W-110,y+26,18); } break;
+    case "pyramid": for(let row=0;row<6;row++){ const n=row+1; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*58,130+row*74,19); } break;
+    case "hourglass": b.spawn=[30,W-30]; S_(0,110,W/2-34,220,18); S_(W,110,W/2+34,220,18); C_(W/2,300,26); S_(W/2-50,360,70,450,18); S_(W/2+50,360,W-70,450,18); stag(18,90,70,510,560); break;
+    case "spinners": b.spawn=[40,W-40]; for(let i=0;i<4;i++) SPIN(i%2?245:115,150+i*115,58,i%3===2?"cross":"bar"); break;
+    case "pins": b.spawn=[30,W-30]; stag(9,48,42,110,560); break;
+    case "zigzag": b.spawn=[30,W-30]; for(let i=0;i<6;i++){ const y=120+i*80; if(i%2) S_(W,y,W-150,y+40,16); else S_(0,y,150,y+40,16); C_(i%2?100:260,y+20,24); } break;
+    case "mixed": b.spawn=[40,W-40]; for(let i=0;i<5;i++){ const y=130+i*95; for(const x of (i%2?[120,240]:[60,180,300])){ if((i+x/60)%2<1) C_(x,y,26); else diamond(x,y,28); } } break;
+    case "orbit": for(let i=0;i<4;i++) b.movers.push({cx:W/2,cy:150+i*110,ax:100,ay:0,r:30,ph:i*1.6,sp:0.7+0.12*i,x:0,y:0,lit:0}); break;
+    case "rain": b.spawn=[30,W-30]; for(let i=0;i<60&&b.circ.length<16;i++){ const rad=14+r()*20, x=40+r()*(W-80), y=110+r()*(H-190); if(x-rad>=26&&x+rad<=W-26&&b.circ.every(c=>Math.hypot(c.x-x,c.y-y)>c.r+rad+26)) C_(x,y,rad); } break;
+    case "chevrons": b.spawn=[30,W-30]; for(let i=0;i<4;i++){ const y=130+i*115; for(const cx of (i%2?[180]:[95,265])){ S_(cx-55,y+38,cx,y,16); S_(cx,y,cx+55,y+38,16); } } break;
+    case "wedges": b.spawn=[60,W-60]; for(let i=0;i<5;i++){ const y=100+i*95; if(i%2) POLY([[W,y],[W,y+90],[W-120,y+90]]); else POLY([[0,y],[120,y+90],[0,y+90]]); } C_(W/2,330,22); break;
+    case "lanes": b.spawn=[30,W-30]; for(let i=1;i<5;i++) S_(i*72,140,i*72,300,14); stag(22,72,80,380,540); break;
+    case "bubbles": b.spawn=[30,W-30]; for(let i=0;i<8;i++) b.movers.push({cx:70+(i%4)*73,cy:150+Math.floor(i/4)*200,ax:0,ay:34,r:22+r()*10,ph:r()*6,sp:0.6+r()*0.6,x:0,y:0,lit:0}); stag(16,73,60,480,540); break;
   }
+
   b.circ=b.circ.filter(c=>c.x-c.r>=26&&c.x+c.r<=W-26);
-  for(const sg of b.segs) for(const e of ["1","2"]){ const x=sg["x"+e]; if(x>10&&x<36) sg["x"+e]=36; if(x<W-10&&x>W-36) sg["x"+e]=W-36; }
+  for(const sg of b.segs){ if(sg.poly) continue; for(const e of ["1","2"]){ const x=sg["x"+e]; if(x>10&&x<44) sg["x"+e]=44; if(x<W-10&&x>W-44) sg["x"+e]=W-44; } }
   for(const s of b.spins) s.kind=s.kind||"bar";
   // spinning objects on every stage: bars, crosses, stars, triangles, squares (more on later stages)
   { const KINDS=[["bar",42],["cross",38],["star",36],["tri",30],["sq",28]], want=2+Math.min(4,Math.floor(L/10))+(r()<0.5?1:0); let placed=0;
@@ -254,21 +261,21 @@ function buildStage(L){
       for(let tries=0;tries<50;tries++){ const x=70+r()*(W-140), y=120+r()*(H-220); if(!areaFree(b,x,y,rad)) continue;
         if(k==="xspin") b.spins.push({x,y,len:40,a:r()*6,w:(r()<.5?-1:1)*(1+r()*0.8),kind:"cross"});
         if(k==="trispin") b.spins.push({x,y,len:30,a:r()*6,w:(r()<.5?-1:1)*(0.8+r()*0.8),kind:"tri"});
-        if(k==="tri"){ const h=24; S_(x,y-h,x+h,y+h*0.7); S_(x+h,y+h*0.7,x-h,y+h*0.7); S_(x-h,y+h*0.7,x,y-h); b.segs.slice(-3).forEach(sg=>sg.tri=1); }
+        if(k==="tri") tri(x,y,24);
         if(k==="mover") b.movers.push({cx:x,cy:y,ax:30+r()*20,ay:0,r:14+r()*6,ph:r()*6,sp:0.8+r()*0.7,x,y,lit:0});
         break; } } }
   const ng=L<3?1:L<10?2:3; placeGates(b,ng,Math.max(90,200-L*2),r); if(b.gates.length<ng) placeGates(b,ng,70,r); if(!b.gates.length) placeGates(b,1,56,r);
   // wall deflectors: short ramps attached to both walls push balls back into the middle,
   // so no ball can slide down the edges through several stages
-  { const free=(x,y)=>{ for(const c of b.circ) if(Math.hypot(c.x-x,c.y-y)<c.r+28) return false; for(const sg of b.segs) if(ptSeg(x,y,sg)<30) return false;
+  { const free=(x,y)=>{ for(const c of b.circ) if(Math.hypot(c.x-x,c.y-y)<c.r+28) return false; for(const sg of b.segs) if(ptSeg(x,y,sg)<30+sg.w/2) return false;
       for(const sp of b.spins) if(Math.hypot(sp.x-x,sp.y-y)<sp.len+28) return false; for(const m of b.movers) if(Math.abs(m.cy-y)<m.ay+m.r+18&&Math.abs(m.cx-x)<m.ax+m.r+18) return false;
       for(const sl of b.sliders) if(Math.abs(sl.y-y)<22&&Math.abs(sl.x0-x)<sl.amp+sl.len+18) return false; for(const g of b.gates) if(Math.abs(g.y-y)<24&&x>g.xa-12&&x<g.xb+g.w+12) return false; return true; };
     for(const side of [0,1]) for(let y=60+r()*30;y<H-60;y+=62+r()*26){ const len=34+r()*14, dy=24+r()*10, x0=side?W:0, x1=side?W-len:len;
       let ok=true; for(let t=0;t<=1.0001;t+=0.25) if(!free(x0+(x1-x0)*t,y+dy*t)) { ok=false; break; }
-      if(ok) S_(x0,y,x1,y+dy); } }
+      if(ok) S_(x0,y,x1,y+dy,14); } }
   // fill empty space with small round obstacles so every stage is dense
-  { const want=8+Math.min(10,Math.floor(L/4)); let added=0;
-    for(let tries=0;tries<400&&added<want;tries++){ const rad=9+r()*7, x=40+r()*(W-80), y=100+r()*(H-160); if(areaFree(b,x,y,rad)){ C_(x,y,rad); added++; } } }
+  { const want=4+Math.min(8,Math.floor(L/6)); let added=0;
+    for(let tries=0;tries<400&&added<want;tries++){ const rad=13+r()*9, x=40+r()*(W-80), y=100+r()*(H-160); if(areaFree(b,x,y,rad)){ C_(x,y,rad); added++; } } }
   // gates: horizontal bands that multiply a ball's value once
   placeGates(b,0,90,r); // re-measure bounces with the filler in place
   return b;
@@ -278,7 +285,7 @@ function buildStage(L){
 /* ================= the tower: every stage stacked, offset by its height ================= */
 const STG=[null];
 function buildTower(){ STG.length=1; for(let L=1;L<=NST;L++){ const b=buildStage(L), oy=(L-1)*HS; b.oy=oy;
-  for(const c of b.circ) c.y+=oy; for(const s of b.segs){ s.y1+=oy; s.y2+=oy; } for(const s of b.spins) s.y+=oy; for(const m of b.movers){ m.cy+=oy; m.x=m.cx; m.y=m.cy; } for(const g of b.gates){ g.y+=oy; g.lit=0; moveGate(g,0); } for(const s of b.sliders) s.y+=oy;
+  for(const c of b.circ) c.y+=oy; for(const s of b.segs){ s.y1+=oy; s.y2+=oy; } for(const s of b.spins) s.y+=oy; for(const m of b.movers){ m.cy+=oy; m.x=m.cx; m.y=m.cy; } for(const g of b.gates){ g.y+=oy; g.lit=0; moveGate(g,0); } for(const s of b.sliders) s.y+=oy; for(const pg of b.polys) pg.pts=pg.pts.map(([x,y])=>[x,y+oy]);
   buildObsGrid(b); STG.push(b); } }
 
 /* ================= physics ================= */
@@ -395,10 +402,10 @@ function render(){
     for(const q of s.gates){ ctx.fillStyle="rgba(255,212,0,.08)"; ctx.fillRect(q.xa,q.y-1,q.xb+q.w-q.xa,2); ctx.fillStyle=`rgba(255,212,0,${0.16+0.3*Math.max(0,q.lit)})`; ctx.fillRect(q.x1,q.y-5,q.x2-q.x1,10); ctx.fillStyle="#ffd400"; ctx.fillRect(q.x1,q.y-1,q.x2-q.x1,2); ctx.fillText("+"+(gmv-1).toFixed(2).replace(/\.?0+$/,"")+"×",(q.x1+q.x2)/2,q.y-8); }
     ctx.fillStyle="#141518"; for(const c of s.circ){ ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill(); if(c.lit>0&&!locked){ ctx.strokeStyle=`rgba(255,255,255,${c.lit*0.5})`; ctx.lineWidth=2; ctx.stroke(); } }
     for(const m of s.movers){ ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,Math.PI*2); ctx.fill(); }
-    ctx.fillStyle="#141518"; for(let i=0;i<s.segs.length;i++){ const g=s.segs[i]; if(g.tri&&s.segs[i+2]&&s.segs[i+2].tri){ ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(s.segs[i+1].x1,s.segs[i+1].y1); ctx.lineTo(s.segs[i+2].x1,s.segs[i+2].y1); ctx.closePath(); ctx.fill(); i+=2; } }
+    ctx.fillStyle="#141518"; for(const pg of s.polys){ ctx.beginPath(); ctx.moveTo(pg.pts[0][0],pg.pts[0][1]); for(let i=1;i<pg.pts.length;i++) ctx.lineTo(pg.pts[i][0],pg.pts[i][1]); ctx.closePath(); ctx.fill(); }
     ctx.strokeStyle="#141518"; ctx.lineCap="round"; for(const g of s.segs){ ctx.lineWidth=g.w; ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); ctx.stroke(); }
-    for(const p of s.spins){ const ed=spinEdges(p); if(p.kind==="tri"||p.kind==="sq"){ ctx.fillStyle="#141518"; ctx.beginPath(); ctx.moveTo(ed[0].x1,ed[0].y1); for(let i=1;i<ed.length;i++) ctx.lineTo(ed[i].x1,ed[i].y1); ctx.closePath(); ctx.fill(); } else { ctx.lineWidth=8; for(const e of ed){ ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke(); } } }
-    ctx.lineWidth=8; for(const sl of s.sliders){ ctx.beginPath(); ctx.moveTo(sl.x-sl.len,sl.y); ctx.lineTo(sl.x+sl.len,sl.y); ctx.stroke(); ctx.fillStyle="rgba(20,21,24,.35)"; ctx.fillRect(sl.x0-sl.amp-sl.len,sl.y-1,2*(sl.amp+sl.len),2); }
+    for(const p of s.spins){ const ed=spinEdges(p); if(p.kind==="tri"||p.kind==="sq"){ ctx.fillStyle="#141518"; ctx.beginPath(); ctx.moveTo(ed[0].x1,ed[0].y1); for(let i=1;i<ed.length;i++) ctx.lineTo(ed[i].x1,ed[i].y1); ctx.closePath(); ctx.fill(); } else { for(const e of ed){ ctx.lineWidth=e.w; ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke(); } } }
+    ctx.lineWidth=14; for(const sl of s.sliders){ ctx.beginPath(); ctx.moveTo(sl.x-sl.len,sl.y); ctx.lineTo(sl.x+sl.len,sl.y); ctx.stroke(); ctx.fillStyle="rgba(20,21,24,.35)"; ctx.fillRect(sl.x0-sl.amp-sl.len,sl.y-1,2*(sl.amp+sl.len),2); }
     ctx.globalAlpha=1; ctx.textAlign="left"; ctx.font="900 12px system-ui"; ctx.fillStyle=locked?"#777":"#ffd400"; ctx.fillText(L+" · "+s.name.toUpperCase(),8,oy+18);
     if(!locked){ ctx.font="700 10px system-ui"; ctx.fillStyle="#9aa0aa"; ctx.fillText("+"+(hitPct(L)*100).toFixed(0)+"% per bounce",8,oy+32); }
     if(locked){ ctx.textAlign="center"; ctx.fillStyle="rgba(20,21,24,.85)"; const yy=oy+HS/2-40; ctx.beginPath(); ctx.roundRect?ctx.roundRect(60,yy,W-120,80,14):ctx.rect(60,yy,W-120,80); ctx.fill();
