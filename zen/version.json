@@ -1,7 +1,7 @@
 {
-  "web": 23,
+  "web": 26,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Lanes: side ramps into a tank whose floor opens when full"
+  "notes": "Big tank stacks to the top, then empties"
 }
