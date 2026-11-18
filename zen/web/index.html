@@ -82,23 +82,23 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 18; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 19; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
-function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
+function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
 const $=id=>document.getElementById(id);
 const money=n=>"$"+fmt(n);
 const NST=150;
 
 /* ================= balls & economy ================= */
-const TYPES=[{name:"White",col:"#f4f4f4"},{name:"Cyan",col:"#3fd6e8"},{name:"Lime",col:"#a6e33b"},{name:"Orange",col:"#ff9f1c"},{name:"Purple",col:"#b86bff"},{name:"Red",col:"#ff4d5e"},{name:"Pink",col:"#ff7fd1"},{name:"Gold",col:"#ffd400"}];
-const GATE=[1,3,8,15,25,40,60,85]; // stages you need to own to unlock each ball
+const TYPES=[{name:"White",col:"#f4f4f4"},{name:"Cyan",col:"#3fd6e8"},{name:"Lime",col:"#a6e33b"},{name:"Orange",col:"#ff9f1c"},{name:"Purple",col:"#b86bff"},{name:"Red",col:"#ff4d5e"},{name:"Pink",col:"#ff7fd1"},{name:"Gold",col:"#ffd400"},{name:"Teal",col:"#1fbf9f"},{name:"Sky",col:"#7ec8ff"},{name:"Coral",col:"#ff8a65"},{name:"Mint",col:"#9dffb0"},{name:"Lavender",col:"#d6b3ff"},{name:"Magenta",col:"#ff3df0"},{name:"Bronze",col:"#c98a4b"},{name:"Silver",col:"#c9d1d9"},{name:"Crimson",col:"#d1124f"},{name:"Royal",col:"#5c6bff"},{name:"Olive",col:"#a3b83b"},{name:"Rainbow",col:"#ffffff",rainbow:1}];
+const GATE=[1,3,8,15,25,40,60,85,90,95,100,106,112,118,124,130,136,142,148,150]; // stages you need to own to unlock each ball
 const RMAX=25;
 const spawnTime=r=>3.2/(1+0.22*(r-1));
 const costRate=(k,r)=>8*Math.pow(7,k)*Math.pow(1.5,r-1)*perkCost("ballCost");
 const costVal=(k,v)=>10*Math.pow(7,k)*Math.pow(1.3,v-1)*perkCost("ballCost");
 const costUnlock=k=>60*Math.pow(9,k);
-let PRICES=[0,149,1.92e+05,5.47e+08,2.62e+10,4.59e+11,6.23e+12,7.25e+13,2.1e+15,3.07e+16,3.3e+17,3.03e+18,2.47e+19,2.01e+20,1.53e+21,2.71e+22,2.94e+23,2.56e+24,1.96e+25,1.39e+26,9.67e+26,6.7e+27,4.56e+28,3.05e+29,1.98e+30,2.74e+31,2.47e+32,1.86e+33,1.28e+34,8.29e+34,5.33e+35,3.35e+36,2.04e+37,1.25e+38,7.74e+38,4.64e+39,2.82e+40,1.73e+41,1.04e+42,6.21e+42,7.77e+43,6.36e+44,4.49e+45,2.85e+46,1.74e+47,1.02e+48,5.97e+48,3.56e+49,2.11e+50,1.21e+51,7e+51,4.08e+52,2.3e+53,1.34e+54,7.73e+54,4.49e+55,2.59e+56,1.49e+57,8.57e+57,4.94e+58,5.58e+59,4.24e+60,2.84e+61,1.76e+62,1.03e+63,5.78e+63,3.33e+64,1.88e+65,1.05e+66,5.91e+66,3.32e+67,1.88e+68,1.04e+69,5.86e+69,3.26e+70,1.84e+71,1.02e+72,5.72e+72,3.2e+73,1.78e+74,9.86e+74,5.44e+75,2.99e+76,1.67e+77,9.18e+77,9.99e+78,7.38e+79,4.8e+80,2.88e+81,1.64e+82,9.27e+82,5.18e+83,2.85e+84,1.57e+85,8.5e+85,4.68e+86,2.58e+87,1.42e+88,7.68e+88,4.17e+89,2.3e+90,1.26e+91,6.94e+91,3.75e+92,2.05e+93,1.11e+94,6.03e+94,3.29e+95,1.79e+96,9.73e+96,5.28e+97,2.91e+98,1.58e+99,8.51e+99,4.65e+100,2.54e+101,1.36e+102,7.33e+102,4.05e+103,2.18e+104,1.17e+105,6.33e+105,3.43e+106,1.85e+107,1e+108,5.39e+108,2.93e+109,1.58e+110,8.58e+110,4.58e+111,2.47e+112,1.34e+113,7.18e+113,3.86e+114,2.1e+115,1.12e+116,5.99e+116,3.21e+117,1.74e+118,9.34e+118,5.01e+119,2.71e+120,1.46e+121,7.91e+121,4.24e+122,2.26e+123,1.22e+124,6.47e+124,3.44e+125,1.85e+126]; // price to unlock stage L (index L-1)
+let PRICES=[0,149,1.92e+05,5.47e+08,2.62e+10,4.59e+11,6.23e+12,7.25e+13,2.1e+15,3.07e+16,3.3e+17,3.03e+18,2.47e+19,2.01e+20,1.53e+21,2.71e+22,2.94e+23,2.56e+24,1.96e+25,1.39e+26,9.67e+26,6.7e+27,4.56e+28,3.05e+29,1.98e+30,2.74e+31,2.47e+32,1.86e+33,1.28e+34,8.29e+34,5.33e+35,3.35e+36,2.04e+37,1.25e+38,7.74e+38,4.64e+39,2.82e+40,1.73e+41,1.04e+42,6.21e+42,7.77e+43,6.36e+44,4.49e+45,2.85e+46,1.74e+47,1.02e+48,5.97e+48,3.56e+49,2.11e+50,1.21e+51,7e+51,4.08e+52,2.3e+53,1.34e+54,7.73e+54,4.49e+55,2.59e+56,1.49e+57,8.57e+57,4.94e+58,5.58e+59,4.24e+60,2.84e+61,1.76e+62,1.03e+63,5.78e+63,3.33e+64,1.88e+65,1.05e+66,5.91e+66,3.32e+67,1.88e+68,1.04e+69,5.86e+69,3.26e+70,1.84e+71,1.02e+72,5.72e+72,3.2e+73,1.78e+74,9.86e+74,5.44e+75,2.99e+76,1.67e+77,9.18e+77,9.99e+78,7.38e+79,4.8e+80,2.88e+81,1.64e+82,1.85e+83,1.36e+84,8.62e+84,5.22e+85,3e+86,3.32e+87,2.4e+88,1.54e+89,9.24e+89,5.18e+90,5.79e+91,4.23e+92,2.71e+93,1.61e+94,9.06e+94,5.09e+95,5.61e+96,4.09e+97,2.62e+98,1.53e+99,8.6e+99,4.79e+100,5.33e+101,3.82e+102,2.43e+103,1.44e+104,8.13e+104,4.49e+105,5e+106,3.58e+107,2.28e+108,1.36e+109,7.68e+109,4.25e+110,4.69e+111,3.39e+112,2.12e+113,1.25e+114,7.03e+114,3.87e+115,4.33e+116,3.09e+117,1.93e+118,1.14e+119,6.38e+119,3.53e+120,3.96e+121,2.81e+122,1.76e+123,1.03e+124,5.8e+124,3.2e+125,3.59e+126,2.54e+127,1.6e+128,9.31e+128,5.24e+129,2.89e+130,3.26e+131,2.32e+132]; // price to unlock stage L (index L-1)
 const priceOf=L=>PRICES[L-1];
 const basis=L=>Math.max(50,PRICES[L-1]||50);
 const OMAX=8, GMAX=10;
@@ -144,8 +144,9 @@ const shrinkOf=L=>(1-0.04*stOf(L).o)*Math.pow(0.97,P("hits"));
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1,0,0,0,0,0,0,0],val:[1,1,1,1,1,1,1,1],st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0}; }
+function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
+while(S.rate.length<TYPES.length) S.rate.push(0); while(S.val.length<TYPES.length) S.val.push(1);
 if((S.ver||0)<2){ for(const k in S.st) S.st[k].o=0; S.ver=2; } // v2: "o" is now obstacle shrink (0..8)
 let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) return; saveT=n; S.last=n; S.cam=cam; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 
@@ -234,9 +235,9 @@ function buildStage(L){
   return b;
 }
 /* ================= physics ================= */
-let balls=[], acc=[0,0,0,0,0,0,0,0], gt=0, earnWin=0, winStart=0, rateNow=0, chimeT=0, fever=0, avgNorm=3;
+let balls=[], acc=new Array(20).fill(0), gt=0, earnWin=0, winStart=0, rateNow=0, chimeT=0, fever=0, avgNorm=3;
 const MAXB=5000;
-const radius=k=>6.5+k*0.3;
+const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
 function pay(v){ S.coins+=v; S.total+=v; earnWin+=v; }
 // more than 5000 balls: the extra ones pay what an average ball earned on its way down
@@ -366,7 +367,7 @@ function render(){
   }
   if(EY>cam-20&&EY<cam+viewH+20){ ctx.fillStyle="#ffd400"; ctx.fillRect(0,EY-3,W,3); ctx.font="900 10px system-ui"; ctx.textAlign="center"; ctx.fillStyle="#ffd400"; ctx.fillText("▼ END ▼",W/2,EY+12); }
   { const y0=cam-10, y1=cam+viewH+10;
-    for(let k=0;k<TYPES.length;k++){ ctx.beginPath(); let any=false; for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; ctx.moveTo(b.x+b.r,b.y); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); any=true; } if(any){ ctx.fillStyle=TYPES[k].col; ctx.fill(); } } }
+    for(let k=0;k<TYPES.length;k++){ ctx.beginPath(); let any=false; for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; ctx.moveTo(b.x+b.r,b.y); ctx.arc(b.x,b.y,b.r,0,Math.PI*2); any=true; } if(any){ ctx.fillStyle=TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col; ctx.fill(); } } }
   if(fever>0){ ctx.fillStyle="rgba(255,212,0,.1)"; ctx.fillRect(0,cam,W,viewH); }
   ctx.font="800 11px system-ui"; ctx.textAlign="center"; for(const p of pops){ ctx.globalAlpha=Math.max(0,p.t); ctx.fillStyle="#ffd400"; ctx.fillText(p.txt,p.x,p.y); } ctx.globalAlpha=1;
 }
