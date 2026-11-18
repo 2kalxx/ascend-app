@@ -1,7 +1,7 @@
 {
-  "web": 8,
+  "web": 9,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Auto also unlocks the next stage"
+  "notes": "Up to 5000 balls on screen"
 }
