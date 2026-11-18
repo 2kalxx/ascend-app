@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 14; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 15; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -147,7 +147,7 @@ let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }
 let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) return; saveT=n; S.last=n; S.cam=cam; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 
 /* ================= stages ================= */
-const W=360, H=620, HS=620, G0=520;
+const W=360, H=620, HS=620, G0=300;
 const NAMES=["Start","Dots","Big X","Crosses","Funnel","Diamonds","Triangles","Pillars","Pyramid","Hourglass","Spinners","Pins","Cups","Mixed","Orbit","Bumpers","Chevrons","Wedges","Spikes","Bubbles"];
 function rng(seed){ let a=seed>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
 // average bounces per ball on each layout (measured) → bounce bonus is scaled so every stage pays about the same
@@ -377,7 +377,7 @@ function step(dt,sim){
   for(let i=balls.length-1;i>=0;i--){ const b=balls[i];
     b.vy+=g*dt; b.x+=b.vx*dt; const py=b.y; b.y+=b.vy*dt; b.life+=dt;
     if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx)*0.5; } if(b.x>W-b.r){ b.x=W-b.r; b.vx=-Math.abs(b.vx)*0.5; }
-    const sp=Math.hypot(b.vx,b.vy); if(sp>480){ b.vx*=480/sp; b.vy*=480/sp; }
+    const sp=Math.hypot(b.vx,b.vy); if(sp>300){ b.vx*=300/sp; b.vy*=300/sp; }
     const L=Math.floor(b.y/HS)+1; stageHits(b,L,sim); const lt=b.y-(L-1)*HS; if(lt<b.r+30&&L>1) stageHits(b,L-1,sim); else if(lt>HS-b.r-30) stageHits(b,L+1,sim);
     const s=STG[L]; if(s) for(let gi=0;gi<s.gates.length;gi++){ const q=s.gates[gi]; if(py<q.y&&b.y>=q.y){ const mid=b.x>=q.x1&&b.x<=q.x2; b.gm+=(mid?gateMult(L):sideMult(L))-1; if(mid) q.lit=1; } }
     if(sp<25) b.slow+=dt; else b.slow=0;
