@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 17; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 18; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -190,14 +190,14 @@ function buildStage(L){
   const th=themeOf(L), v=variantOf(L), h=HT[L], oy=OY[L], r=rng(L*7919+13), k=shrinkOf(L), mir=v%2===1;
   const b={L,name:stageName(L),theme:th.id,oy,h,circ:[],segs:[],polys:[],spins:[],gates:[],tips:[]};
   const MX=x=>mir?W-x:x;
-  const C_=(x,y,rad,o)=>{ rad*=k; x=MX(x); if(x-rad<26) x=26+rad; if(x+rad>W-26) x=W-26-rad; b.circ.push(Object.assign({x,y:oy+y,r:rad,lit:0},o||{})); };
+  const C_=(x,y,rad,o)=>{ rad*=k; x=MX(x); if(x-rad<26) x=-rad*0.3; else if(x+rad>W-26) x=W+rad*0.3; if(b.circ.some(c=>Math.abs(c.y-oy-y)<2&&Math.abs(c.x-x)<4)) return; b.circ.push(Object.assign({x,y:oy+y,r:rad,lit:0},o||{})); };
   const S_=(x1,y1,x2,y2,w)=>{ x1=MX(x1); x2=MX(x2); for(const e of [0,1]){ } const fix=x=>(x>2&&x<44)?44:(x<W-2&&x>W-44)?W-44:x; b.segs.push({x1:fix(x1),y1:oy+y1,x2:fix(x2),y2:oy+y2,w:(w||14),lit:0}); };
   const POLY=(pts)=>{ pts=pts.map(([x,y])=>[MX(x),oy+y]); const id=b.polys.length+1; b.polys.push({pts,id}); for(let i=0;i<pts.length;i++){ const a=pts[i], c=pts[(i+1)%pts.length]; b.segs.push({x1:a[0],y1:a[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } };
   const scaleAround=(pts,cx,cy)=>pts.map(([x,y])=>[cx+(x-cx)*k,cy+(y-cy)*k]);
-  const tri=(cx,cy,hh)=>POLY(scaleAround([[cx,cy-hh],[cx+hh*0.95,cy+hh*0.7],[cx-hh*0.95,cy+hh*0.7]],cx,cy));
+  const triSeen=new Set(); const tri=(cx,cy,hh)=>{ const hw=hh*0.95*k; if(cx-hw<26) cx=0; else if(cx+hw>W-26) cx=W; const key=Math.round(cx)+'|'+Math.round(cy); if(triSeen.has(key)) return; triSeen.add(key); POLY(scaleAround([[cx,cy-hh],[cx+hh*0.95,cy+hh*0.7],[cx-hh*0.95,cy+hh*0.7]],cx,cy)); };
   const diamond=(cx,cy,hx,hy)=>POLY(scaleAround([[cx,cy-hy],[cx+hx,cy],[cx,cy+hy],[cx-hx,cy]],cx,cy));
   const star=(cx,cy,R1,R2,n,a0)=>{ const pts=[]; for(let i=0;i<n*2;i++){ const rr=i%2?R2:R1, a=a0+i*Math.PI/n; pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]); } POLY(scaleAround(pts,cx,cy)); };
-  const stag=(rad,dx,dy,y0,y1,off)=>{ for(let y=y0,i=0;y<=y1;y+=dy,i++){ const o=(i+(off||0))%2?dx/2:0; for(let x=W/2-Math.floor((W/2)/dx)*dx+o;x<=W;x+=dx) if(x-rad>=26&&x+rad<=W-26) C_(x,y,rad); } };
+  const stag=(rad,dx,dy,y0,y1,off)=>{ for(let y=y0,i=0;y<=y1;y+=dy,i++){ const o=(i+(off||0))%2?dx/2:0; for(let x=W/2-Math.ceil((W/2)/dx)*dx+o;x<=W+dx/2;x+=dx) C_(x,y,rad); } };
   // gate rows: one every two screens and one near the stage bottom (like the red bars in the video)
   const gy=[]; for(let y=2*SCR-60;y<h-200;y+=2*SCR) gy.push(y); if(th.id==="lanes") gy.length=0; gy.push(h-50);
   // content goes into the zones between gates (a free band is kept around every gate)
@@ -207,21 +207,25 @@ function buildStage(L){
     switch(th.id){
       case "dots": { const rows=[]; for(let y=y0+20,i=0;y<=y1-20;y+=74,i++) rows.push([y,i]);
         for(const [y,i] of rows){ if(i%4===3){ for(const x of (i%8===3?[60,180,300]:[120,240])) b.spins.push({x:MX(x),y:oy+y,len:34*k,a:r()*6,w:(r()<.5?-1:1)*0.15,kind:"plus",th:14*k}); }
-          else { const dx=88/dens, o=i%2?dx/2:0; for(let x=W/2-Math.floor((W/2)/dx)*dx+o;x<=W;x+=dx) if(x-24>=26&&x+24<=W-26) C_(x,y,24); } } break; }
+          else { const dx=Math.max(84,88/dens), o=i%2?dx/2:0; for(let x=W/2-Math.ceil((W/2)/dx)*dx+o;x<=W+dx/2;x+=dx) C_(x,y,24); } } break; }
       case "tri": for(let y=y0+30;y<=y1-150;y+=250){ S_(0,y,90,y+55,14); S_(W,y,W-90,y+55,14); tri(W/2,y+95,62); POLY([[0,y+150],[78*k,y+185],[0,y+220]]); POLY([[W,y+150],[W-78*k,y+185],[W,y+220]]); } break;
-      case "spikes": for(let y=y0+20,i=0;y<=y1-20;y+=Math.max(58,70/dens),i++) for(let x=46+(i%2?33:0);x<=W-46;x+=66) tri(x,y,15); break;
+      case "spikes": for(let y=y0+20,i=0;y<=y1-20;y+=Math.max(58,70/dens),i++) for(let x=(i%2?33:0)-0;x<=W+20;x+=66) tri(x,y,15); break;
       case "shelves": { S_(60,y0+60,W/2,y0+10,14); S_(W/2,y0+10,W-60,y0+60,14); for(let y=y0+140,i=0;y<=y1-20;y+=95,i++){ if(i%2) S_(W-200,y,W-60,y,14); else S_(60,y,200,y,14); } break; }
       case "cups": for(let y=y0+20,i=0;y<=y1-50;y+=130,i++){ const L_=i%2===0; if(L_){ S_(0,y,44,y+34,12); S_(44,y+34,118,y+44,12); } else { S_(W,y,W-44,y+34,12); S_(W-44,y+34,W-118,y+44,12); } } break;
       case "green": { let cnt=0; for(let y=y0+20,i=0;y<=y1-20;y+=70,i++){ if(i%5===4&&y+130<y1){ b.spins.push({x:MX(i%10===4?150:210),y:oy+y+50,len:80*k,a:r()*6,w:(r()<.5?-1:1)*0.5,kind:"xballs",br:20*k}); y+=110; continue; }
-          const dx=80/dens, o=i%2?dx/2:0; for(let x=W/2-Math.floor((W/2)/dx)*dx+o;x<=W;x+=dx){ const rad=(cnt++%3===0)?22:14; if(x-rad>=26&&x+rad<=W-26) C_(x,y,rad,{bump:1}); } } break; }
+          const dx=Math.max(80,80/dens), o=i%2?dx/2:0; for(let x=W/2-Math.ceil((W/2)/dx)*dx+o;x<=W+dx/2;x+=dx){ const rad=(cnt++%3===0)?22:14; C_(x,y,rad,{bump:1}); } } break; }
       case "diamonds": for(let y=y0+50,i=0;y<=y1-50;y+=150,i++) for(const x of (i%2?[180]:[90,270])) diamond(x,y,42,42); break;
       case "lanes": { S_(120,y0,120,y1,14); S_(240,y0,240,y1,14); for(let y=y0+120,i=0;y<=y1-80;y+=170,i++){ const side=i%2; if(side) S_(120,y,70,y+50,12); else S_(240,y,290,y+50,12); if(i%3===2){ S_(120,y+70,165,y+115,12); } } break; }
-      case "stars": for(let y=y0+70,i=0;y<=y1-70;y+=170,i++){ if(i%3===1) C_(i%2?100:260,y,64); else for(const x of (i%2?[180]:[95,265])) star(x,y,56,32,8,r()*1); } break;
+      case "stars": for(let y=y0+70,i=0;y<=y1-70;y+=170,i++){ if(i%3===1) C_(i%2?100:260,y,64); else for(const x of (i%2?[180]:[95,265])) star(x,y,56,40,8,r()*1); } break;
       case "slants": for(let y=y0+20,i=0;y<=y1-110;y+=115,i++){ const x=50+r()*120; if(i%2) S_(x,y,x+130,y+95,14); else S_(x+130,y,x,y+95,14); } break;
-      case "trifield": for(let y=y0+25,i=0;y<=y1-20;y+=58,i++) for(let x=40+(i%2?32:0);x<=W-40;x+=64) tri(x,y,19); break;
+      case "trifield": for(let y=y0+25,i=0;y<=y1-20;y+=58,i++) for(let x=(i%2?32:0)-0;x<=W+20;x+=64) tri(x,y,19); break;
       case "thin": for(let y=y0+20,i=0;y<=y1-10;y+=82,i++){ const x=20+r()*(W-200); S_(x,y,x+160*k,y,8); } break;
       case "arrows": for(let y=y0+40,i=0;y<=y1-50;y+=125,i++){ if(i%3===2){ diamond(W/2,y,110,26); } else if(i%2) POLY([[W,y-30],[W-170*k,y],[W,y+30]]); else POLY([[0,y-30],[170*k,y],[0,y+30]]); } break;
     } }
+  // small wall wedges so no ball can slide down along the edges
+  if(["shelves","lanes","stars","slants","thin","diamonds","spikes"].includes(th.id)){ const near=(x,y)=>b.circ.some(c=>Math.hypot(c.x-x,c.y-y)<c.r+30)||b.segs.some(sg=>ptSeg(x,y,sg)<30+sg.w/2);
+    for(const side of [0,1]) for(let y=90+r()*40;y<h-90;y+=120+r()*40){ if(gy.some(g=>Math.abs(g-y)<95)) continue; const X=side?W:0, d=side?-1:1, pts=[[X,y],[X+d*34,y+30],[X,y+60]];
+      if(pts.some(([x,yy])=>near(x,oy+yy))||near(X+d*18,oy+y+30)) continue; const id=b.polys.length+1, P2=pts.map(([x,yy])=>[x,oy+yy]); b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const a=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:a[0],y1:a[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } } }
   // gates
   for(const y of gy){ const pat=GPAT[Math.floor(r()*GPAT.length)], w=Math.max(70,120-v*4); b.gates.push({y:oy+y,pat,w,xa:16,xb:W-16-w,sp:40+r()*30,ph:r()*20,x1:16,x2:16+w,lit:0}); }
   for(const t of TIPS) if(t[0]===L) b.tips.push({y:oy+h*t[1],txt:t[2]});
@@ -249,10 +253,10 @@ function buildObsGrid(s){ const rows=Math.ceil(s.h/OC)+1; s.og=new Array(OCOLS*r
   for(const g of s.segs) add(Math.min(g.x1,g.x2),Math.min(g.y1,g.y2),Math.max(g.x1,g.x2),Math.max(g.y1,g.y2),"g",g); }
 function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
   const gy=((b.y-s.oy)/OC)|0, gx=(b.x/OC)|0, cell=gy>=0&&gy<s.ogRows&&gx>=0&&gx<OCOLS?s.og[gy*OCOLS+gx]:null;
-  if(cell){ for(const c of cell.c) if(collide(b,c.x,c.y,c.r,c.bump?1.05:0.5)){ c.lit=1; if(!sim) tick(c.y-s.oy); }
+  if(cell){ for(const c of cell.c) if(collide(b,c.x,c.y,c.r,c.bump?0.8:0.5)){ c.lit=1; if(!sim) tick(c.y-s.oy); }
     for(const sg of cell.g) segHit(b,sg,0.25); }
   for(const sp of s.spins){ const dx=b.x-sp.x, dy=b.y-sp.y, R=sp.len+(sp.br||0)+b.r+8; if(dx*dx+dy*dy>R*R) continue; for(const e of spinEdges(sp)) segHit(b,e,0.4,-dy*sp.w,dx*sp.w);
-    const bl=spinBalls(sp); if(bl) for(const [x,y] of bl) if(collide(b,x,y,sp.br,1.0,-(y-sp.y)*sp.w,(x-sp.x)*sp.w)&&!sim) tick(y-s.oy); } }
+    const bl=spinBalls(sp); if(bl) for(const [x,y] of bl) if(collide(b,x,y,sp.br,0.7,-(y-sp.y)*sp.w,(x-sp.x)*sp.w)&&!sim) tick(y-s.oy); } }
 function step(dt,sim){
   gt+=dt; if(fever>0) fever-=dt;
   const rm=rateMult()*(fever>0?2:1);
@@ -355,7 +359,7 @@ function render(){
         if(c-a>40){ ctx.fillStyle="#fff"; ctx.fillText("x"+(q.pat[i]*(i===1?lucky:1)*gb).toFixed(2),(a+c)/2,q.y+4); } }
       ctx.fillStyle="#141518"; ctx.fillRect(q.x1-3,y0-2,6,hgt+4); ctx.fillRect(q.x2-3,y0-2,6,hgt+4); }
     // tips (dark boxes like in the video)
-    if(!locked) for(const t of s.tips){ ctx.font="700 11px system-ui"; const lines=wrapText(t.txt,150), bh=14*lines.length+14; ctx.fillStyle="rgba(24,25,30,.92)"; roundBox(W/2-88,t.y-bh/2,176,bh,8); ctx.fill(); ctx.fillStyle="#fff"; ctx.textAlign="center"; lines.forEach((ln,i)=>ctx.fillText(ln,W/2,t.y-bh/2+18+i*14)); }
+    if(false) for(const t of s.tips){ ctx.font="700 11px system-ui"; const lines=wrapText(t.txt,150), bh=14*lines.length+14; ctx.fillStyle="rgba(24,25,30,.92)"; roundBox(W/2-88,t.y-bh/2,176,bh,8); ctx.fill(); ctx.fillStyle="#fff"; ctx.textAlign="center"; lines.forEach((ln,i)=>ctx.fillText(ln,W/2,t.y-bh/2+18+i*14)); }
     ctx.globalAlpha=1; ctx.textAlign="left"; ctx.font="900 12px system-ui"; ctx.fillStyle=locked?"#888":"#ffd400"; ctx.fillText(L+" · "+s.name.toUpperCase(),8,oy+18);
     if(locked){ ctx.textAlign="center"; ctx.fillStyle="rgba(20,21,24,.88)"; const yy=oy+60; roundBox(50,yy,W-100,84,14); ctx.fill();
       ctx.font="900 18px system-ui"; ctx.fillStyle=L===S.unlocked+1&&S.coins>=priceOf(L)?"#ffd400":"#ddd"; ctx.fillText("🔒 Stage "+L,W/2,yy+32); ctx.font="800 13px system-ui"; ctx.fillStyle="#bbb"; ctx.fillText(L===S.unlocked+1?"Unlock for "+money(priceOf(L)):money(priceOf(L)),W/2,yy+54); ctx.font="700 10px system-ui"; ctx.fillText("all gates pay ×1.35 more",W/2,yy+72); }
@@ -454,12 +458,14 @@ function openMenu(){ const L=$("layer");
     <div class="srow"><span>🎵 Lo-fi music</span><button class="tg ${S.music?"on":""}" id="tm">${S.music?"On":"Off"}</button></div>
     <div class="srow"><span>🔔 Sounds</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
     <div class="srow"><span>📳 Vibration</span><button class="tg ${S.haptic?"on":""}" id="th">${S.haptic?"On":"Off"}</button></div>
+    <div class="srow"><span>ℹ️ How to play</span><button class="tg" id="info">Open</button></div>
     <div class="srow"><span>Total earned</span><b>${money(S.total)}</b></div>
     <div class="srow"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ZEN_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
     ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
     <button class="btn g" id="rst">Start over</button><button class="btn" id="cl">Close</button></div></div>`;
   const q=s=>L.querySelector(s);
   q("#cl").onclick=()=>{ L.innerHTML=""; };
+  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
   q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
   q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
   q("#th").onclick=()=>{ S.haptic=!S.haptic; save(true); if(S.haptic) buzz(); openMenu(); };

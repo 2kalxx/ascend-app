@@ -1,7 +1,7 @@
 {
-  "web": 17,
+  "web": 18,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Balls spawn in the middle"
+  "notes": "Obstacles reach the walls, tips moved to the menu"
 }
