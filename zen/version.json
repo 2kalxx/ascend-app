@@ -1,7 +1,7 @@
 {
-  "web": 13,
+  "web": 14,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Marble-race parts: paddle wheels, seesaws, pistons, trap doors"
+  "notes": "Zen Idle style gates and obstacles from the video"
 }

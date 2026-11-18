@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 13; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 14; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -137,6 +137,7 @@ const rateMult=()=>Math.pow(1.15,P("rate"))*(1+0.05*C("sr"));
 const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(k===0?1+C("wp"):1);
 const stOf=L=>{ S.st[L]=S.st[L]||{o:1,g:0}; return S.st[L]; };
 const hitPct=L=>(0.04*stOf(L).o+0.02*P("hits"))*(1+0.15*C("hh"))*(STG[L]?STG[L].bf:1);
+const sideMult=L=>1+(gateMult(L)-1)*0.35;
 const gateMult=L=>(1.5+0.35*stOf(L).g+0.25*P("gates"))*(1+0.1*C("gm"));
 
 /* ================= state ================= */
@@ -147,17 +148,18 @@ let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) 
 
 /* ================= stages ================= */
 const W=360, H=620, HS=620, G0=520;
-const NAMES=["Start","Dots","Big Dots","Crosses","Funnel","Diamonds","Triangles","Bars","Pyramid","Hourglass","Spinners","Pins","Zigzag","Mixed","Orbit","Rain","Chevrons","Wedges","Lanes","Bubbles"];
+const NAMES=["Start","Dots","Big X","Crosses","Funnel","Diamonds","Triangles","Pillars","Pyramid","Hourglass","Spinners","Pins","Cups","Mixed","Orbit","Bumpers","Chevrons","Wedges","Spikes","Bubbles"];
 function rng(seed){ let a=seed>>>0; return ()=>{ a=(a+0x6D2B79F5)>>>0; let t=a; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
 // average bounces per ball on each layout (measured) → bounce bonus is scaled so every stage pays about the same
 const AVGHITS={start:3.5,dots:4.2,path:10,funnel:2.9,cross:1.6,pyramid:2.8,pillars:2,rings:3.8,zigzag:3,spinners:2.2,hourglass:2.3,scatter:2.5,stairs:3.9,orbit:0.8,comb:2.1,diamonds:1.2,twister:3.7,lanes:2.5,bubbles:5.3,chevrons:9.1};
-const LAYS=["dots","bigdots","crosses","funnel","diamonds","triangles","bars","pyramid","hourglass","spinners","pins","zigzag","mixed","orbit","rain","chevrons","wedges","lanes","bubbles"];
+const LAYS=["dots","xs","crosses","funnel","diamonds","triangles","pillars","pyramid","hourglass","spinners","pins","cups","mixed","orbit","bumpers","chevrons","wedges","spikes","bubbles"];
 const stageName=L=>L===1?"Start":NAMES[1+((L-2)%(NAMES.length-1))]+(L>NAMES.length?" "+["II","III","IV","V"][Math.floor((L-2)/(NAMES.length-1))-1]:"");
 // gates go into open space (never through obstacles) where balls actually fall
 function ptSeg(px,py,s){ const dx=s.x2-s.x1, dy=s.y2-s.y1, t=Math.max(0,Math.min(1,((px-s.x1)*dx+(py-s.y1)*dy)/(dx*dx+dy*dy))); return Math.hypot(px-(s.x1+dx*t),py-(s.y1+dy*t)); }
 // rotating shapes: bar, cross (2 bars) or triangle; sliders: horizontal beams moving left/right
 function spinEdges(s){ const L=s.len, a=s.a;
   if(s.kind==="tri"||s.kind==="sq"){ const n=s.kind==="tri"?3:4, v=[]; for(let i=0;i<n;i++) v.push([s.x+Math.cos(a+i*Math.PI*2/n)*L,s.y+Math.sin(a+i*Math.PI*2/n)*L]); return v.map((p,i)=>({x1:p[0],y1:p[1],x2:v[(i+1)%n][0],y2:v[(i+1)%n][1],w:7})); }
+  if(s.kind==="cup"){ const P=[[-22,-16],[-15,12],[15,12],[22,-16]].map(([x,y])=>[s.x+x*Math.cos(a)-y*Math.sin(a),s.y+x*Math.sin(a)+y*Math.cos(a)]); return [0,1,2].map(i=>({x1:P[i][0],y1:P[i][1],x2:P[i+1][0],y2:P[i+1][1],w:8})); }
   if(s.kind==="wheel"){ const e=[]; for(let i=0;i<5;i++){ const b=a+i*Math.PI*2/5; e.push({x1:s.x,y1:s.y,x2:s.x+Math.cos(b)*L,y2:s.y+Math.sin(b)*L,w:12}); } return e; }
   if(s.kind==="star"){ const e=[]; for(let i=0;i<3;i++){ const b=a+i*Math.PI/3; e.push({x1:s.x-Math.cos(b)*L,y1:s.y-Math.sin(b)*L,x2:s.x+Math.cos(b)*L,y2:s.y+Math.sin(b)*L,w:12}); } return e; }
   const e=[{x1:s.x-Math.cos(a)*L,y1:s.y-Math.sin(a)*L,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:14}];
@@ -194,6 +196,14 @@ function gateFree(b,y,x1,x2){
   for(const s of b.spins) if(Math.abs(s.y-y)<s.len+14&&s.x+s.len+8>x1&&s.x-s.len-8<x2) return false;
   for(const m of b.movers) if(Math.abs(m.cy-y)<m.ay+m.r+14&&m.cx+m.ax+m.r+8>x1&&m.cx-m.ax-m.r-8<x2) return false;
   return true; }
+// remove layout obstacles inside a box (to make room for gates and marble-race parts)
+function clearArea(b,x0,x1,y0,y1){ const hit=(ax0,ax1,ay0,ay1)=>ax1>x0&&ax0<x1&&ay1>y0&&ay0<y1;
+  b.circ=b.circ.filter(c=>!hit(c.x-c.r,c.x+c.r,c.y-c.r,c.y+c.r));
+  const dead=new Set(b.polys.filter(pg=>{ const xs=pg.pts.map(q=>q[0]), ys=pg.pts.map(q=>q[1]); return hit(Math.min(...xs),Math.max(...xs),Math.min(...ys),Math.max(...ys)); }).map(pg=>pg.id));
+  b.polys=b.polys.filter(pg=>!dead.has(pg.id));
+  b.segs=b.segs.filter(sg=>!(sg.poly?dead.has(sg.poly):hit(Math.min(sg.x1,sg.x2)-sg.w,Math.max(sg.x1,sg.x2)+sg.w,Math.min(sg.y1,sg.y2)-sg.w,Math.max(sg.y1,sg.y2)+sg.w)));
+  b.spins=b.spins.filter(o=>!hit(o.x-o.len,o.x+o.len,o.y-o.len,o.y+o.len));
+  b.movers=b.movers.filter(o=>!hit(o.cx-o.ax-o.r,o.cx+o.ax+o.r,o.cy-o.ay-o.r,o.cy+o.ay+o.r)); }
 function placeGates(b,ng,wdt,r){
   // trace some balls through the stage to learn where they fall
   const CW=10, CH=10, cols=Math.ceil(W/CW), rows=Math.ceil(H/CH), dens=new Float32Array(cols*rows);
@@ -236,6 +246,11 @@ function buildStage(L){
     case "funnel": b.spawn=[30,W-30]; S_(0,120,W/2-38,235,18); S_(W,120,W/2+38,235,18); C_(W/2,330,34); stag(20,90,80,420,540,1); break;
     case "diamonds": b.spawn=[40,W-40]; for(let i=0;i<4;i++){ const y=150+i*115; for(const x of (i%2?[120,240]:[70,180,290])) diamond(x,y,34); } break;
     case "triangles": b.spawn=[40,W-40]; for(let i=0;i<4;i++){ const y=150+i*115; for(const x of (i%2?[120,240]:[70,180,290])) tri(x,y,36); } break;
+    case "xs": b.spawn=[40,W-40]; stag(20,120,120,150,520); for(let i=0;i<3;i++){ const y=210+i*120; for(const x of (i%2?[120,240]:[60,180,300])) SPIN(x,y,32,"cross",(i%2?-1:1)*0.12); } break;
+    case "pillars": b.spawn=[60,W-60]; S_(110,110,110,260,16); S_(250,110,250,260,16); tri(180,215,52); for(let x=60;x<=300;x+=60) tri(x,330,13); S_(70,390,70,520,16); S_(290,390,290,520,16); tri(180,470,40); break;
+    case "cups": b.spawn=[40,W-40]; for(let i=0;i<4;i++){ const y=150+i*110; for(const x of (i%2?[120,240]:[70,180,290])) b.spins.push({x,y,len:24,a:0,a0:0,w:0,kind:"cup",tl:{minE:0,maxE:2.4*(x<180?-1:1)||2.4,hold1:0.4,mv:0.45,hold2:2.6+r()*1.5,ph:r()*6}}); } break;
+    case "bumpers": b.spawn=[40,W-40]; stag(26,110,100,140,540); for(const c of b.circ) if(r()<0.6) c.bump=1; break;
+    case "spikes": b.spawn=[40,W-40]; for(let i=0;i<4;i++){ const y=140+i*115; for(let x=50;x<=310;x+=52) tri(x+(i%2?26:0),y,13); S_(60,y+60,170,y+40,14); S_(300,y+60,190,y+40,14); } break;
     case "bars": b.spawn=[40,W-40]; for(let i=0;i<5;i++){ const y=120+i*95; if(i%2) S_(W,y,110,y+26,18); else S_(0,y,W-110,y+26,18); } break;
     case "pyramid": for(let row=0;row<6;row++){ const n=row+1; for(let i=0;i<n;i++) C_(W/2+(i-(n-1)/2)*58,130+row*74,19); } break;
     case "hourglass": b.spawn=[30,W-30]; S_(0,110,W/2-34,220,18); S_(W,110,W/2+34,220,18); C_(W/2,300,26); S_(W/2-50,360,70,450,18); S_(W/2+50,360,W-70,450,18); stag(18,90,70,510,560); break;
@@ -253,6 +268,8 @@ function buildStage(L){
 
   b.circ=b.circ.filter(c=>c.x-c.r>=26&&c.x+c.r<=W-26);
   for(const sg of b.segs){ if(sg.poly) continue; for(const e of ["1","2"]){ const x=sg["x"+e]; if(x>10&&x<44) sg["x"+e]=44; if(x<W-10&&x>W-44) sg["x"+e]=W-44; } }
+  { const ng=L<4?1:2, ys=[H-46]; if(ng>1) ys.push(Math.round(H*0.44));
+    for(const y of ys){ clearArea(b,0,W,y-28,y+28); const w=Math.max(64,112-L); b.gates.push({y,w,xa:18,xb:W-18-w,sp:45+r()*30,ph:r()*20,x1:18,x2:18+w,lit:0,band:1}); } }
   for(const s of b.spins) s.kind=s.kind||"bar";
   // marble-race parts on every stage from 2 on: paddle wheels, seesaws, wall pistons, trap doors
   if(L>=2){
@@ -264,7 +281,7 @@ function buildStage(L){
       b.segs=b.segs.filter(sg=>!(sg.poly?dead.has(sg.poly):hit(Math.min(sg.x1,sg.x2)-sg.w,Math.max(sg.x1,sg.x2)+sg.w,Math.min(sg.y1,sg.y2)-sg.w,Math.max(sg.y1,sg.y2)+sg.w)));
       b.spins=b.spins.filter(o=>!hit(o.x-o.len,o.x+o.len,o.y-o.len,o.y+o.len)); };
     const moverIn=(y0,y1)=>b.movers.some(o=>o.cy+o.ay+o.r>y0&&o.cy-o.ay-o.r<y1);
-    const used=[];
+    const used=b.gates.map(g=>g.y);
     const parts=["wheel","seesaw","piston","trap"], n=1+(L>=6?1:0)+(L>=18?1:0)+(r()<0.4?1:0);
     for(let i=0;i<n;i++){ const k=parts[(L+i*3+Math.floor(r()*4))%4];
       for(let t=0;t<30;t++){ const y=150+r()*(H-270), h=k==="trap"?40:k==="piston"?34:(k==="wheel"?44:58)+28;
@@ -285,7 +302,7 @@ function buildStage(L){
   if(L>=2){ const kinds=["xspin","slider","tri","trispin","mover"], n=1+Math.min(3,Math.floor(L/8))+(r()<0.5?1:0);
     for(let i=0;i<n;i++){ const k=kinds[Math.floor(r()*kinds.length)];
       if(k==="slider"){ for(let tries=0;tries<40;tries++){ const y=110+r()*(H-200), len=34+r()*14, amp=70+r()*40; const s={x0:W/2,y,len,amp,sp:0.8+r()*0.8,ph:r()*6,x:W/2,vx:0};
-          let ok=b.sliders.every(o=>Math.abs(o.y-y)>60)&&b.pistons.every(o=>Math.abs(o.y-y)>60)&&b.segs.every(sg=>{ for(let x=W/2-amp-len;x<=W/2+amp+len;x+=8) if(ptSeg(x,y,sg)<30) return false; return true; })&&b.circ.every(c=>Math.abs(c.y-y)>c.r+28)&&b.spins.every(o=>Math.abs(o.y-y)>o.len+28)&&b.movers.every(m=>Math.abs(m.cy-y)>m.ay+m.r+28);
+          let ok=b.sliders.every(o=>Math.abs(o.y-y)>60)&&b.pistons.every(o=>Math.abs(o.y-y)>60)&&b.gates.every(g=>Math.abs(g.y-y)>40)&&b.segs.every(sg=>{ for(let x=W/2-amp-len;x<=W/2+amp+len;x+=8) if(ptSeg(x,y,sg)<30) return false; return true; })&&b.circ.every(c=>Math.abs(c.y-y)>c.r+28)&&b.spins.every(o=>Math.abs(o.y-y)>o.len+28)&&b.movers.every(m=>Math.abs(m.cy-y)>m.ay+m.r+28);
           if(ok){ b.sliders.push(s); break; } } continue; }
       const rad=k==="mover"?52:k==="tri"?26:44;
       for(let tries=0;tries<50;tries++){ const x=70+r()*(W-140), y=120+r()*(H-220); if(!areaFree(b,x,y,rad)) continue;
@@ -294,7 +311,6 @@ function buildStage(L){
         if(k==="tri") tri(x,y,24);
         if(k==="mover") b.movers.push({cx:x,cy:y,ax:30+r()*20,ay:0,r:14+r()*6,ph:r()*6,sp:0.8+r()*0.7,x,y,lit:0});
         break; } } }
-  const ng=L<3?1:L<10?2:3; placeGates(b,ng,Math.max(90,200-L*2),r); if(b.gates.length<ng) placeGates(b,ng,70,r); if(!b.gates.length) placeGates(b,1,56,r);
   // wall deflectors: short ramps attached to both walls push balls back into the middle,
   // so no ball can slide down the edges through several stages
   { const free=(x,y)=>{ for(const c of b.circ) if(Math.hypot(c.x-x,c.y-y)<c.r+28) return false; for(const sg of b.segs) if(ptSeg(x,y,sg)<30+sg.w/2) return false;
@@ -338,7 +354,7 @@ function buildObsGrid(s){ const rows=Math.ceil(HS/OC)+1; s.og=Array.from({length
   for(const g of s.segs) add(Math.min(g.x1,g.x2),Math.min(g.y1,g.y2),Math.max(g.x1,g.x2),Math.max(g.y1,g.y2),"g",g); }
 function stageHits(b,L,sim){ const s=STG[L]; if(!s) return; let h=0;
   const gy=((b.y-s.oy)/OC)|0, gx=(b.x/OC)|0, cell=gy>=0&&gx>=0&&gx<OCOLS?s.og[gy*OCOLS+gx]:null;
-  if(cell){ for(const c of cell.c) if(collide(b,c.x,c.y,c.r,0.5)){ h++; c.lit=1; if(!sim) tick(c.y-s.oy); }
+  if(cell){ for(const c of cell.c) if(collide(b,c.x,c.y,c.r,c.bump?1.05:0.5)){ h++; c.lit=1; if(!sim) tick(c.y-s.oy); }
     for(const sg of cell.g) if(segHit(b,sg,0.25)){ h++; sg.lit=1; } }
   for(const m of s.movers) if(collide(b,m.x,m.y,m.r,0.5,m.vx,m.vy)){ h++; m.lit=1; if(!sim) tick(m.y-s.oy); }
   for(const sp of s.spins){ const dx=b.x-sp.x, dy=b.y-sp.y; if(dx*dx+dy*dy>(sp.len+b.r+8)**2) continue; for(const e of spinEdges(sp)) if(segHit(b,e,0.4,-dy*sp.w,dx*sp.w)) h++; }
@@ -349,7 +365,7 @@ function step(dt,sim){
   gt+=dt; if(fever>0) fever-=dt;
   const rm=rateMult()*(fever>0?2:1);
   for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); } }
-  for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; for(const sp of s.spins){ if(sp.rock){ const u=gt*sp.rsp+sp.ph; sp.a=sp.a0+sp.amp*Math.sin(u); sp.w=sp.amp*sp.rsp*Math.cos(u); } else sp.a+=sp.w*dt; } for(const p of s.pistons) pistonExt(p,gt); for(const sl of s.sliders) moveSlider(sl,gt); for(const q of s.gates) moveGate(q,gt); for(const m of s.movers){ const ox=m.x, oy=m.y; m.x=m.cx+Math.sin(gt*m.sp+m.ph)*m.ax; m.y=m.cy+Math.sin(gt*m.sp*1.3+m.ph)*m.ay; m.vx=(m.x-ox)/dt; m.vy=(m.y-oy)/dt; } }
+  for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; for(const sp of s.spins){ if(sp.tl){ pistonExt(sp.tl,gt); sp.a=sp.tl.e; sp.w=sp.tl.de; } else if(sp.rock){ const u=gt*sp.rsp+sp.ph; sp.a=sp.a0+sp.amp*Math.sin(u); sp.w=sp.amp*sp.rsp*Math.cos(u); } else sp.a+=sp.w*dt; } for(const p of s.pistons) pistonExt(p,gt); for(const sl of s.sliders) moveSlider(sl,gt); for(const q of s.gates) moveGate(q,gt); for(const m of s.movers){ const ox=m.x, oy=m.y; m.x=m.cx+Math.sin(gt*m.sp+m.ph)*m.ax; m.y=m.cy+Math.sin(gt*m.sp*1.3+m.ph)*m.ay; m.vx=(m.x-ox)/dt; m.vy=(m.y-oy)/dt; } }
   const g=G0*(1-0.05*C("gw")), EY=exitY();
   gHead.fill(-1); const nb=balls.length;
   for(let i=0;i<nb;i++){ const b=balls[i]; const gx=Math.max(0,Math.min(GW-1,(b.x/BG)|0)), gy=Math.max(0,Math.min(GH-1,(b.y/BG)|0)), c=gy*GW+gx; gNext[i]=gHead[c]; gHead[c]=i; b.c=c; }
@@ -363,7 +379,7 @@ function step(dt,sim){
     if(b.x<b.r){ b.x=b.r; b.vx=Math.abs(b.vx)*0.5; } if(b.x>W-b.r){ b.x=W-b.r; b.vx=-Math.abs(b.vx)*0.5; }
     const sp=Math.hypot(b.vx,b.vy); if(sp>480){ b.vx*=480/sp; b.vy*=480/sp; }
     const L=Math.floor(b.y/HS)+1; stageHits(b,L,sim); const lt=b.y-(L-1)*HS; if(lt<b.r+30&&L>1) stageHits(b,L-1,sim); else if(lt>HS-b.r-30) stageHits(b,L+1,sim);
-    const s=STG[L]; if(s) for(let gi=0;gi<s.gates.length;gi++){ const q=s.gates[gi]; if(py<q.y&&b.y>=q.y&&b.x>=q.x1&&b.x<=q.x2){ b.gm+=gateMult(L)-1; q.lit=1; } }
+    const s=STG[L]; if(s) for(let gi=0;gi<s.gates.length;gi++){ const q=s.gates[gi]; if(py<q.y&&b.y>=q.y){ const mid=b.x>=q.x1&&b.x<=q.x2; b.gm+=(mid?gateMult(L):sideMult(L))-1; if(mid) q.lit=1; } }
     if(sp<25) b.slow+=dt; else b.slow=0;
     if(b.slow>2&&((b.slow*120)|0)%240===0){ b.vx+=(Math.random()<.5?-1:1)*140; b.vy=-90; }
     if(b.st!==L){ b.st=L; b.stT=0; } else b.stT+=dt;
@@ -431,8 +447,12 @@ function render(){
     ctx.globalAlpha=locked?0.28:1; ctx.fillStyle=L%2?"#3a3c43":"#383a41"; ctx.fillRect(0,oy,W,HS);
     // gates
     const gmv=gateMult(L); ctx.font="900 11px system-ui"; ctx.textAlign="center";
-    for(const q of s.gates){ ctx.fillStyle="rgba(255,212,0,.08)"; ctx.fillRect(q.xa,q.y-1,q.xb+q.w-q.xa,2); ctx.fillStyle=`rgba(255,212,0,${0.16+0.3*Math.max(0,q.lit)})`; ctx.fillRect(q.x1,q.y-5,q.x2-q.x1,10); ctx.fillStyle="#ffd400"; ctx.fillRect(q.x1,q.y-1,q.x2-q.x1,2); ctx.fillText("+"+(gmv-1).toFixed(2).replace(/\.?0+$/,"")+"×",(q.x1+q.x2)/2,q.y-8); }
-    ctx.fillStyle="#141518"; for(const c of s.circ){ ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill(); if(c.lit>0&&!locked){ ctx.strokeStyle=`rgba(255,255,255,${c.lit*0.5})`; ctx.lineWidth=2; ctx.stroke(); } }
+    for(const q of s.gates){ const hgt=20, y0=q.y-hgt/2, sm=sideMult(L);
+      ctx.fillStyle="#3fd6e8"; ctx.fillRect(0,y0,W,hgt); ctx.fillStyle=`rgb(255,${200+Math.round(30*Math.max(0,q.lit))},0)`; ctx.fillRect(q.x1,y0,q.x2-q.x1,hgt);
+      ctx.fillStyle="#141518"; ctx.fillRect(q.x1-3,y0-3,6,hgt+6); ctx.fillRect(q.x2-3,y0-3,6,hgt+6);
+      ctx.font="900 11px system-ui"; ctx.textAlign="center"; ctx.fillStyle="#0f3a40"; const lab="x"+sm.toFixed(2);
+      if(q.x1>44) ctx.fillText(lab,q.x1/2,q.y+4); if(W-q.x2>44) ctx.fillText(lab,(q.x2+W)/2,q.y+4); ctx.fillStyle="#3a2c00"; ctx.fillText("x"+gmv.toFixed(2),(q.x1+q.x2)/2,q.y+4); }
+    ctx.fillStyle="#141518"; for(const c of s.circ){ ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fill(); if(c.bump){ ctx.strokeStyle="#39e639"; ctx.lineWidth=3; ctx.stroke(); } if(c.lit>0&&!locked){ ctx.strokeStyle=`rgba(255,255,255,${c.lit*0.5})`; ctx.lineWidth=2; ctx.stroke(); } }
     for(const m of s.movers){ ctx.beginPath(); ctx.arc(m.x,m.y,m.r,0,Math.PI*2); ctx.fill(); }
     ctx.fillStyle="#141518"; for(const pg of s.polys){ ctx.beginPath(); ctx.moveTo(pg.pts[0][0],pg.pts[0][1]); for(let i=1;i<pg.pts.length;i++) ctx.lineTo(pg.pts[i][0],pg.pts[i][1]); ctx.closePath(); ctx.fill(); }
     ctx.strokeStyle="#141518"; ctx.lineCap="round"; for(const g of s.segs){ ctx.lineWidth=g.w; ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); ctx.stroke(); }
