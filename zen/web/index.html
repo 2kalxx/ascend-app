@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 27; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 28; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -227,7 +227,7 @@ function buildStage(L){
       case "stars": for(let y=y0+70,i=0;y<=y1-70;y+=170,i++){ if(i%3===1) C_(i%2?100:260,y,64); else for(const x of (i%2?[180]:[95,265])) star(x,y,56,40,8,r()*1); } break;
       case "slants": { const gap=Math.max(36,64-v*4); for(let y=y0+20,i=0;y<=y1-90;y+=125,i++){ if(i%2) S_(W,y,gap,y+64,14); else S_(0,y,W-gap,y+64,14); } break; } // zig-zag: balls roll across every ramp and queue at the narrow gaps
       case "trifield": for(let y=y0+25,i=0;y<=y1-20;y+=58,i++) for(let x=(i%2?32:0)-0;x<=W+20;x+=64) tri(x,y,19); break;
-      case "thin": for(let y=y0+20,i=0;y<=y1-30;y+=66,i++){ if(i%3===2){ S_(70,y,W/2-20,y+22,8); S_(W-70,y,W/2+20,y+22,8); } else if(i%2) S_(W,y,90,y+26,8); else S_(0,y,W-90,y+26,8); } break; // tilted ledges: back and forth, with small funnels
+      case "thin": for(let y=y0+20,i=0;y<=y1-60;y+=118,i++){ if(i%3===2){ S_(0,y-6,W/2-20,y+44,8); S_(W,y-6,W/2+20,y+44,8); } else if(i%2) S_(W,y,90,y+60,8); else S_(0,y,W-90,y+60,8); } break; // tilted ledges: back and forth, with small funnels
       case "arrows": for(let y=y0+40,i=0;y<=y1-50;y+=125,i++){ if(i%3===2){ diamond(W/2,y,110,26); } else if(i%2) POLY([[W,y-30],[W-170*k,y],[W,y+30]]); else POLY([[0,y-30],[170*k,y],[0,y+30]]); } break;
     } }
   // small wall wedges so no ball can slide down along the edges

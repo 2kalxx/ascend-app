@@ -1,7 +1,7 @@
 {
-  "web": 27,
+  "web": 28,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "More zig-zag and jams (Slants, Ledges, Diamonds)"
+  "notes": "Ledges funnels reach the walls"
 }
