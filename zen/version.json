@@ -1,7 +1,7 @@
 {
-  "web": 29,
+  "web": 30,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Balls never vanish, jam breaker, ball cap fitted to stage capacity"
+  "notes": "Auto-buy every 3 s"
 }
