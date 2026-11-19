@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 30; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 31; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -191,11 +191,12 @@ function buildStage(L){
   const th=themeOf(L), v=variantOf(L), h=HT[L], oy=OY[L], r=rng(L*7919+13), k=shrinkOf(L), mir=v%2===1;
   const b={L,name:stageName(L),theme:th.id,oy,h,circ:[],segs:[],polys:[],spins:[],gates:[],tips:[],doors:[]};
   const MX=x=>mir?W-x:x;
-  const C_=(x,y,rad,o)=>{ rad*=k; x=MX(x); if(x-rad<26) x=-rad*0.3; else if(x+rad>W-26) x=W+rad*0.3; if(b.circ.some(c=>Math.abs(c.y-oy-y)<2&&Math.abs(c.x-x)<4)) return; if(b.circ.some(c=>{ const g=Math.hypot(c.x-x,c.y-oy-y)-c.r-rad; return g>-1&&g<24; })) return; /* never leave a gap a ball could get wedged in */ b.circ.push(Object.assign({x,y:oy+y,r:rad,lit:0},o||{})); };
+  const C_=(x,y,rad,o)=>{ rad*=k; x=MX(x); if(x-rad<26) x=Math.min(40-rad,rad*0.4); else if(x+rad>W-26) x=W-Math.min(40-rad,rad*0.4); if(b.circ.some(c=>Math.abs(c.y-oy-y)<2&&Math.abs(c.x-x)<4)) return; if(b.circ.some(c=>{ const g=Math.hypot(c.x-x,c.y-oy-y)-c.r-rad; return g>-1&&g<24; })) return; /* never leave a gap a ball could get wedged in */ b.circ.push(Object.assign({x,y:oy+y,r:rad,lit:0},o||{})); };
   const S_=(x1,y1,x2,y2,w)=>{ x1=MX(x1); x2=MX(x2); for(const e of [0,1]){ } const fix=x=>(x>2&&x<44)?44:(x<W-2&&x>W-44)?W-44:x; b.segs.push({x1:fix(x1),y1:oy+y1,x2:fix(x2),y2:oy+y2,w:(w||14),lit:0}); };
   const POLY=(pts)=>{ pts=pts.map(([x,y])=>[MX(x),oy+y]); const id=b.polys.length+1; b.polys.push({pts,id}); for(let i=0;i<pts.length;i++){ const a=pts[i], c=pts[(i+1)%pts.length]; b.segs.push({x1:a[0],y1:a[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } };
   const scaleAround=(pts,cx,cy)=>pts.map(([x,y])=>[cx+(x-cx)*k,cy+(y-cy)*k]);
-  const triSeen=new Set(); const tri=(cx,cy,hh)=>{ const hw=hh*0.95*k; if(cx-hw<26) cx=0; else if(cx+hw>W-26) cx=W; const key=Math.round(cx)+'|'+Math.round(cy); if(triSeen.has(key)) return; triSeen.add(key); POLY(scaleAround([[cx,cy-hh],[cx+hh*0.95,cy+hh*0.7],[cx-hh*0.95,cy+hh*0.7]],cx,cy)); };
+  const triSeen=new Set(); const tri=(cx,cy,hh)=>{ const hw=hh*0.95*k; let ww=hh*0.95; if(cx-hw<26){ ww=Math.max(ww,Math.min(42,cx+hw)/k); cx=0; } else if(cx+hw>W-26){ ww=Math.max(ww,Math.min(42,W-cx+hw)/k); cx=W; } const key=Math.round(cx)+'|'+Math.round(cy); if(triSeen.has(key)) return; triSeen.add(key); POLY(scaleAround([[cx,cy-hh],[cx+ww,cy+hh*0.7],[cx-ww,cy+hh*0.7]],cx,cy)); };
+  const hexa=(cx,cy,R0)=>POLY(scaleAround([0,1,2,3,4,5].map(i=>[cx+Math.cos(Math.PI/6+i*Math.PI/3)*R0,cy+Math.sin(Math.PI/6+i*Math.PI/3)*R0]),cx,cy));
   const diamond=(cx,cy,hx,hy)=>POLY(scaleAround([[cx,cy-hy],[cx+hx,cy],[cx,cy+hy],[cx-hx,cy]],cx,cy));
   const star=(cx,cy,R1,R2,n,a0)=>{ const pts=[]; for(let i=0;i<n*2;i++){ const rr=i%2?R2:R1, a=a0+i*Math.PI/n; pts.push([cx+Math.cos(a)*rr,cy+Math.sin(a)*rr]); } POLY(scaleAround(pts,cx,cy)); };
   const stag=(rad,dx,dy,y0,y1,off)=>{ for(let y=y0,i=0;y<=y1;y+=dy,i++){ const o=(i+(off||0))%2?dx/2:0; for(let x=W/2-Math.ceil((W/2)/dx)*dx+o;x<=W+dx/2;x+=dx) C_(x,y,rad); } };
@@ -207,33 +208,47 @@ function buildStage(L){
   for(const [y0,y1] of zones){ if(y1-y0<60) continue;
     switch(th.id){
       case "dots": { const rows=[]; for(let y=y0+20,i=0;y<=y1-20;y+=74,i++) rows.push([y,i]);
-        for(const [y,i] of rows){ if(i%4===3){ for(const x of (i%8===3?[60,180,300]:[120,240])) b.spins.push({x:MX(x),y:oy+y,len:34*k,a:r()*6,w:(r()<.5?-1:1)*0.15,kind:"plus",th:14*k}); }
+        for(const [y,i] of rows){ if(i%4===3&&v%2===1){ for(const x of (i%8===3?[90,180,270]:[135,225])){ S_(x,y-6,x,y+30,7); b.circ.push({x:MX(x),y:oy+y-14,r:13*k,lit:0}); } }
+          else if(i%4===3){ for(const x of (i%8===3?[60,180,300]:[120,240])) b.spins.push({x:MX(x),y:oy+y,len:34*k,a:r()*6,w:(r()<.5?-1:1)*0.15,kind:"plus",th:14*k}); }
           else { const dx=Math.max(84,88/dens), o=i%2?dx/2:0; for(let x=W/2-Math.ceil((W/2)/dx)*dx+o;x<=W+dx/2;x+=dx) C_(x,y,24); } } break; }
-      case "tri": for(let y=y0+30;y<=y1-150;y+=250){ S_(0,y,90,y+55,14); S_(W,y,W-90,y+55,14); tri(W/2,y+95,62); POLY([[0,y+150],[78*k,y+185],[0,y+220]]); POLY([[W,y+150],[W-78*k,y+185],[W,y+220]]); } break;
+      case "tri": for(let y=y0+30;y<=y1-150;y+=250){ S_(0,y,90,y+55,14); S_(W,y,W-90,y+55,14); if(v%2) hexa(W/2,y+95,58); else tri(W/2,y+95,62); POLY([[0,y+150],[78*k,y+185],[0,y+220]]); POLY([[W,y+150],[W-78*k,y+185],[W,y+220]]); } break;
       case "spikes": for(let y=y0+20,i=0;y<=y1-20;y+=Math.max(58,70/dens),i++) for(let x=(i%2?33:0)-0;x<=W+20;x+=66) tri(x,y,15); break;
-      case "shelves": { S_(60,y0+60,W/2,y0+10,14); S_(W/2,y0+10,W-60,y0+60,14); for(let y=y0+140,i=0;y<=y1-20;y+=95,i++){ if(i%2) S_(W-200,y,W-60,y,14); else S_(60,y,200,y,14); } break; }
-      case "cups": for(let y=y0+20,i=0;y<=y1-80;y+=120,i++){ if(i%2===0){ S_(0,y,44,y+30,12); S_(44,y+30,212,y+72,12); C_(300,y+50,13); } else { S_(W,y,W-44,y+30,12); S_(W-44,y+30,W-212,y+72,12); C_(60,y+50,13); } } break;
+      case "shelves": { S_(60,y0+60,W/2,y0+10,14); S_(W/2,y0+10,W-60,y0+60,14); for(let y=y0+140,i=0;y<=y1-20;y+=95,i++){ if(i%3===2){ const o=(i%2)*52; for(let x=-52+o;x<W;x+=104) if(x+56>4&&x<W-4) S_(Math.max(0,x),y+((x/104|0)%2?5:0),Math.min(W,x+56),y+((x/104|0)%2?0:5),12); } else if(i%2) S_(W-200,y,W-60,y,14); else S_(60,y,200,y,14); } break; }
+      case "cups": for(let y=y0+20,i=0;y<=y1-80;y+=120,i++){ if(i%2===0){ S_(0,y,44,y+30,12); S_(44,y+30,212,y+72,12); if(v%2){ S_(238,y+20,254,y+70,10); S_(316,y+20,306,y+70,10); } else C_(300,y+50,13); } else { S_(W,y,W-44,y+30,12); S_(W-44,y+30,W-212,y+72,12); if(v%2){ S_(W-238,y+20,W-254,y+70,10); S_(W-316,y+20,W-306,y+70,10); } else C_(60,y+50,13); } } break;
       case "green": { let cnt=0; for(let y=y0+20,i=0;y<=y1-20;y+=70,i++){ if(i%5===4&&y+130<y1){ b.spins.push({x:MX(i%10===4?150:210),y:oy+y+50,len:80*k,a:r()*6,w:(r()<.5?-1:1)*0.5,kind:"xballs",br:20*k}); y+=110; continue; }
           const dx=Math.max(80,80/dens), o=i%2?dx/2:0; for(let x=W/2-Math.ceil((W/2)/dx)*dx+o;x<=W+dx/2;x+=dx){ const rad=(cnt++%3===0)?22:14; C_(x,y,rad,{bump:1}); } } break; }
-      case "diamonds": for(let y=y0+50,i=0;y<=y1-50;y+=150,i++){ for(const x of (i%2?[180]:[90,270])) diamond(x,y,42,42); if(i%2===1&&y+125<y1){ const neck=Math.max(66,78-v*2); S_(0,y+58,W/2-neck/2,y+92,14); S_(W,y+58,W/2+neck/2,y+92,14); } } break; // funnels with a narrow neck → jams
+      case "diamonds": for(let y=y0+50,i=0;y<=y1-50;y+=150,i++){ for(const x of (i%2?[180]:[90,270])) if(v%2) hexa(x,y,44); else diamond(x,y,42,42); if(i%2===1&&y+125<y1){ const neck=Math.max(66,78-v*2); S_(0,y+58,W/2-neck/2,y+92,14); S_(W,y+58,W/2+neck/2,y+92,14); } } break; // funnels with a narrow neck → jams
       case "lanes": { // three lanes; long ramps push the side lanes into a middle tank whose floor opens when the tank is full
         const Hc=640, yB=y1-Hc-110, yF=y1-30;
         S_(120,y0,120,yB-50,14); S_(240,y0,240,yB-50,14);
-        for(let y=y0+120,i=0;y<=yB-160;y+=170,i++){ const side=i%2; if(side) S_(120,y,70,y+50,12); else S_(240,y,290,y+50,12); }
+        for(let y=y0+120,i=0;y<=yB-160;y+=170,i++){ if(i%2){ S_(120,y,70,y+50,12); S_(W,y,W-48,y+42,12); } else { S_(240,y,290,y+50,12); S_(0,y,48,y+42,12); } }
         S_(0,yB-70,128,yB+36,14); S_(W,yB-70,W-128,yB+36,14);           // ramps from both walls into the tank
         S_(120,yB+30,120,yF,14); S_(240,yB+30,240,yF,14);               // tank walls
         b.doors.push({x1:MX(120)<MX(240)?MX(120):MX(240),x2:Math.max(MX(120),MX(240)),y:oy+yF,top:oy+yB+40,rampY0:oy+yB-70,rampK:106/128,open:false,cnt:0,closedT:0,openT:0,pile:[],pileN:[]});
         break; }
-      case "stars": for(let y=y0+70,i=0;y<=y1-70;y+=170,i++){ if(i%3===1) C_(i%2?100:260,y,64); else for(const x of (i%2?[180]:[95,265])) star(x,y,56,40,8,r()*1); } break;
+      case "stars": for(let y=y0+70,i=0;y<=y1-70;y+=170,i++){ if(i%3===1&&v%2) b.spins.push({x:MX(i%2?110:250),y:oy+y,len:62*k,a:r()*6,w:(r()<.5?-1:1)*0.35,kind:"plus",th:14*k}); else if(i%3===1) C_(i%2?100:260,y,64); else for(const x of (i%2?[180]:[95,265])) star(x,y,56,40,8,r()*1); } break;
       case "slants": { const gap=Math.max(70,84-v*2); for(let y=y0+20,i=0;y<=y1-100;y+=125,i++){ if(i%2) S_(W,y,gap,y+80,14); else S_(0,y,W-gap,y+80,14); } break; } // zig-zag: balls roll across every ramp and queue at the narrow gaps
       case "trifield": for(let y=y0+25,i=0;y<=y1-20;y+=58,i++) for(let x=(i%2?32:0)-0;x<=W+20;x+=64) tri(x,y,19); break;
       case "thin": for(let y=y0+20,i=0;y<=y1-60;y+=118,i++){ if(i%3===2){ S_(0,y-6,W/2-36,y+50,8); S_(W,y-6,W/2+36,y+50,8); } else if(i%2) S_(W,y,90,y+74,8); else S_(0,y,W-90,y+74,8); } break; // tilted ledges: back and forth, with small funnels
-      case "arrows": for(let y=y0+40,i=0;y<=y1-50;y+=125,i++){ if(i%3===2){ diamond(W/2,y,110,26); } else if(i%2) POLY([[W,y-30],[W-170*k,y],[W,y+30]]); else POLY([[0,y-30],[170*k,y],[0,y+30]]); } break;
+      case "arrows": for(let y=y0+40,i=0;y<=y1-50;y+=125,i++){ if(i%3===2&&v%2){ for(let j=0;j<3;j++){ S_(110+j*50,y-30+j*26,150+j*50,y-24+j*26,10); } } else if(i%3===2){ diamond(W/2,y,110,26); } else if(i%2) POLY([[W,y-30],[W-170*k,y],[W,y+30]]); else POLY([[0,y-30],[170*k,y],[0,y+30]]); } break;
     } }
   // small wall wedges so no ball can slide down along the edges
   if(["shelves","lanes","stars","diamonds","spikes"].includes(th.id)){ const near=(x,y)=>b.circ.some(c=>Math.hypot(c.x-x,c.y-y)<c.r+30)||b.segs.some(sg=>ptSeg(x,y,sg)<30+sg.w/2);
     for(const side of [0,1]) for(let y=90+r()*40;y<h-90;y+=120+r()*40){ if(gy.some(g=>Math.abs(g-y)<95)) continue; const X=side?W:0, d=side?-1:1, pts=[[X,y],[X+d*34,y+30],[X,y+60]];
       if(pts.some(([x,yy])=>near(x,oy+yy))||near(X+d*18,oy+y+30)) continue; const id=b.polys.length+1, P2=pts.map(([x,yy])=>[x,oy+yy]); b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const a=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:a[0],y1:a[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } } }
+  // fill straight drop channels: no ball may fall far along a wall or down an open column (wall wedges at the edges, small pegs inside)
+  { const R=7, hitAt=(x,y)=>b.circ.some(c=>Math.abs(c.y-y)<c.r+R&&Math.hypot(c.x-x,c.y-y)<c.r+R)||b.segs.some(g=>y>=Math.min(g.y1,g.y2)-20&&y<=Math.max(g.y1,g.y2)+20&&ptSeg(x,y,g)<g.w/2+R)||b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+R);
+    const clear=(x,y,rad)=>!b.circ.some(c=>{ const g=Math.hypot(c.x-x,c.y-y)-c.r-rad; return g<26; })&&!b.segs.some(g=>y>=Math.min(g.y1,g.y2)-60&&y<=Math.max(g.y1,g.y2)+60&&ptSeg(x,y,g)<g.w/2+rad+26)&&!b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+rad+26)&&!b.doors.length;
+    const wedge=(side,y,dep)=>{ const X=side?W:0, d=side?-1:1, P2=[[X,y-30-dep*0.3],[X+d*dep,y],[X,y+30+dep*0.3]]; const smp=[]; for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; for(let t=0;t<1;t+=0.2) smp.push([q[0]+(c[0]-q[0])*t,q[1]+(c[1]-q[1])*t]); } const nar=d=>d>-3&&d<26; /* overlapping a solid is fine, a narrow slit is not; never overlap another polygon */ if(smp.some(([x,yy])=>b.segs.some(g=>g.poly?ptSeg(x,yy,g)<g.w/2+26:nar(ptSeg(x,yy,g)-g.w/2))||b.circ.some(c=>nar(Math.hypot(c.x-x,c.y-yy)-c.r))||b.spins.some(p=>Math.hypot(p.x-x,p.y-yy)<p.len+26))) return false; const id=b.polys.length+1; b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:q[0],y1:q[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } return true; };
+    const inGate=y=>gy.some(g=>Math.abs(oy+g-y)<64);
+    for(let pass=0;pass<6;pass++){ let added=0;
+      for(let x=8;x<=352;x+=6){ if(th.id==="lanes"&&x>100&&x<260) continue; const edge=x<54||x>306, lim=edge?230:380; let last=oy;
+        for(let y=oy;y<=oy+h+4;y+=4){ const end=y>oy+h; if(!end&&!hitAt(x,y)) continue; const run=y-last;
+          if(run>lim){ let done=false; const fr=[]; for(let j=0;j<=12;j++){ fr.push(0.5+j*0.03,0.5-j*0.03); } for(const f of fr){ const ym=last+run*f; if(inGate(ym)) continue;
+              if(edge){ const d0=Math.max(34,Math.min(60,(x<180?x:W-x)+16)); if([d0,d0-10,d0-20].some(dd=>dd>=24&&wedge(x<180?0:1,ym,dd))){ done=true; break; } } else if(clear(x,ym,10)){ b.circ.push({x,y:ym,r:10*k,lit:0}); done=true; break; } }
+            if(done) added++; }
+          last=y; } }
+      if(!added) break; } }
   // gates
   for(const y of gy){ const pat=GPAT[Math.floor(r()*GPAT.length)], w=Math.max(70,120-v*4); b.gates.push({y:oy+y,pat,w,xa:16,xb:W-16-w,sp:40+r()*30,ph:r()*20,x1:16,x2:16+w,lit:0}); }
   for(const t of TIPS) if(t[0]===L) b.tips.push({y:oy+h*t[1],txt:t[2]});
@@ -245,7 +260,7 @@ function buildStage(L){
 let balls=[], acc=new Array(20).fill(0), gt=0, earnWin=0, winStart=0, rateNow=0, chimeT=0, fever=0, avgNorm=3;
 const MAXB_ABS=5000;
 // measured: how many balls each stage holds while it still flows (×10, from a 30 balls/s stress test of every stage)
-const STAGE_CAP=[64,49,21,74,90,60,98,94,42,146,46,141,64,83,61,30,118,127,74,119,105,52,147,57,145,82,67,49,21,85,90,59,112,96,44,146,46,141,64,84,61,32,112,128,74,127,105,53,147,57,146,82,68,50,23,87,89,59,121,96,42,146,47,142,64,82,61,34,103,127,73,136,105,54,146,58,146,81,68,50,23,91,89,58,135,96,41,145,44,141,64,83,62,34,109,127,73,140,105,51,146,59,146,81,68,50,23,84,90,59,136,96,40,146,46,141,63,84,61,33,111,127,74,141,105,53,145,56,146,82,67,50,22,81,89,59,136,96,43,146,45,141,63,84,61,33,101,127,75,141];
+const STAGE_CAP=[78,65,24,113,92,70,52,96,57,145,66,142,64,83,61,30,118,127,74,119,105,52,147,57,145,82,67,49,21,85,90,59,112,96,44,146,46,141,64,84,61,32,112,128,74,127,105,53,147,57,146,82,68,50,23,87,89,59,121,96,42,146,47,142,64,82,61,34,103,127,73,136,105,54,146,58,146,81,68,50,23,91,89,58,135,96,41,145,44,141,64,83,62,34,109,127,73,140,105,51,146,59,146,81,68,50,23,84,90,59,136,96,40,146,46,141,63,84,61,33,111,127,74,141,105,53,145,56,146,82,67,50,22,81,89,59,136,96,43,146,45,141,63,84,61,33,101,127,75,141];
 let tankN=0; const capMemo=[]; const capOf=U=>{ if(capMemo[U]) return capMemo[U]; let c=0; for(let L=1;L<=U&&c<MAXB_ABS;L++) c+=STAGE_CAP[L-1]*10; return capMemo[U]=Math.min(MAXB_ABS,Math.max(300,c)); };
 const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
