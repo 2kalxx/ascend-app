@@ -19,7 +19,7 @@ import org.json.JSONObject;
 public class Updater implements Runnable {
     static final String BASE = "https://raw.githubusercontent.com/2kalxx/ascend-app/main/";
     static final String WEB_FILE = "web.html";
-    static final long CHECK_EVERY_MS = 3L * 60 * 60 * 1000; // at most every 3 hours (unless "Check now")
+    static final long CHECK_EVERY_MS = 15L * 1000; // check every time the app is opened (15 s guard against double checks)
     static volatile boolean running = false;
 
     private final MainActivity act;

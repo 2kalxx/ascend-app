@@ -1,7 +1,7 @@
 {
   "web": 7,
-  "apk": 1,
+  "apk": 2,
   "minApk": 1,
   "apkPath": "apk/OrbitCrush.apk",
-  "notes": "Lo-fi music"
+  "notes": "App update: checks & installs updates automatically when opened"
 }

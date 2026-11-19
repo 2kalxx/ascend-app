@@ -1,7 +1,7 @@
 {
   "web": 33,
-  "apk": 1,
+  "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Ball cap adapts to your phone's fps (60-120)"
+  "notes": "App update: checks & installs updates automatically when opened"
 }

@@ -1,7 +1,7 @@
 {
   "web": 3,
-  "apk": 1,
+  "apk": 2,
   "minApk": 1,
   "apkPath": "apk/SakuraGate.apk",
-  "notes": "Auto-continue to the next story stage after 3 s"
+  "notes": "App update: checks & installs updates automatically when opened"
 }

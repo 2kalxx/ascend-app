@@ -1,7 +1,7 @@
 {
   "web": 6,
-  "apk": 5,
+  "apk": 6,
   "minApk": 3,
   "apkPath": "apk/Ascend.apk",
-  "notes": "v6: life assessment \u2013 Before / After 66 days stats, personal plan, catch-up quests"
+  "notes": "App update: checks & installs updates automatically when opened"
 }

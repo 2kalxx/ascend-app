@@ -37,6 +37,8 @@ public class ApkInstaller implements Runnable {
             PackageInstaller pi = act.getPackageManager().getPackageInstaller();
             PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
             params.setAppPackageName(act.getPackageName());
+            // Android 12+: once this app installed itself, later updates need no tap at all
+            if (android.os.Build.VERSION.SDK_INT >= 31) params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_NOT_REQUIRED);
             int id = pi.createSession(params);
             PackageInstaller.Session s = pi.openSession(id);
             try (InputStream in = c.getInputStream(); OutputStream out = s.openWrite("ascend.apk", 0, -1)) {

@@ -47,11 +47,15 @@ public class MainActivity extends Activity implements ValueCallback<String> {
         runOnUiThread(new UiTask(this, webChanged, newApk, manual));
     }
 
+    static int autoPrompted = 0;
+
     void applyUpdateResult(boolean webChanged, int newApk, boolean manual) {
         if (webChanged) loadPage(); // the page shows "Ascend updated" itself
         if (newApk > 0) {
             String js = "window.ascendApkUpdate&&ascendApkUpdate(" + newApk + ")";
             if (webChanged) web.postDelayed(new UiTask(this, js), 1500); else web.evaluateJavascript(js, null);
+            // install app updates by itself (asked once per app start, so a "Cancel" doesn't loop)
+            if (newApk != autoPrompted) { autoPrompted = newApk; ApkInstaller.start(this); }
         }
         if (!webChanged && newApk == 0 && manual) toastInPage("You're on the latest version ✓");
     }

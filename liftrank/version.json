@@ -1,7 +1,7 @@
 {
   "web": 1,
-  "apk": 1,
+  "apk": 2,
   "minApk": 1,
   "apkPath": "apk/LiftRank.apk",
-  "notes": "LiftRank 1.0: muscle rankings from your lifts, body map, workout logger"
+  "notes": "App update: checks & installs updates automatically when opened"
 }
