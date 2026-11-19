@@ -37,11 +37,12 @@ h3{margin:14px 2px 8px;font-size:15px;color:var(--mu);font-weight:600}
 .hc .lv{position:absolute;left:3px;bottom:2px;font-size:11px;font-weight:800;text-shadow:0 1px 2px #000}
 .hc .st{position:absolute;right:3px;top:1px;font-size:9px;color:var(--gd);text-shadow:0 1px 2px #000}
 .hc .el{position:absolute;left:3px;top:2px;font-size:12px}
-.hc.R{border-color:var(--rr)} .hc.SR{border-color:var(--sr)} .hc.SSR{border-color:var(--gd);box-shadow:0 0 10px rgba(255,211,107,.35)}
+.hc.R{border-color:#8d96aa} .hc.B{border-color:#62e0a1} .hc.E{border-color:var(--rr)} .hc.SR{border-color:var(--sr)} .hc.SSR{border-color:var(--gd);box-shadow:0 0 10px rgba(255,211,107,.35)} .hc.SSS{border-color:#ff5d8f;box-shadow:0 0 12px rgba(255,93,143,.55),0 0 4px #fff inset}
+.hc .tier{position:absolute;right:3px;bottom:2px;font-size:9px;font-weight:900;border-radius:5px;padding:0 3px;background:#000a}
 .hc.lock{filter:grayscale(1) brightness(.45)}
 .hc .inT{position:absolute;right:3px;bottom:2px;font-size:10px;background:var(--pk);border-radius:6px;padding:0 4px;font-weight:800}
 .tag{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:800}
-.tR{background:#1d3b63;color:var(--rr)} .tSR{background:#3b2361;color:var(--sr)} .tSSR{background:#5a4512;color:var(--gd)} .tN{background:#33384a;color:var(--nn)}
+.tR{background:#2e3342;color:#b9c1d4} .tB{background:#173d2c;color:#62e0a1} .tE{background:#1d3b63;color:var(--rr)} .tSSS{background:linear-gradient(90deg,#ff5d8f,#ffd36b,#6fb7ff);color:#1a0d24} .tGR{background:#1d3b63;color:var(--rr)} .tSR{background:#3b2361;color:var(--sr)} .tSSR{background:#5a4512;color:var(--gd)} .tN{background:#33384a;color:var(--nn)}
 .bar{height:7px;background:#0c0816;border-radius:5px;overflow:hidden}
 .bar i{display:block;height:100%;background:var(--gr)}
 #layer:empty{display:none}
@@ -69,7 +70,7 @@ h3{margin:14px 2px 8px;font-size:15px;color:var(--mu);font-weight:600}
 .foe.dead{opacity:0;transform:scale(.6)}
 .foe.boss{width:62%;max-width:260px}
 .foe.tgt::after{content:"▼";position:absolute;top:-4px;left:50%;transform:translateX(-50%);color:var(--pk);font-size:14px}
-#team{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:6px 8px calc(10px + env(safe-area-inset-bottom));position:relative;z-index:2}
+#team{display:grid;grid-template-columns:repeat(5,1fr);gap:4px;padding:6px 8px calc(10px + env(safe-area-inset-bottom));position:relative;z-index:2}
 .tm{position:relative;background:#0007;border-radius:12px;padding:4px;border:2px solid #fff2;transition:transform .15s}
 .tm .pt{border-radius:9px;overflow:hidden;aspect-ratio:1/1;background:#0005}
 .tm .pt svg{width:100%;height:100%;display:block}
@@ -127,7 +128,7 @@ h3{margin:14px 2px 8px;font-size:15px;color:var(--mu);font-weight:600}
 <div id="layer"></div>
 <div id="toast"></div>
 <script>
-const SAKURA_WEB_VERSION = 1; // bump on every web update (the Android app reads this)
+const SAKURA_WEB_VERSION = 2; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const $=id=>document.getElementById(id);
 const fmt=n=>{ n=Math.floor(n); if(n<1e4) return ""+n; const u=["K","M","B","T","Qa","Qi"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<100?n.toFixed(1):Math.floor(n))+u[i]; };
@@ -150,7 +151,10 @@ const CLS={
   mage:{n:"Onmyoji",i:"🔮",hp:0.8,atk:1.05,def:0.75,spd:100,col:"#8e5bd8"},
   healer:{n:"Miko",i:"🌸",hp:0.95,atk:0.9,def:0.9,spd:104,col:"#f2f2f2"},
   ninja:{n:"Kunoichi",i:"🗡️",hp:0.85,atk:1.0,def:0.8,spd:118,col:"#2b2b3a"}};
-const RAR={R:{m:1,st:1,shard:5,c:"var(--rr)"},SR:{m:1.2,st:2,shard:10,c:"var(--sr)"},SSR:{m:1.45,st:3,shard:25,c:"var(--gd)"}};
+// rarity tiers, lowest → highest
+const TIERS=["R","B","E","SR","SSR","SSS"];
+const RAR={R:{m:1,st:1,shard:4,sk:1,c:"#8d96aa"},B:{m:1.08,st:1,shard:5,sk:1.05,c:"#62e0a1"},E:{m:1.18,st:2,shard:6,sk:1.1,c:"var(--rr)"},SR:{m:1.3,st:2,shard:8,sk:1.18,c:"var(--sr)"},SSR:{m:1.48,st:3,shard:15,sk:1.32,c:"var(--gd)"},SSS:{m:1.75,st:4,shard:25,sk:1.6,c:"#ff5d8f"}};
+const tierIx=r=>TIERS.indexOf(r);
 // look: [hair color, eye color, hair style, accessory]
 const HEROES=[
  ["sakura","Sakura Amane","SR","light","blade","#ffb3d1","#e2557f","long","pin","A cheerful shrine swordswoman who found you at the shattered Sakura Gate.","Petal Iaigiri"],
@@ -183,7 +187,32 @@ const HEROES=[
  ["tamaki","Tamaki Oniwa","R","dark","blade","#3b2a3a","#c0392b","pony","horns","Small oni girl, big club, bigger appetite.","Oni Club"],
  ["yume","Yume Hoshizora","R","light","mage","#fff1b8","#c58bff","bob","star","Dreams the future. Mostly about dinner.","Dream Spark"],
  ["nanami","Nanami Umi","R","water","archer","#3fc1c9","#1b6b8a","pony","shell","Fisher-girl with a harpoon bow and endless patience.","Wave Shot"]
-].map(a=>({id:a[0],name:a[1],rar:a[2],el:a[3],cls:a[4],hair:a[5],eye:a[6],style:a[7],acc:a[8],bio:a[9],skill:a[10]}));
+,
+ ["kaguya","Kaguya Tsukiyomi","SSS","light","mage","#f5f0ff","#c58bff","long","moon","Moon princess who arrived in a stalk of bamboo – and never quite went home.","Moonlit Bamboo Seal"],
+ ["tamamo","Tamamo Kuzunoha","SSS","fire","mage","#ffd36b","#ff4b3a","long","fox","The nine-tailed fox of legend, now fighting for the Gate she once mocked.","Nine Suns Foxfire"],
+ ["benten","Benten Mizuchi","SSS","water","healer","#4db4ff","#9fe6ff","bun","dragon","Goddess of rivers and music. Her biwa song heals friends and drowns foes.","Divine Biwa Tide"],
+ ["sakuya","Sakuya Konohana","SSS","wind","healer","#ffc2da","#5fdc8c","long","flower","Blossom goddess of the sacred mountain. Spring follows wherever she walks.","Thousand Blossom Spring"],
+ ["tomoe","Tomoe Akagane","SSS","fire","blade","#2b2b3a","#ff4b3a","pony","band","Warrior of the old wars, returned through the Gate with her red iron blade.","Red Iron Onslaught"],
+ ["raika","Raika Narukami","SSS","wind","ninja","#ffe066","#7fd3ff","twin","horns","Daughter of the thunder god. Strikes between two heartbeats.","Heavenly Thunder Drum"],
+ ["kurozome","Kurozome Yomi","SSS","dark","mage","#1b1426","#ff4b3a","long","moon","The fallen Gate-keeper, redeemed. Her shadows remember every sin.","Gate of Yomi"],
+ ["hinome","Hinome Amaterasu","SSS","light","blade","#fff1b8","#ffb03a","long","halo","Avatar of the sun goddess. When she draws her blade, the night ends.","Heaven-Splitting Dawn"]
+].concat((()=>{ // 62 more heroines from Hinomoto's villages, shrines and clans
+  const GN=["Aiko","Akemi","Akari","Asuka","Ayaka","Ayumi","Chie","Chihiro","Eri","Fumiko","Hana","Haruna","Honoka","Ichika","Iroha","Kaori","Kasumi","Kirika","Kotone","Kurumi","Mai","Maki","Mana","Mayu","Megumi","Michiru","Midori","Mika","Minami","Misaki","Mitsuki","Moe","Nagisa","Nao","Nene","Noa","Riko","Rina","Risa","Ruri","Saki","Sana","Sara","Satsuki","Sayaka","Setsuna","Shiori","Shion","Sora","Sumire","Touka","Tsukasa","Umeko","Wakana","Yae","Yoko","Yui","Yukari","Yuna","Yuzu","Kanon","Hazuki"];
+  const FN=["Aizawa","Fujimoto","Hayase","Ichinose","Kamiya","Kirishima","Mochizuki","Nanase","Ogata","Saotome","Takamura","Tsukuba","Yamabuki","Hanazono","Kisaragi","Minase","Sakuraba","Shirasagi","Kurenai","Hoshimiya","Asakura","Hiiro","Sumeragi","Kagura","Amamiya","Kiryu","Mikazuki","Ootori","Shiranui","Takanashi","Yukimura","Kazama","Momose","Kanzaki","Hayama","Akizuki","Mizusawa","Utsugi","Tachikawa","Fuyuki","Natsume","Kotobuki"];
+  const HAIR=["#ffb3d1","#c9a46a","#c0392b","#2fb67c","#e9f4ff","#ff4b3a","#3b2a6b","#ffe7a3","#4a4a5e","#3a6fd8","#ff9b42","#6b4fa8","#7fd3ff","#d8642b","#ff5d73","#ffd36b","#2b2b3a","#2f8fd8","#a8e6ff","#f4e1ff","#8b5a2b","#ffe066","#9ad26b","#ff9fb8","#5d6d8a","#3fc1c9","#b07cff","#1b1426","#f7c6a3","#e6e6e6"];
+  const EYE=["#e2557f","#5aa36b","#f39c12","#1b6b4a","#5aa9ff","#ffb03a","#c58bff","#ffb84d","#9fe6ff","#ffd36b","#ff7eb6","#3a8bd8","#5fdc8c","#ff4b3a","#62e0a1","#7fd3ff","#8e5bd8","#2f8f5a"];
+  const STY=["long","twin","pony","bun","bob"], ACC=["pin","ribbon","band","mask","snow","horns","moon","fox","bell","leaf","dragon","flower","star","shell"];
+  const CL=["blade","guard","archer","mage","healer","ninja"];
+  const ORI=["A shrine maiden from","A wandering swordswoman from","A tea-house worker from","A noble daughter of","A fisher-girl from","A mountain hermit from","A palace guard of","A street performer from","A runaway princess of","A blacksmith's apprentice from","A temple scholar of","A rice farmer from","A courier from","A lighthouse keeper of"];
+  const PL=["Haruno","the Bamboo Forest","Kappa River","the Tengu Peaks","Inari Shrine","the Silver Snowfield","the old capital","the Oni Fortress","the Moonlit Sea","a nameless island","the Sakura Gate","the eastern highlands","the hot-spring town","the floating market"];
+  const QU=["She collects broken talismans and swears they still work.","Never loses at shogi, always loses at cards.","Talks to her weapon. It rarely answers.","Can eat thirty dango in one sitting.","Writes a haiku after every battle.","Afraid of cats, adores foxes.","Trains at dawn, naps at noon.","Keeps a diary of every yokai she has defeated.","Dreams of opening a sweets shop when the war ends.","Hums lullabies while fighting.","Claims to be descended from a dragon. Nobody believes her.","Polishes her armor until it shines like a mirror.","Hates thunder, loves rain.","Has a pet sparrow named General."];
+  const EW={fire:["Crimson","Blazing","Ember","Inferno","Scarlet"],water:["Azure","Tidal","Frost","Mist","Rain"],wind:["Gale","Tempest","Verdant","Zephyr","Storm"],light:["Radiant","Dawn","Holy","Solar","Golden"],dark:["Shadow","Eclipse","Night","Abyssal","Raven"]};
+  const CW={blade:["Slash","Iaigiri","Edge","Cleave","Crescent Cut"],guard:["Bulwark","Aegis","Wall","Bastion","Stance"],archer:["Arrow","Volley","Shot","Rain of Arrows","Hawk Eye"],mage:["Seal","Hex","Talisman","Nova","Sigil"],healer:["Prayer","Blessing","Bloom","Grace","Chant"],ninja:["Fang","Dance","Shuriken","Step","Shadow Clone"]};
+  const TIER=[].concat(Array(10).fill("R"),Array(20).fill("B"),Array(18).fill("E"),Array(8).fill("SR"),Array(6).fill("SSR"));
+  const out=[]; for(let i=0;i<62;i++){ const r=seeded("heroine"+i), el=ELN[i%5], cl=CL[(i*7+Math.floor(i/5))%6], g=GN[i], f=FN[(i*11)%FN.length];
+    out.push([g.toLowerCase()+"_"+i,g+" "+f,TIER[i],el,cl,HAIR[Math.floor(r()*HAIR.length)],EYE[Math.floor(r()*EYE.length)],STY[Math.floor(r()*STY.length)],ACC[Math.floor(r()*ACC.length)],
+      ORI[Math.floor(r()*ORI.length)]+" "+PL[Math.floor(r()*PL.length)]+". "+QU[Math.floor(r()*QU.length)],EW[el][Math.floor(r()*5)]+" "+CW[cl][Math.floor(r()*5)]]); }
+  return out; })()).map(a=>({id:a[0],name:a[1],rar:a[2],el:a[3],cls:a[4],hair:a[5],eye:a[6],style:a[7],acc:a[8],bio:a[9],skill:a[10]}));
 const HB={}; HEROES.forEach(h=>HB[h.id]=h);
 const SKD={
   blade:{d:"Heavy strike on one foe (2.6× ATK).",cd:3},
@@ -293,9 +322,9 @@ const LS="sakuraGate_v1";
 let S;
 function fresh(){ return {gold:3000,gems:3200,tickets:5,exp:2500,stam:120,stamT:Date.now(),pity:0,pitySR:0,
   heroes:{sakura:{lv:1,stars:2,shards:0},koharu:{lv:1,stars:1,shards:0},natsu:{lv:1,stars:1,shards:0}},
-  gear:[],nextG:1,team:["natsu","sakura","koharu",null],stars:{},tower:0,afkT:Date.now(),
+  gear:[],nextG:1,team:["natsu","sakura","koharu",null,null],stars:{},tower:0,afkT:Date.now(),
   daily:{d:"",c:{},got:{}},ach:{},cnt:{wins:0,pulls:0,lvups:0,enh:0,tower:0},seen:{},music:true,sound:true,auto:false,spd:1,newH:{}}; }
-function load(){ try{ const o=JSON.parse(localStorage.getItem(LS)); if(o&&o.heroes){ S=Object.assign(fresh(),o); return; } }catch(e){} S=fresh(); }
+function load(){ try{ const o=JSON.parse(localStorage.getItem(LS)); if(o&&o.heroes){ S=Object.assign(fresh(),o); while(S.team.length<5) S.team.push(null); for(const id in S.heroes) if(!HB[id]) delete S.heroes[id]; return; } }catch(e){} S=fresh(); }
 let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<2000) return; saveT=n; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 load();
 
@@ -307,11 +336,16 @@ const starCost=st=>[0,10,20,40,70,120][st]||999;
 const GEARSTAT={atk:"ATK",hp:"HP",def:"DEF",spd:"SPD",crit:"CRIT%",cdmg:"CRIT DMG%"};
 function gearBonus(gid){ const g=S.gear.find(x=>x.u===gid); if(!g) return null; const m=1+g.lv*0.12; const o={}; o[g.main]=(o[g.main]||0)+g.mv*m; for(const [k,v] of g.subs) o[k]=(o[k]||0)+v; return o; }
 function stats(id){ const h=HB[id], o=S.heroes[id]; const c=CLS[h.cls], r=RAR[h.rar].m, lm=1+0.085*(o.lv-1), sm=1+0.12*(o.stars-1);
-  const s={hp:Math.round(600*c.hp*r*lm*sm),atk:Math.round(60*c.atk*r*lm*sm),def:Math.round(32*c.def*r*lm*sm),spd:c.spd+(h.rar==="SSR"?6:h.rar==="SR"?3:0),crit:10+(h.cls==="archer"?10:0)+(h.cls==="ninja"?6:0),cdmg:50};
+  const cb=1+colBonus(); const s={hp:Math.round(600*c.hp*r*lm*sm*cb),atk:Math.round(60*c.atk*r*lm*sm*cb),def:Math.round(32*c.def*r*lm*sm),spd:c.spd+tierIx(h.rar)*1.5,crit:10+(h.cls==="archer"?10:0)+(h.cls==="ninja"?6:0),cdmg:50};
   for(const sl of ["w","a","c"]){ const gid=o.g&&o.g[sl]; const b=gid&&gearBonus(gid); if(b) for(const k in b){ if(k==="hp"||k==="atk"||k==="def") s[k]+=Math.round(b[k]); else s[k]+=b[k]; } }
   s.spd=Math.round(s.spd); s.crit=Math.min(100,Math.round(s.crit)); s.cdmg=Math.round(s.cdmg); return s; }
+// Collection: every heroine you own (and every ★ above her starting ★) permanently strengthens all heroines
+function colBonus(){ let b=0; for(const id in S.heroes){ const h=HB[id]; if(!h) continue; b+=0.004+0.002*tierIx(h.rar)/5+0.001*Math.max(0,S.heroes[id].stars-RAR[h.rar].st); } return b; }
+// Team synergy (element bonus)
+function synergy(ids){ const c={}; ids.filter(Boolean).forEach(id=>c[HB[id].el]=(c[HB[id].el]||0)+1); const mx=Math.max(0,...Object.values(c)); const n=Object.keys(c).length;
+  if(ids.filter(Boolean).length===5&&n===5) return {b:0.12,t:"🌈 Five Elements +12% ATK/HP"}; if(mx>=5) return {b:0.25,t:"Pure element ×5 +25% ATK/HP"}; if(mx>=4) return {b:0.16,t:"Element ×4 +16% ATK/HP"}; if(mx>=3) return {b:0.1,t:"Element ×3 +10% ATK/HP"}; return {b:0,t:"No synergy (3+ same element, or all 5 different)"}; }
 const power=id=>{ const s=stats(id); return Math.round(s.hp*0.25+s.atk*2.4+s.def*1.6+s.spd*2+s.crit*6+s.cdmg*1.5); };
-const teamPower=()=>S.team.filter(Boolean).reduce((a,id)=>a+power(id),0);
+const teamPower=()=>Math.round(S.team.filter(Boolean).reduce((a,id)=>a+power(id),0)*(1+synergy(S.team).b));
 
 /* ================= gear ================= */
 const GSLOT={w:{n:"Weapon",i:["🗡️","🏹","🔱","⚔️"],main:["atk"]},a:{n:"Armor",i:["🥋","👘","🛡️"],main:["hp","def"]},c:{n:"Charm",i:["📿","🧿","🎐","🪭"],main:["spd","crit","cdmg"]}};
@@ -335,12 +369,13 @@ function tickStam(){ const n=Date.now(); if(S.stam>=STAM_MAX){ S.stamT=n; return
 const cleared=()=>Object.keys(S.stars).length;
 function afkRate(){ const p=cleared(); return {gold:30+p*14,exp:25+p*12}; } // per minute
 function afkPending(){ const m=Math.min(12*60,(Date.now()-S.afkT)/60000); const r=afkRate(); return {m,gold:Math.floor(r.gold*m),exp:Math.floor(r.exp*m),gems:Math.floor(m/60)*5}; }
-const DQ=[["win","Win 5 battles",5,{gems:60,gold:2000}],["pull","Summon 3 times",3,{gems:50}],["lvup","Level up heroines 5 times",5,{exp:3000}],["enh","Enhance gear 3 times",3,{gold:3000}],["tower","Clear 1 Abyss Tower floor",1,{gems:40}],["afk","Collect patrol rewards",1,{gold:1500}]];
+const DQ=[["win","Win 5 battles",5,{gems:60,gold:2000}],["pull","Summon 3 times",3,{gems:50}],["lvup","Level up heroines 5 times",5,{exp:3000}],["enh","Enhance gear 3 times",3,{gold:3000}],["tower","Clear 1 Abyss Tower floor",1,{gems:40}],["afk","Collect patrol rewards",1,{gold:1500}],["bounty","Complete 2 bounties",2,{gems:40}]];
 function ensureDaily(){ const t=today(); if(S.daily.d!==t) S.daily={d:t,c:{},got:{},all:false}; }
 function bump(k,n){ ensureDaily(); S.daily.c[k]=(S.daily.c[k]||0)+(n||1); S.cnt[k]=(S.cnt[k]||0)+(n||1); }
 const ACH=[
  ...[1,2,3,4,5,6,7,8,9,10].map(c=>({id:"ch"+c,t:`Clear Chapter ${c}: ${CH[c-1].n}`,ok:()=>chapterDone(c-1),r:{gems:c===10?1000:300,tickets:c%2===0?2:0}})),
- ...[5,10,15,20,25,30].map(n=>({id:"own"+n,t:`Recruit ${n} heroines`,ok:()=>Object.keys(S.heroes).length>=n,r:{gems:n*20}})),
+ ...[5,10,15,20,25,30,40,50,60,70,80,90,100].map(n=>({id:"own"+n,t:`Recruit ${n} heroines`,ok:()=>Object.keys(S.heroes).length>=n,r:{gems:n*20,tickets:n%20===0?2:0}})),
+ ...[1,3,5,8].map(n=>({id:"sss"+n,t:`Own ${n} SSS heroine${n>1?"s":""}`,ok:()=>Object.keys(S.heroes).filter(id=>HB[id].rar==="SSS").length>=n,r:{gems:n*300}})),
  ...[20,40,60,70].map(n=>({id:"lv"+n,t:`Raise a heroine to Lv ${n}`,ok:()=>Object.values(S.heroes).some(o=>o.lv>=n),r:{gems:n*5,tickets:1}})),
  ...[10,25,50,100].map(n=>({id:"tw"+n,t:`Reach Abyss Tower floor ${n}`,ok:()=>S.tower>=n,r:{gems:n*10}})),
  ...[50,200,500].map(n=>({id:"pl"+n,t:`Summon ${n} times`,ok:()=>(S.cnt.pulls||0)>=n,r:{tickets:n>=200?5:3}})),
@@ -348,7 +383,7 @@ const ACH=[
 function chapterDone(c){ return !!S.stars[(c*SPC+SPC-1)]; }
 function grant(r){ const out=[]; for(const k in r){ if(!r[k]) continue; S[k]=(S[k]||0)+r[k]; out.push(icon(k)+" "+fmt(r[k])); } return out.join("  "); }
 const icon=k=>({gold:"🪙",gems:"💎",tickets:"🎫",exp:"📜",stam:"⚡"})[k]||k;
-function badges(){ ensureDaily(); const dq=DQ.some(([k,,n])=>(S.daily.c[k]||0)>=n&&!S.daily.got[k])||(DQ.every(([k,,n])=>S.daily.got[k])&&!S.daily.all); const ac=ACH.some(a=>!S.ach[a.id]&&a.ok()); return {quest:dq||ac,afk:afkPending().m>=60}; }
+function badges(){ ensureDaily(); const dq=DQ.some(([k,,n])=>(S.daily.c[k]||0)>=n&&!S.daily.got[k])||(DQ.every(([k,,n])=>S.daily.got[k])&&!S.daily.all); const ac=ACH.some(a=>!S.ach[a.id]&&a.ok()); ensureBounty(); const bn=S.bnt.list.some(b=>b.st&&!b.got&&Date.now()>=b.st+b.hrs*3600000); return {quest:dq||ac,afk:afkPending().m>=60||bn}; }
 
 /* ================= sound & music ================= */
 let AC=null, musicNode=null;
@@ -385,7 +420,7 @@ function nav(){ const b=badges(); const T=[["home","🏯","Story"],["summon","�
 function render(){ topBar(); nav(); const m=$("main"); const st=m.scrollTop; ({home:vHome,summon:vSummon,heroes:vHeroes,gear:vGear,quest:vQuest})[tab](m); if(render.keep) m.scrollTop=st; render.keep=false; save(); }
 function sheet(html,onMount){ $("layer").innerHTML=`<div class="sheet">${html}</div>`; const l=$("layer"); l.onclick=e=>{ if(e.target===l) closeSheet(); }; const x=l.querySelector(".x"); if(x) x.onclick=closeSheet; if(onMount) onMount(l); }
 function closeSheet(){ $("layer").innerHTML=""; }
-const heroCard=(id,extra)=>{ const h=HB[id], o=S.heroes[id]; return `<div class="hc ${h.rar} ${o?"":"lock"}" data-h="${id}">${portrait(h)}<span class="el">${EL[h.el].i}</span>${o?`<span class="st">${"★".repeat(o.stars)}</span><span class="lv">Lv${o.lv}</span>`:""}${S.newH[id]?'<span class="new">NEW</span>':""}${extra||""}</div>`; };
+const heroCard=(id,extra)=>{ const h=HB[id], o=S.heroes[id]; return `<div class="hc ${h.rar} ${o?"":"lock"}" data-h="${id}">${portrait(h)}<span class="el">${EL[h.el].i}</span>${o?`<span class="st">${"★".repeat(o.stars)}</span><span class="lv">Lv${o.lv}</span>`:""}${S.newH[id]?'<span class="new">NEW</span>':""}${extra||(o?"":`<span class="tier" style="color:${RAR[h.rar].c}">${h.rar}</span>`)}</div>`; };
 
 /* ---------- home / story ---------- */
 function stageInfo(i){ const c=Math.floor(i/SPC), s=i%SPC, ch=CH[c], boss=s===SPC-1; const P=Math.pow(1.047,i)*(1+c*0.04);
@@ -397,12 +432,13 @@ function vHome(m){ tickStam(); const cur=Math.min(cleared(),NST-1); const c=Math
   for(let s=0;s<SPC;s++){ const i=sub.ch*SPC+s, st=S.stars[i]||0, lock=i>cleared(), boss=s===SPC-1, info=stageInfo(i);
     h+=`<div class="stg ${boss?"boss":""} ${lock?"lock":""} ${i===cleared()?"cur":""}" data-i="${i}"><div style="font-size:20px">${boss?"👹":"⛩️"}</div><b>${sub.ch+1}-${s+1}</b><div class="s">${lock?"🔒":"★".repeat(st)+"☆".repeat(3-st)}</div><div class="sm mu">Lv ${info.lvl}</div></div>`; }
   h+=`</div><h3>Abyss Tower</h3><div class="card row"><div class="grow"><b>🗼 Floor ${S.tower+1}</b><div class="sm mu">Endless climb, harder every floor. 💎 every floor, extra every 5th. ${cleared()<16?"Unlocks after Chapter 2.":"No stamina needed."}</div></div><button class="btn alt" id="tw" ${cleared()<16?"disabled":""}>Climb</button></div>
-  <div class="card row"><div class="grow"><b>Team power ${fmt(teamPower())}</b><div class="sm mu">${S.team.filter(Boolean).map(id=>HB[id].name.split(" ")[0]).join(" · ")}</div></div><button class="btn gray" id="tme">Edit team</button></div>`;
+  <div class="card row"><div class="grow"><b>📋 Bounty Board</b><div class="sm mu">${(()=>{ ensureBounty(); const r=S.bnt.list.filter(b=>b.st&&!b.got&&Date.now()>=b.st+b.hrs*3600000).length, f=S.bnt.list.filter(b=>!b.st).length; return (r?`<span style="color:var(--gd)">${r} ready to claim</span> · `:"")+f+" open"; })()}</div></div><button class="btn alt" id="bnt">Open</button></div>
+  <div class="card row"><div class="grow"><b>Team power ${fmt(teamPower())}</b><div class="sm" style="color:var(--gd)">${synergy(S.team).b?synergy(S.team).t:""}</div><div class="sm mu">${S.team.filter(Boolean).map(id=>HB[id].name.split(" ")[0]).join(" · ")}</div></div><button class="btn gray" id="tme">Edit team</button></div>`;
   m.innerHTML=h;
   $("afk").onclick=()=>{ const a=afkPending(); S.gold+=a.gold; S.exp+=a.exp; S.gems+=a.gems; S.afkT=Date.now(); bump("afk"); toast(`Collected 🪙 ${fmt(a.gold)} 📜 ${fmt(a.exp)}${a.gems?" 💎 "+a.gems:""}`); render(); };
   $("pc").onclick=()=>{ sub.ch--; render(); }; $("nc").onclick=()=>{ sub.ch++; render(); };
   $("intro").onclick=()=>story(CH[sub.ch].intro); if($("outro")) $("outro").onclick=()=>story(CH[sub.ch].outro);
-  $("tw").onclick=()=>prepBattle({tower:S.tower+1}); $("tme").onclick=teamEdit;
+  $("tw").onclick=()=>prepBattle({tower:S.tower+1}); $("tme").onclick=teamEdit; $("bnt").onclick=bountySheet;
   m.querySelectorAll(".stg").forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; if(i>cleared()) return; stageSheet(i); }); }
 function stageSheet(i){ const f=stageInfo(i); const st=S.stars[i]||0;
   sheet(`<button class="x">✕</button><h2>${f.boss?"👹 Boss · ":""}Stage ${f.c+1}-${f.s+1}</h2><div class="mu sm">${f.ch.n} · enemy level ${f.lvl} · elements ${f.ch.el.map(e=>EL[e].i).join(" ")}</div>
@@ -420,37 +456,70 @@ function story(lines,done){ let i=0; const d=document.createElement("div"); d.id
     d.querySelector(".skip").onclick=e=>{ e.stopPropagation(); i=lines.length; show(); }; };
   d.onclick=()=>{ i++; sfx("tap"); show(); }; show(); }
 function teamEdit(){ const own=Object.keys(S.heroes).sort((a,b)=>power(b)-power(a));
-  sheet(`<button class="x">✕</button><h2>Team (4)</h2><p class="sm mu">Tap a heroine to add or remove. Order = left to right.</p><div class="grid" id="tsel" style="margin-bottom:12px">${[0,1,2,3].map(k=>S.team[k]?heroCard(S.team[k]):`<div class="hc" style="display:flex;align-items:center;justify-content:center;color:var(--mu)">empty</div>`).join("")}</div><div class="grid" id="tall">${own.map(id=>heroCard(id,S.team.includes(id)?'<span class="inT">IN</span>':"")).join("")}</div>`,l=>{
-    l.querySelectorAll("#tall .hc").forEach(el=>el.onclick=()=>{ const id=el.dataset.h; const k=S.team.indexOf(id); if(k>=0){ if(S.team.filter(Boolean).length<=1) return toast("Need at least 1 heroine"); S.team[k]=null; } else { const e=S.team.indexOf(null); if(e<0) return toast("Team is full – remove someone first"); S.team[e]=id; } S.team=[...S.team.filter(Boolean),null,null,null,null].slice(0,4); teamEdit(); render(); });
-    l.querySelectorAll("#tsel .hc[data-h]").forEach(el=>el.onclick=()=>{ const id=el.dataset.h; if(S.team.filter(Boolean).length<=1) return; S.team[S.team.indexOf(id)]=null; S.team=[...S.team.filter(Boolean),null,null,null,null].slice(0,4); teamEdit(); render(); }); }); }
+  
+  sheet(`<button class="x">✕</button><h2>Team (5)</h2><p class="sm mu">Tap a heroine to add or remove. Order = left to right.</p><div class="sm" style="margin:-4px 0 8px;color:var(--gd)">${synergy(S.team).t}</div><div class="grid" id="tsel" style="margin-bottom:12px;grid-template-columns:repeat(5,1fr)">${[0,1,2,3,4].map(k=>S.team[k]?heroCard(S.team[k]):`<div class="hc" style="display:flex;align-items:center;justify-content:center;color:var(--mu)">empty</div>`).join("")}</div><div class="grid" id="tall">${own.map(id=>heroCard(id,S.team.includes(id)?'<span class="inT">IN</span>':"")).join("")}</div>`,l=>{
+    l.querySelectorAll("#tall .hc").forEach(el=>el.onclick=()=>{ const id=el.dataset.h; const k=S.team.indexOf(id); if(k>=0){ if(S.team.filter(Boolean).length<=1) return toast("Need at least 1 heroine"); S.team[k]=null; } else { const e=S.team.indexOf(null); if(e<0) return toast("Team is full – remove someone first"); S.team[e]=id; } S.team=[...S.team.filter(Boolean),null,null,null,null,null].slice(0,5); teamEdit(); render(); });
+    l.querySelectorAll("#tsel .hc[data-h]").forEach(el=>el.onclick=()=>{ const id=el.dataset.h; if(S.team.filter(Boolean).length<=1) return; S.team[S.team.indexOf(id)]=null; S.team=[...S.team.filter(Boolean),null,null,null,null,null].slice(0,5); teamEdit(); render(); }); }); }
+
+
+/* ---------- bounty board (send heroines on timed missions) ---------- */
+const BNAME=["Escort a rice merchant","Clear a haunted well","Hunt a stray oni","Guard the shrine festival","Scout the bamboo paths","Recover a lost talisman","Deliver medicine to Haruno","Investigate strange foxfire","Calm a river spirit","Patrol the capital at night","Repair the mountain torii","Chase off bandit tengu"];
+function ensureBounty(force){ const t=today(); if(!S.bnt||S.bnt.d!==t||force){ const r=seeded(t+(force?Date.now():"")); const p=cleared(); const list=[];
+   for(let i=0;i<5;i++){ const hrs=[1,2,4,8][Math.floor(r()*4)], n=1+Math.floor(r()*3), el=r()<0.5?ELN[Math.floor(r()*5)]:null, tier=hrs>=4?TIERS[Math.min(4,1+Math.floor(r()*3))]:null;
+     const rew={gold:Math.round(900*hrs*(1+p/12)),exp:Math.round(700*hrs*(1+p/10))}; if(hrs>=2) rew.gems=10*hrs; if(hrs===8&&r()<0.5) rew.tickets=1;
+     list.push({nm:BNAME[Math.floor(r()*BNAME.length)],hrs,n,el,tier,rew,hs:[],st:0,got:false}); }
+   S.bnt={d:t,list,rf:(S.bnt&&S.bnt.d===t?S.bnt.rf:0)}; } }
+const bOk=(b,id)=>(!b.el||HB[id].el===b.el)&&(!b.tier||tierIx(HB[id].rar)>=tierIx(b.tier));
+const busy=()=>new Set(S.bnt.list.filter(b=>b.st&&!b.got).flatMap(b=>b.hs));
+function bountySheet(){ ensureBounty(); const now=Date.now(), B2=busy();
+  sheet(`<button class="x">✕</button><h2>📋 Bounty Board</h2><p class="sm mu">Send heroines on missions. They still fight in battles while away. New bounties every day.</p>
+   ${S.bnt.list.map((b,i)=>{ const left=b.st?b.st+b.hrs*3600000-now:0, done=b.st&&left<=0;
+     return `<div class="card"><div class="row"><div class="grow"><b>${b.nm}</b> <span class="sm mu">· ${b.hrs}h</span><div class="sm">Needs ${b.n} heroine${b.n>1?"s":""}${b.el?" · "+EL[b.el].i+" only":""}${b.tier?` · <span class="tag t${b.tier}">${b.tier}+</span>`:""}</div><div class="sm mu">${Object.entries(b.rew).map(([k,v])=>icon(k)+" "+fmt(v)).join(" ")}</div>${b.st&&!b.got?`<div class="sm" style="color:var(--pk)">${b.hs.map(id=>HB[id].name.split(" ")[0]).join(", ")}${done?"":" · "+Math.ceil(left/60000)+" min left"}</div>`:""}</div>
+       ${b.got?'<button class="btn gray" disabled>Done</button>':done?`<button class="btn gold" data-c="${i}">Claim</button>`:b.st?'<button class="btn gray" disabled>Away</button>':`<button class="btn" data-s="${i}">Send</button>`}</div></div>`; }).join("")}
+   <button class="btn alt" id="bref" style="width:100%">🔄 New bounties · 💎 ${30+S.bnt.rf*30}</button>`,l=>{
+    l.querySelectorAll("[data-s]").forEach(el=>el.onclick=()=>{ const b=S.bnt.list[+el.dataset.s]; const cand=Object.keys(S.heroes).filter(id=>!B2.has(id)&&bOk(b,id)).sort((x,y)=>tierIx(HB[x].rar)-tierIx(HB[y].rar)||power(x)-power(y));
+      if(cand.length<b.n) return toast("Not enough free heroines that match"); b.hs=cand.slice(0,b.n); b.st=Date.now(); bountySheet(); });
+    l.querySelectorAll("[data-c]").forEach(el=>el.onclick=()=>{ const b=S.bnt.list[+el.dataset.c]; b.got=true; toast(grant(b.rew)); bump("bounty"); bountySheet(); render.keep=true; render(); });
+    l.querySelector("#bref").onclick=()=>{ const c=30+S.bnt.rf*30; if(S.gems<c) return toast("Not enough 💎"); if(S.bnt.list.some(b=>b.st&&!b.got)) return toast("Wait until running bounties are back"); S.gems-=c; const rf=S.bnt.rf+1; ensureBounty(true); S.bnt.rf=rf; bountySheet(); render.keep=true; render(); }; }); }
 
 /* ---------- summon ---------- */
-function featured(){ const ssr=HEROES.filter(h=>h.rar==="SSR"); const d=Math.floor(Date.now()/86400000/3); return ssr[d%ssr.length].id; }
-function rollOne(){ S.pity++; S.pitySR++; let p=0.03; if(S.pity>=70) p=0.03+(S.pity-69)*0.06; const r=Math.random();
-  let rar= (r<p||S.pity>=90)?"SSR" : (r<p+0.15||S.pitySR>=10)?"SR":"R";
-  if(rar==="SSR"){ S.pity=0; S.pitySR=0; } else if(rar==="SR") S.pitySR=0;
-  let pool=HEROES.filter(h=>h.rar===rar); if(rar==="SSR"&&Math.random()<0.5) return HB[featured()]; return pick(pool); }
+function featured(){ const sss=HEROES.filter(h=>h.rar==="SSS"); const d=Math.floor(Date.now()/86400000/3); return sss[d%sss.length].id; }
+const RATES=[["SSS",0.007],["SSR",0.03],["SR",0.08],["E",0.16],["B",0.28],["R",0.443]];
+// pity: SR+ every 10 pulls · SSR+ rises from pull 60, sure by 80 · SSS sure by pull 200
+function rollOne(){ S.pity++; S.pitySR++; S.pitySSS=(S.pitySSS||0)+1; const r=Math.random(); let acc=0, rar="R";
+  const sssP=0.007+(S.pitySSS>=160?(S.pitySSS-159)*0.02:0), ssrP=0.03+(S.pity>=60?(S.pity-59)*0.05:0);
+  if(r<sssP||S.pitySSS>=200) rar="SSS"; else if(r<sssP+ssrP||S.pity>=80) rar="SSR"; else { acc=sssP+ssrP; for(const [t,p] of RATES.slice(2)){ acc+=p; if(r<acc){ rar=t; break; } } }
+  if(S.pitySR>=10&&tierIx(rar)<3) rar="SR";
+  if(rar==="SSS"){ S.pitySSS=0; S.pity=0; S.pitySR=0; } else if(rar==="SSR"){ S.pity=0; S.pitySR=0; } else if(rar==="SR") S.pitySR=0;
+  if(rar==="SSS"&&Math.random()<0.5) return HB[featured()]; return pick(HEROES.filter(h=>h.rar===rar)); }
 function addHero(h){ const o=S.heroes[h.id]; if(o){ o.shards+=RAR[h.rar].shard; return false; } S.heroes[h.id]={lv:1,stars:RAR[h.rar].st,shards:0}; S.newH[h.id]=1; if(S.team.includes(null)){ S.team[S.team.indexOf(null)]=h.id; } return true; }
 function doPull(n,cur){ const cost=cur==="tickets"?n:n*160; if(S[cur]<cost) return toast(cur==="tickets"?"Not enough 🎫":"Not enough 💎"); S[cur]-=cost;
   const res=[]; for(let i=0;i<n;i++){ const h=rollOne(); res.push([h,addHero(h)]); } bump("pull",n); save(true); pullAnim(res); }
-function pullAnim(res){ const best=res.some(([h])=>h.rar==="SSR")?"SSR":res.some(([h])=>h.rar==="SR")?"SR":"R"; const d=document.createElement("div"); d.id="pull"; document.body.appendChild(d);
-  d.innerHTML=`<div class="gate" style="border-color:${RAR[best].c}"></div><div class="mu" style="margin-top:16px">The Sakura Gate opens…</div>`; sfx(best==="SSR"?"ssr":"skill"); buzz();
-  setTimeout(()=>{ d.innerHTML=`<div class="pgrid">${res.map(([h,isNew],i)=>`<div class="hc ${h.rar}" style="animation-delay:${i*0.08}s">${portrait(h)}<span class="el">${EL[h.el].i}</span>${isNew?'<span class="new">NEW</span>':`<span class="lv">+${RAR[h.rar].shard} shards</span>`}</div>`).join("")}</div>
-    <div style="margin-top:14px;text-align:center">${res.filter(([h])=>h.rar==="SSR").map(([h])=>`<div style="color:var(--gd);font-weight:900">✨ SSR · ${h.name} ✨</div>`).join("")}</div><button class="btn" style="margin-top:16px;width:200px" id="pok">OK</button>`;
+function pullAnim(res){ const best=TIERS[Math.max(...res.map(([h])=>tierIx(h.rar)))]; const d=document.createElement("div"); d.id="pull"; document.body.appendChild(d);
+  d.innerHTML=`<div class="gate" style="border-color:${RAR[best].c}"></div><div class="mu" style="margin-top:16px">The Sakura Gate opens…</div>`; sfx(tierIx(best)>=4?"ssr":"skill"); buzz();
+  setTimeout(()=>{ d.innerHTML=`<div class="pgrid">${res.map(([h,isNew],i)=>`<div class="hc ${h.rar}" style="animation-delay:${i*0.08}s">${portrait(h)}<span class="el">${EL[h.el].i}</span><span class="st tag t${h.rar}" style="font-size:9px">${h.rar}</span>${isNew?'<span class="new">NEW</span>':`<span class="lv">+${RAR[h.rar].shard} shards</span>`}</div>`).join("")}</div>
+    <div style="margin-top:14px;text-align:center">${res.filter(([h])=>tierIx(h.rar)>=4).map(([h])=>`<div style="color:${RAR[h.rar].c};font-weight:900">✨ ${h.rar} · ${h.name} ✨</div>`).join("")}</div><button class="btn" style="margin-top:16px;width:200px" id="pok">OK</button>`;
     d.querySelector("#pok").onclick=()=>{ d.remove(); render(); }; },1300); }
 function vSummon(m){ const f=HB[featured()]; const left=3-(Math.floor(Date.now()/86400000)%3);
-  m.innerHTML=`<div class="banner"><div style="position:relative;z-index:2;max-width:56%"><div class="tag tSSR">RATE UP</div><div style="font-size:20px;font-weight:900;margin-top:4px;text-shadow:0 2px 4px #0006">${f.name}</div><div class="sm">${EL[f.el].i} ${CLS[f.cls].n}</div><div class="sm" style="margin-top:6px;opacity:.9">${f.bio}</div><div class="sm" style="margin-top:6px">Changes in ${left} day${left>1?"s":""}</div></div><div class="feat">${portrait(f,{nobg:true})}</div></div>
+  m.innerHTML=`<div class="banner"><div style="position:relative;z-index:2;max-width:56%"><div class="tag tSSS">SSS RATE UP</div><div style="font-size:20px;font-weight:900;margin-top:4px;text-shadow:0 2px 4px #0006">${f.name}</div><div class="sm">${EL[f.el].i} ${CLS[f.cls].n}</div><div class="sm" style="margin-top:6px;opacity:.9">${f.bio}</div><div class="sm" style="margin-top:6px">Changes in ${left} day${left>1?"s":""}</div></div><div class="feat">${portrait(f,{nobg:true})}</div></div>
   <div class="card"><div class="row"><button class="btn grow" id="p1">Summon ×1<br><span class="sm">💎 160</span></button><button class="btn gold grow" id="p10">Summon ×10<br><span class="sm">💎 1600</span></button></div>
   <div class="row" style="margin-top:8px"><button class="btn alt grow" id="t1" ${S.tickets<1?"disabled":""}>🎫 ×1</button><button class="btn alt grow" id="t10" ${S.tickets<10?"disabled":""}>🎫 ×10</button><span class="cur">🎫 ${S.tickets}</span></div>
-  <div class="sm mu" style="margin-top:10px">SSR 3% · SR 15% · R 82%. SR guaranteed every 10. Rates rise from pull 70; SSR guaranteed by 90 (now ${S.pity}/90). 50% of SSRs are the rate-up heroine. Duplicates give shards to raise ★.</div></div>
-  <h3>All heroines (${Object.keys(S.heroes).length}/${HEROES.length})</h3><div class="grid">${HEROES.slice().sort((a,b)=>"SSR SR R".indexOf(a.rar)-"SSR SR R".indexOf(b.rar)).map(h=>heroCard(h.id)).join("")}</div>`;
+  <div class="sm mu" style="margin-top:10px">${RATES.map(([t,p])=>`<span class="tag t${t}">${t} ${(p*100).toFixed(1)}%</span>`).join(" ")}<br>SR or better every 10 pulls. SSR+ guaranteed by pull 80 (now ${S.pity}/80). SSS guaranteed by pull 200 (now ${S.pitySSS||0}/200) – 50% of SSS pulls are the rate-up heroine. Duplicates give shards to raise ★.</div></div>
+  <h3>All heroines (${Object.keys(S.heroes).length}/${HEROES.length})</h3><div class="grid">${HEROES.slice().sort((a,b)=>tierIx(b.rar)-tierIx(a.rar)).map(h=>heroCard(h.id)).join("")}</div>`;
   $("p1").onclick=()=>doPull(1,"gems"); $("p10").onclick=()=>doPull(10,"gems"); $("t1").onclick=()=>doPull(1,"tickets"); $("t10").onclick=()=>doPull(10,"tickets");
   m.querySelectorAll(".grid .hc").forEach(el=>el.onclick=()=>heroSheet(el.dataset.h)); }
 
 /* ---------- heroes ---------- */
-function vHeroes(m){ const f=sub.heroes; const ids=Object.keys(S.heroes).filter(id=>f==="all"||HB[id].el===f).sort((a,b)=>power(b)-power(a));
-  m.innerHTML=`<div class="seg">${["all",...ELN].map(k=>`<button data-f="${k}" class="${f===k?"on":""}">${k==="all"?"All":EL[k].i}</button>`).join("")}</div><div class="grid">${ids.map(id=>heroCard(id,S.team.includes(id)?'<span class="inT">TEAM</span>':"")).join("")}</div>`;
-  m.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ sub.heroes=b.dataset.f; render(); });
+function vHeroes(m){ const f=sub.heroes, t=sub.tier||"all", showAll=!!sub.all; const owned=Object.keys(S.heroes).length;
+  const ids=HEROES.map(h=>h.id).filter(id=>(showAll||S.heroes[id])&&(f==="all"||HB[id].el===f)&&(t==="all"||HB[id].rar===t)).sort((a,b)=>(S.heroes[b]?1:0)-(S.heroes[a]?1:0)||(S.heroes[a]&&S.heroes[b]?power(b)-power(a):tierIx(HB[b].rar)-tierIx(HB[a].rar)));
+  const byT=TIERS.map(x=>`<span class="tag t${x}">${x} ${HEROES.filter(h=>h.rar===x&&S.heroes[h.id]).length}/${HEROES.filter(h=>h.rar===x).length}</span>`).join(" ");
+  m.innerHTML=`<div class="card"><div class="row"><b class="grow">📖 Collection ${owned}/${HEROES.length}</b><span style="color:var(--gd);font-weight:800">+${(colBonus()*100).toFixed(1)}% ATK/HP</span></div><div class="bar" style="margin:6px 0"><i style="width:${owned/HEROES.length*100}%;background:var(--pk)"></i></div><div class="sm">${byT}</div><div class="sm mu" style="margin-top:4px">Every heroine you own – and every ★ she gains – powers up your whole roster.</div></div>
+   <div class="seg">${["all",...ELN].map(k=>`<button data-f="${k}" class="${f===k?"on":""}">${k==="all"?"All":EL[k].i}</button>`).join("")}</div>
+   <div class="seg">${["all",...TIERS].map(k=>`<button data-t="${k}" class="${t===k?"on":""}">${k==="all"?"Any":k}</button>`).join("")}<button id="shAll" class="${showAll?"on":""}">${showAll?"👁 all":"owned"}</button></div>
+   <div class="grid">${ids.map(id=>heroCard(id,S.team.includes(id)?'<span class="inT">TEAM</span>':"")).join("")}</div>`;
+  m.querySelectorAll(".seg button[data-f]").forEach(b=>b.onclick=()=>{ sub.heroes=b.dataset.f; render(); });
+  m.querySelectorAll(".seg button[data-t]").forEach(b=>b.onclick=()=>{ sub.tier=b.dataset.t; render(); });
+  $("shAll").onclick=()=>{ sub.all=!sub.all; render(); };
   m.querySelectorAll(".grid .hc").forEach(el=>el.onclick=()=>heroSheet(el.dataset.h)); }
 function heroSheet(id){ const h=HB[id], o=S.heroes[id]; delete S.newH[id];
   if(!o){ return sheet(`<button class="x">✕</button><div class="row"><div style="width:110px" class="hc ${h.rar} lock">${portrait(h)}</div><div class="grow"><h2>${h.name}</h2><span class="tag t${h.rar}">${h.rar}</span> ${EL[h.el].i} ${CLS[h.cls].i} ${CLS[h.cls].n}<p class="sm mu">${h.bio}</p></div></div><div class="card"><b>${h.skill}</b><div class="sm mu">${SKD[h.cls].d}</div></div><p class="mu sm">Not recruited yet – summon her at the Sakura Gate.</p>`); }
@@ -461,7 +530,7 @@ function heroSheet(id){ const h=HB[id], o=S.heroes[id]; delete S.newH[id];
     <div class="row" style="margin-top:8px"><button class="btn grow" id="l1" ${o.lv>=cap?"disabled":""}>Level +1</button><button class="btn alt grow" id="lm" ${o.lv>=cap?"disabled":""}>Level max</button></div>
     <div class="row" style="margin-top:8px"><div class="grow sm">Shards ${o.shards}/${o.stars<6?sc:"—"}</div><button class="btn gold" id="star" ${o.stars>=6||o.shards<sc?"disabled":""}>★ Ascend</button></div></div>
    <div class="card"><div class="stat"><span>❤️ HP</span><b>${fmt(s.hp)}</b></div><div class="stat"><span>⚔️ ATK</span><b>${fmt(s.atk)}</b></div><div class="stat"><span>🛡️ DEF</span><b>${fmt(s.def)}</b></div><div class="stat"><span>💨 SPD</span><b>${s.spd}</b></div><div class="stat"><span>🎯 CRIT</span><b>${s.crit}%</b></div><div class="stat" style="border:0"><span>💥 CRIT DMG</span><b>+${s.cdmg}%</b></div></div>
-   <div class="card"><b>✨ ${h.skill}</b><div class="sm mu">${SKD[h.cls].d}${h.rar==="SSR"?" SSR: +30% skill power.":""} Ready every ${SKD[h.cls].cd} actions.</div></div>
+   <div class="card"><b>✨ ${h.skill}</b><div class="sm mu">${SKD[h.cls].d}${RAR[h.rar].sk>1?` ${h.rar}: +${Math.round((RAR[h.rar].sk-1)*100)}% skill power.`:""}${h.rar==="SSS"?" Divine aura: the whole team gets +10% ATK while she fights.":""} Ready every ${SKD[h.cls].cd} actions.</div></div>
    <h3>Gear</h3>${["w","a","c"].map(gslot).join("")}
    <div class="row" style="margin-top:8px"><button class="btn alt grow" id="auto">Auto-equip best</button><button class="btn gray grow" id="uneq">Unequip all</button></div>`,l=>{
     const lvl=max=>{ let n=0; while(o.lv<cap&&S.exp>=xpNeed(o.lv)&&S.gold>=goldNeed(o.lv)&&(max||n<1)){ S.exp-=xpNeed(o.lv); S.gold-=goldNeed(o.lv); o.lv++; n++; } if(!n) return toast(S.exp<need?"Not enough 📜 EXP – battle or collect patrol rewards":"Not enough 🪙"); bump("lvup",n); sfx("heal"); heroSheet(id); render.keep=true; render(); };
@@ -517,7 +586,7 @@ function menu(){ sheet(`<button class="x">✕</button><h2>☰ Menu</h2>
   • <b>Battle</b>: heroines act by SPD. When a card glows, tap it to unleash her skill – or switch on AUTO.<br>
   • <b>Level up</b> with 📜 EXP + 🪙. The level cap is 10 + 10 per ★. Duplicates give shards → ★ Ascend (max ★6).<br>
   • <b>Gear</b>: weapon, armor, charm. Enhance up to +15. Higher chapters drop better gear.<br>
-  • <b>Summon</b>: 💎 160 per pull. SSR guaranteed by pull 90, SR every 10.<br>
+  • <b>Ranks</b>: R &lt; B &lt; E &lt; SR &lt; SSR &lt; SSS – 100 heroines to collect. SSS heroines give the team a divine aura.<br>• <b>Summon</b>: 💎 160 per pull. SR+ every 10, SSR+ by pull 80, SSS by pull 200.<br>• <b>Team of 5</b>: 3+ heroines of one element, or all 5 different, give a synergy bonus. Your Collection powers up every heroine.<br>• <b>Bounty Board</b>: send heroines on timed missions for extra loot.<br>
   • <b>Patrol</b> rewards build up while you're away (12 h max). Abyss Tower opens after Chapter 2.</div>
   <h3>Data</h3><button class="btn gray" id="rst" style="width:100%">Reset game</button>`,l=>{
    l.querySelector("#mus").onclick=()=>{ S.music=!S.music; music(S.music); menu(); };
@@ -536,11 +605,12 @@ function mkWaves(o){ const W=[]; let P,lvl,ch,els,mons,boss;
   if(o.tower){ const f=o.tower; P=Math.pow(1.047,Math.min(NST,16+f*1.3))*Math.pow(1.03,Math.max(0,16+f*1.3-NST))*1.15; lvl=Math.round(14+f*1.1); const c=CH[(f-1)%CH.length]; els=ELN; mons=c.mons; boss=c.boss; ch=c; }
   else { const f=stageInfo(o.stage); P=f.P; lvl=f.lvl; ch=f.ch; els=ch.el; mons=ch.mons; boss=ch.boss; }
   const isBoss=o.tower?o.tower%5===0:stageInfo(o.stage).boss; const nW=isBoss?3:o.tower?2:(stageInfo(o.stage).s<2?2:3);
-  const mk=(type,bossy,el)=>({type,el,boss:bossy,name:(bossy?"👑 ":"")+MON[type].n,lvl,hp:Math.round(380*P*(bossy?6.5:1)),atk:Math.round(52*P*(bossy?1.5:1)),def:Math.round(26*P),spd:88+Math.random()*20+(bossy?6:0),crit:5,cdmg:50});
+  const mk=(type,bossy,el)=>({type,el,boss:bossy,name:(bossy?"👑 ":"")+MON[type].n,lvl,hp:Math.round(480*P*(bossy?7:1)),atk:Math.round(60*P*(bossy?1.5:1)),def:Math.round(26*P),spd:88+Math.random()*20+(bossy?6:0),crit:5,cdmg:50});
   for(let w=0;w<nW;w++){ const last=w===nW-1; if(last&&isBoss) W.push([mk(boss,true,pick(els))]); else { const n=w===0?2+Math.floor(Math.random()*2):3; const arr=[]; for(let k=0;k<n;k++) arr.push(mk(pick(mons),false,pick(els))); W.push(arr); } }
   return {W,ch}; }
 function startBattle(o){ if(o.stage!=null){ S.stam-=stageInfo(o.stage).cost; } const {W,ch}=mkWaves(o);
-  const team=S.team.filter(Boolean).map(id=>{ const s=stats(id); return {id,h:HB[id],hero:true,...s,max:s.hp,el:HB[id].el,cls:HB[id].cls,en:0,cd:SKD[HB[id].cls].cd,shield:0,taunt:0,g:Math.random()*30,dead:false}; });
+  const ids=S.team.filter(Boolean), syn=synergy(ids), aura=1+0.1*ids.filter(id=>HB[id].rar==="SSS").length;
+  const team=ids.map(id=>{ const s=stats(id); s.hp=Math.round(s.hp*(1+syn.b)); s.atk=Math.round(s.atk*(1+syn.b)*aura); return {id,h:HB[id],hero:true,...s,max:s.hp,el:HB[id].el,cls:HB[id].cls,en:0,cd:SKD[HB[id].cls].cd,shield:0,taunt:0,g:Math.random()*30,dead:false}; });
   B={o,W,wave:0,team,foes:[],ch,t:0,over:false,log:"",turn:null,busy:0,target:null};
   const d=document.createElement("div"); d.id="bt"; document.body.appendChild(d);
   d.innerHTML=`<svg class="bg" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><rect width="100" height="160" fill="${ch.bg}"/><circle cx="78" cy="22" r="12" fill="#fff6" /><path d="M0 120 Q25 96 50 112 Q75 96 100 116 V160 H0Z" fill="#0004"/><g fill="#ffb3d1" opacity=".5">${Array.from({length:14},()=>`<circle cx="${Math.random()*100}" cy="${Math.random()*150}" r="${0.6+Math.random()*1.2}"/>`).join("")}</g><path d="M30 120 V84 M70 120 V84 M24 86 H76 M27 92 H73" stroke="#c0392b" stroke-width="3" opacity=".45"/></svg>
@@ -565,7 +635,7 @@ function dmg(a,d,mult,critBonus){ let x=a.atk*mult*(100/(100+d.def*0.9))*elemMod
 const alive=a=>a.filter(u=>!u.dead);
 function heroAct(u){ const foes=alive(B.foes); if(!foes.length) return; const sk=u.en>=u.cd&&(S.auto||u.queued); u.queued=false;
   const tgt=()=>{ const t=B.target!=null&&!B.foes[B.target].dead?B.foes[B.target]:null; return t||foes.slice().sort((a,b)=>a.hp-b.hp)[0]; };
-  const P=u.h.rar==="SSR"?1.3:1;
+  const P=RAR[u.h.rar].sk;
   if(!sk){ dmg(u,tgt(),1); u.en++; return; }
   u.en=0; sfx("skill"); B.log=`✨ ${u.h.name.split(" ")[0]}: ${u.h.skill}!`; fx(hitEl(u),"✨"+u.h.skill,"heal");
   switch(u.cls){
