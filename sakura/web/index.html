@@ -117,7 +117,7 @@ h3{margin:14px 2px 8px;font-size:15px;color:var(--mu);font-weight:600}
 .stg{background:var(--pn2);border-radius:12px;padding:8px 4px;text-align:center;border:1px solid var(--ln)}
 .stg.boss{border-color:var(--rd)}
 .stg.lock{opacity:.35}
-.stg.cur{border-color:var(--pk);box-shadow:0 0 0 2px #ff7eb655}
+.stg.now{border-color:var(--pk);box-shadow:0 0 0 2px #ff7eb655}
 .stg .s{color:var(--gd);font-size:11px;letter-spacing:1px}
 </style>
 </head>
@@ -130,7 +130,7 @@ h3{margin:14px 2px 8px;font-size:15px;color:var(--mu);font-weight:600}
 <div id="layer"></div>
 <div id="toast"></div>
 <script>
-const SAKURA_WEB_VERSION = 4; // bump on every web update (the Android app reads this)
+const SAKURA_WEB_VERSION = 5; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const $=id=>document.getElementById(id);
 const fmt=n=>{ n=Math.floor(n); if(n<1e4) return ""+n; const u=["K","M","B","T","Qa","Qi"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<100?n.toFixed(1):Math.floor(n))+u[i]; };
@@ -460,7 +460,7 @@ function vHome(m){ tickStam(); const cur=Math.min(cleared(),NST-1); const c=Math
   h+=`<div class="row" style="margin:6px 0 8px"><button class="btn gray" id="pc" ${sub.ch<=0?"disabled":""}>◀</button><div class="grow" style="text-align:center"><div style="font-weight:900">Chapter ${sub.ch+1}</div><div class="mu sm">${ch.n}</div></div><button class="btn gray" id="nc" ${sub.ch>=CH.length-1||sub.ch>=c?"disabled":""}>▶</button></div>`;
   h+=`<div class="row" style="margin-bottom:8px"><button class="btn alt grow" id="intro">📖 Story: Prologue</button>${chapterDone(sub.ch)?`<button class="btn alt grow" id="outro">📖 Epilogue</button>`:""}</div><div class="stageGrid">`;
   for(let s=0;s<SPC;s++){ const i=sub.ch*SPC+s, st=S.stars[i]||0, lock=i>cleared(), boss=s===SPC-1, info=stageInfo(i);
-    h+=`<div class="stg ${boss?"boss":""} ${lock?"lock":""} ${i===cleared()?"cur":""}" data-i="${i}"><div style="font-size:20px">${boss?"👹":"⛩️"}</div><b>${sub.ch+1}-${s+1}</b><div class="s">${lock?"🔒":"★".repeat(st)+"☆".repeat(3-st)}</div><div class="sm mu">Lv ${info.lvl}</div></div>`; }
+    h+=`<div class="stg ${boss?"boss":""} ${lock?"lock":""} ${i===cleared()?"now":""}" data-i="${i}"><div style="font-size:20px">${boss?"👹":"⛩️"}</div><b>${sub.ch+1}-${s+1}</b><div class="s">${lock?"🔒":"★".repeat(st)+"☆".repeat(3-st)}</div><div class="sm mu">Lv ${info.lvl}</div></div>`; }
   h+=`</div><h3>Abyss Tower</h3><div class="card row"><div class="grow"><b>🗼 Floor ${S.tower+1}</b><div class="sm mu">Endless climb, harder every floor. 💎 every floor, extra every 5th. ${cleared()<16?"Unlocks after Chapter 2.":"No stamina needed."}</div></div><button class="btn alt" id="tw" ${cleared()<16?"disabled":""}>Climb</button></div>
   <div class="card row"><div class="grow"><b>📋 Bounty Board</b><div class="sm mu">${(()=>{ ensureBounty(); const r=S.bnt.list.filter(b=>b.st&&!b.got&&Date.now()>=b.st+b.hrs*3600000).length, f=S.bnt.list.filter(b=>!b.st).length; return (r?`<span style="color:var(--gd)">${r} ready to claim</span> · `:"")+f+" open"; })()}</div></div><button class="btn alt" id="bnt">Open</button></div>
   <div class="card row"><div class="grow"><b>Team power ${fmt(teamPower())}</b><div class="sm" style="color:var(--gd)">${synergy(S.team).b?synergy(S.team).t:""}</div><div class="sm mu">${S.team.filter(Boolean).map(id=>HB[id].name.split(" ")[0]).join(" · ")}</div></div><button class="btn gray" id="tme">Edit team</button></div>`;

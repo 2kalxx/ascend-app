@@ -1,7 +1,7 @@
 {
-  "web": 4,
+  "web": 5,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/SakuraGate.apk",
-  "notes": "Heroic opening theme, vibration switch, tidier settings & top bar"
+  "notes": "Fix current-stage tile layout"
 }
