@@ -1,7 +1,7 @@
 {
-  "web": 3,
+  "web": 4,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/SakuraGate.apk",
-  "notes": "App update: checks & installs updates automatically when opened"
+  "notes": "Heroic opening theme, vibration switch, tidier settings & top bar"
 }
