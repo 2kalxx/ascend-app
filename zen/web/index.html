@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 31; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 32; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -266,12 +266,12 @@ const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
 function pay(v){ S.coins+=v; S.total+=v; earnWin+=v; }
 // more balls than the unlocked stages can hold while flowing: the extra ones pay what an average ball earned on its way down
-function spawn(k,x,y){ if(balls.length+tankN>=capOf(S.unlocked)){ pay(ballVal(k)*worldMult()*avgNorm); return; }
+function spawn(k,x,y){ 
   const sp=getStage(1).spawn; balls.push({k,x:x!=null?x:sp[0]+Math.random()*(sp[1]-sp[0]),y:y!=null?y:-8,vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0}); }
 function collide(b,cx,cy,cr,e,ovx,ovy){ const dx=b.x-cx, dy=b.y-cy, d2=dx*dx+dy*dy, m=b.r+cr; if(d2>=m*m) return false; const d=Math.sqrt(d2)||0.01;
   const nx=dx/d, ny=dy/d; b.x=cx+nx*m; b.y=cy+ny*m; const rvx=b.vx-(ovx||0), rvy=b.vy-(ovy||0), vn=rvx*nx+rvy*ny; if(vn<0){ b.vx-=(1+e)*vn*nx; b.vy-=(1+e)*vn*ny; b.vx+=(Math.random()-.5)*10; return vn<-60; } return false; }
 function segHit(b,s,e,svx,svy){ const dx=s.x2-s.x1, dy=s.y2-s.y1, t=Math.max(0,Math.min(1,((b.x-s.x1)*dx+(b.y-s.y1)*dy)/(dx*dx+dy*dy))); return collide(b,s.x1+dx*t,s.y1+dy*t,(s.w||8)/2,e,svx,svy); }
-const BG=18, GW=Math.ceil(W/BG)+1, GH=Math.ceil(WORLD_H/BG)+40; const gHead=new Int32Array(GW*GH).fill(-1), gNext=new Int32Array(MAXB_ABS+600), gUsed=new Int32Array(MAXB_ABS+600);
+const BG=18, GW=Math.ceil(W/BG)+1, GH=Math.ceil(WORLD_H/BG)+40; const gHead=new Int32Array(GW*GH).fill(-1); let gNext=new Int32Array(8000), gUsed=new Int32Array(8000);
 const OC=40, OCOLS=Math.ceil(W/OC);
 function buildObsGrid(s){ const rows=Math.ceil(s.h/OC)+1; s.og=new Array(OCOLS*rows); s.ogRows=rows;
   const add=(x1,y1,x2,y2,list,item)=>{ const m=14; for(let gy=Math.max(0,((y1-s.oy-m)/OC)|0);gy<=Math.min(rows-1,((y2-s.oy+m)/OC)|0);gy++) for(let gx=Math.max(0,((x1-m)/OC)|0);gx<=Math.min(OCOLS-1,((x2+m)/OC)|0);gx++){ const i=gy*OCOLS+gx; const c=s.og[i]||(s.og[i]={c:[],g:[],p:[]}); c[list].push(item); } };
@@ -304,7 +304,7 @@ function step(dt,sim){ tankN=tankBalls();
   const doorStages=[]; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(!s) continue; for(const sp of s.spins) sp.a+=sp.w*dt; for(const q of s.gates) moveGate(q,gt); if(s.doors.length){ doorStages.push(s); for(const d of s.doors) d.cnt=0; } }
   const g=G0*(1-0.05*C("gw")), EY=exitY(), wm=worldMult(), lucky=1+0.1*C("hh");
   // ball ↔ ball (linked-list grid, only touched cells are cleared)
-  const nb=balls.length; let nu=0;
+  const nb=balls.length; let nu=0; if(nb>gNext.length){ const n2=Math.ceil(nb*1.5); gNext=new Int32Array(n2); gUsed=new Int32Array(n2); }
   for(let i=0;i<nb;i++){ const b=balls[i]; const gx=Math.max(0,Math.min(GW-1,(b.x/BG)|0)), gy=Math.max(0,Math.min(GH-1,((b.y+200)/BG)|0)), c=gy*GW+gx; if(gHead[c]===-1) gUsed[nu++]=c; gNext[i]=gHead[c]; gHead[c]=i; b.c=c; }
   for(let it=0;it<2;it++){ // two passes keep big piles from squashing
   for(let i=0;i<nb;i++){ const b=balls[i], c0=b.c, cx=c0%GW, cy=(c0/GW)|0;
@@ -470,7 +470,7 @@ document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset
 document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 function tankBalls(){ let n=0; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(s) for(const d of s.doors) n+=d.pile.length; } return n; }
 function uiTop(){ if(typeof syncAuto==='function') syncAuto();
-  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+capOf(S.unlocked).toLocaleString("de-DE")+" balls";
+  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" balls";
   const L=S.unlocked+1, u=$("unlockB");
   if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+" · gates ×1.35"; u.className=S.coins>=priceOf(L)?"ok":""; }
   $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);

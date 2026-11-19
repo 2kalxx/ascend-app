@@ -1,7 +1,7 @@
 {
-  "web": 31,
+  "web": 32,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Edges filled, new obstacle shapes (hexagons, lollipops, bricks, V-cups, stairs, spinning crosses)"
+  "notes": "No ball cap"
 }
