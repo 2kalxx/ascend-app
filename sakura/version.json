@@ -1,0 +1,7 @@
+{
+  "web": 1,
+  "apk": 1,
+  "minApk": 1,
+  "apkPath": "apk/SakuraGate.apk",
+  "notes": "First release"
+}

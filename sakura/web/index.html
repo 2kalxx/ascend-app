@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Sakura Gate</title>
+<style>
+:root{--bg:#120d1f;--pn:#1e1633;--pn2:#2a2045;--ln:#3a2e5c;--tx:#f4eefc;--mu:#a99cc8;--pk:#ff7eb6;--gd:#ffd36b;--sr:#c58bff;--rr:#6fb7ff;--nn:#9aa3b5;--gr:#62e0a1;--rd:#ff5d73}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;user-select:none}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--tx);font:14px/1.35 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden}
+button{font:inherit;color:inherit;border:0;cursor:pointer}
+#app{position:fixed;inset:0;display:flex;flex-direction:column;background:radial-gradient(120% 60% at 50% 0%,#2d1d4f 0%,#120d1f 70%)}
+#top{display:flex;gap:6px;align-items:center;padding:calc(8px + env(safe-area-inset-top)) 10px 8px;background:rgba(0,0,0,.25)}
+.cur{display:flex;align-items:center;gap:4px;background:var(--pn);border:1px solid var(--ln);border-radius:20px;padding:3px 9px;font-weight:700;font-size:13px;white-space:nowrap}
+#menuB{margin-left:auto;background:var(--pn);border:1px solid var(--ln);border-radius:10px;padding:4px 10px;font-size:16px}
+#main{flex:1;overflow-y:auto;padding:10px 10px 90px}
+#nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:#160f28;border-top:1px solid var(--ln);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+#nav button{flex:1;background:none;padding:8px 0 7px;font-size:11px;color:var(--mu);display:flex;flex-direction:column;align-items:center;gap:1px;position:relative}
+#nav button b{font-size:21px;font-weight:400}
+#nav button.on{color:var(--pk)}
+.dot{position:absolute;top:5px;right:calc(50% - 18px);width:9px;height:9px;border-radius:50%;background:var(--rd)}
+h2{margin:4px 2px 10px;font-size:18px}
+h3{margin:14px 2px 8px;font-size:15px;color:var(--mu);font-weight:600}
+.card{background:var(--pn);border:1px solid var(--ln);border-radius:14px;padding:12px;margin-bottom:10px}
+.btn{background:linear-gradient(180deg,#ff8cc0,#e25596);border-radius:12px;padding:10px 14px;font-weight:800;box-shadow:0 3px 0 #9c2f63;text-align:center}
+.btn.alt{background:linear-gradient(180deg,#8f7bd8,#5f4bb0);box-shadow:0 3px 0 #3b2c78}
+.btn.gold{background:linear-gradient(180deg,#ffe08a,#f1a93a);color:#3a2300;box-shadow:0 3px 0 #a86a12}
+.btn.gray{background:#3b3355;box-shadow:none;color:var(--mu)}
+.btn:active{transform:translateY(2px);box-shadow:none}
+.btn[disabled]{opacity:.45;pointer-events:none}
+.row{display:flex;gap:8px;align-items:center}
+.grow{flex:1}
+.mu{color:var(--mu)} .sm{font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.hc{position:relative;border-radius:12px;overflow:hidden;background:var(--pn2);border:2px solid var(--ln);aspect-ratio:5/6}
+.hc svg{width:100%;height:100%;display:block}
+.hc .lv{position:absolute;left:3px;bottom:2px;font-size:11px;font-weight:800;text-shadow:0 1px 2px #000}
+.hc .st{position:absolute;right:3px;top:1px;font-size:9px;color:var(--gd);text-shadow:0 1px 2px #000}
+.hc .el{position:absolute;left:3px;top:2px;font-size:12px}
+.hc.R{border-color:var(--rr)} .hc.SR{border-color:var(--sr)} .hc.SSR{border-color:var(--gd);box-shadow:0 0 10px rgba(255,211,107,.35)}
+.hc.lock{filter:grayscale(1) brightness(.45)}
+.hc .inT{position:absolute;right:3px;bottom:2px;font-size:10px;background:var(--pk);border-radius:6px;padding:0 4px;font-weight:800}
+.tag{display:inline-block;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:800}
+.tR{background:#1d3b63;color:var(--rr)} .tSR{background:#3b2361;color:var(--sr)} .tSSR{background:#5a4512;color:var(--gd)} .tN{background:#33384a;color:var(--nn)}
+.bar{height:7px;background:#0c0816;border-radius:5px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--gr)}
+#layer:empty{display:none}
+#layer{position:fixed;inset:0;z-index:20;background:rgba(6,3,14,.82);display:flex;align-items:flex-end;justify-content:center}
+.sheet{width:100%;max-width:520px;max-height:92vh;overflow-y:auto;background:var(--pn);border-radius:18px 18px 0 0;padding:14px 14px calc(16px + env(safe-area-inset-bottom));border-top:1px solid var(--ln)}
+.x{float:right;background:var(--pn2);border-radius:9px;padding:3px 10px;font-size:16px}
+.stat{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #2c2347;font-size:13px}
+.gi{display:flex;align-items:center;gap:8px;background:var(--pn2);border-radius:10px;padding:7px 9px;margin-bottom:6px;border-left:4px solid var(--nn)}
+.gi.R{border-left-color:var(--rr)} .gi.SR{border-left-color:var(--sr)} .gi.SSR{border-left-color:var(--gd)}
+.gico{font-size:22px;width:30px;text-align:center}
+.seg{display:flex;background:var(--pn2);border-radius:10px;padding:3px;gap:3px;margin-bottom:10px}
+.seg button{flex:1;background:none;border-radius:8px;padding:6px;color:var(--mu);font-weight:700;font-size:12px}
+.seg button.on{background:var(--ln);color:var(--tx)}
+#toast{position:fixed;left:50%;top:70px;transform:translateX(-50%);background:#000c;border:1px solid var(--ln);border-radius:12px;padding:8px 14px;z-index:60;font-weight:700;pointer-events:none;transition:opacity .3s;opacity:0;max-width:90%;text-align:center}
+/* battle */
+#bt{position:fixed;inset:0;z-index:30;display:flex;flex-direction:column;background:linear-gradient(#1b2340,#3a2550 55%,#1a1226)}
+#bt .bg{position:absolute;inset:0;opacity:.5;pointer-events:none}
+#btTop{display:flex;align-items:center;gap:6px;padding:calc(8px + env(safe-area-inset-top)) 10px 6px;position:relative;z-index:2}
+#foes{flex:1;display:flex;flex-wrap:wrap;align-content:center;justify-content:center;gap:4px;padding:6px;position:relative;z-index:2}
+.foe{width:31%;max-width:150px;position:relative;text-align:center;transition:transform .15s,opacity .4s}
+.foe svg{width:100%;height:auto;display:block}
+.foe .hp{height:6px;background:#0008;border-radius:4px;overflow:hidden;margin:0 8%}
+.foe .hp i{display:block;height:100%;background:var(--rd);transition:width .2s}
+.foe .nm{font-size:11px;color:#ddd}
+.foe.dead{opacity:0;transform:scale(.6)}
+.foe.boss{width:62%;max-width:260px}
+.foe.tgt::after{content:"▼";position:absolute;top:-4px;left:50%;transform:translateX(-50%);color:var(--pk);font-size:14px}
+#team{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;padding:6px 8px calc(10px + env(safe-area-inset-bottom));position:relative;z-index:2}
+.tm{position:relative;background:#0007;border-radius:12px;padding:4px;border:2px solid #fff2;transition:transform .15s}
+.tm .pt{border-radius:9px;overflow:hidden;aspect-ratio:1/1;background:#0005}
+.tm .pt svg{width:100%;height:100%;display:block}
+.tm .hp,.tm .en,.tm .at{height:5px;border-radius:3px;background:#0009;margin-top:3px;overflow:hidden}
+.tm .hp i{display:block;height:100%;background:var(--gr);transition:width .2s}
+.tm .en i{display:block;height:100%;background:var(--pk)}
+.tm .at i{display:block;height:100%;background:#7fd3ff}
+.tm .sk{position:absolute;inset:0;border-radius:10px;display:none;align-items:center;justify-content:center;background:rgba(255,126,182,.25);font-weight:900;font-size:12px;text-shadow:0 1px 3px #000;animation:pulse 1s infinite}
+.tm.ready .sk{display:flex}
+.tm.dead{filter:grayscale(1) brightness(.4)}
+.tm.act,.foe.act{transform:translateY(-8px)}
+.tm .shd{position:absolute;top:2px;right:4px;font-size:11px}
+@keyframes pulse{50%{background:rgba(255,126,182,.45)}}
+.fx{position:fixed;z-index:40;font-weight:900;pointer-events:none;text-shadow:0 2px 3px #000,0 0 2px #000;animation:up 1s forwards;font-size:18px}
+.fx.crit{color:var(--gd);font-size:23px} .fx.heal{color:var(--gr)} .fx.weak{color:#ff9f43}
+@keyframes up{to{transform:translateY(-46px);opacity:0}}
+.shake{animation:sh .25s}
+@keyframes sh{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+#btLog{position:relative;z-index:2;text-align:center;font-size:12px;color:#ffd9ea;min-height:17px;padding:0 10px}
+.sbtn{background:#0008;border:1px solid #fff3;border-radius:9px;padding:4px 9px;font-weight:800;font-size:12px}
+.sbtn.on{background:var(--pk);color:#fff}
+/* story */
+#story{position:fixed;inset:0;z-index:50;background:linear-gradient(#0b0717,#241640);display:flex;flex-direction:column;justify-content:flex-end}
+#story .por{flex:1;display:flex;align-items:flex-end;justify-content:center}
+#story .por svg{height:min(52vh,420px);width:auto;filter:drop-shadow(0 0 20px #ff7eb655)}
+#story .box{background:#1e1633f2;border-top:2px solid var(--pk);padding:14px 16px calc(18px + env(safe-area-inset-bottom));min-height:150px}
+#story .who{font-weight:900;color:var(--pk);margin-bottom:6px}
+#story .txt{font-size:15px;line-height:1.5}
+#story .skip{position:absolute;top:calc(10px + env(safe-area-inset-top));right:10px}
+/* summon */
+.banner{border-radius:16px;overflow:hidden;position:relative;background:linear-gradient(135deg,#ff7eb6 0%,#7b4fd6 60%,#2b1b54 100%);padding:14px;min-height:190px;margin-bottom:10px}
+.banner .feat{position:absolute;right:-10px;bottom:0;width:58%}
+.banner .feat svg{width:100%;height:auto;display:block}
+#pull{position:fixed;inset:0;z-index:55;background:radial-gradient(circle,#3b1f63,#0b0717);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px}
+.pgrid{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;width:100%;max-width:480px}
+.pgrid .hc{animation:pop .45s backwards}
+@keyframes pop{from{transform:scale(.2) rotate(-10deg);opacity:0}}
+.gate{width:160px;height:200px;border-radius:80px 80px 10px 10px;border:6px solid var(--gd);box-shadow:0 0 50px var(--pk),inset 0 0 40px var(--pk);animation:glow 1.1s infinite alternate}
+@keyframes glow{to{box-shadow:0 0 90px var(--gd),inset 0 0 70px var(--gd)}}
+.new{position:absolute;top:2px;left:50%;transform:translateX(-50%);background:var(--rd);font-size:9px;font-weight:900;border-radius:5px;padding:0 4px}
+.stageGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:7px}
+.stg{background:var(--pn2);border-radius:12px;padding:8px 4px;text-align:center;border:1px solid var(--ln)}
+.stg.boss{border-color:var(--rd)}
+.stg.lock{opacity:.35}
+.stg.cur{border-color:var(--pk);box-shadow:0 0 0 2px #ff7eb655}
+.stg .s{color:var(--gd);font-size:11px;letter-spacing:1px}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="top"></div>
+  <div id="main"></div>
+  <div id="nav"></div>
+</div>
+<div id="layer"></div>
+<div id="toast"></div>
+<script>
+const SAKURA_WEB_VERSION = 1; // bump on every web update (the Android app reads this)
+const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
+const $=id=>document.getElementById(id);
+const fmt=n=>{ n=Math.floor(n); if(n<1e4) return ""+n; const u=["K","M","B","T","Qa","Qi"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<100?n.toFixed(1):Math.floor(n))+u[i]; };
+const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const rnd=(a,b)=>a+Math.random()*(b-a);
+const pick=a=>a[Math.floor(Math.random()*a.length)];
+const today=()=>{ const d=new Date(); return d.getFullYear()+"-"+(d.getMonth()+1)+"-"+d.getDate(); };
+function seeded(s){ let h=2166136261; for(const c of String(s)){ h^=c.charCodeAt(0); h=Math.imul(h,16777619); } return ()=>{ h+=0x6D2B79F5; let t=h; t=Math.imul(t^t>>>15,t|1); t^=t+Math.imul(t^t>>>7,t|61); return ((t^t>>>14)>>>0)/4294967296; }; }
+
+/* ================= data ================= */
+const EL={fire:{i:"🔥",n:"Fire",c:"#ff6a4d"},water:{i:"💧",n:"Water",c:"#4db4ff"},wind:{i:"🍃",n:"Wind",c:"#5fdc8c"},light:{i:"☀️",n:"Light",c:"#ffd36b"},dark:{i:"🌙",n:"Dark",c:"#a77bff"}};
+const ELN=Object.keys(EL);
+function elemMod(a,d){ if((a==="fire"&&d==="wind")||(a==="wind"&&d==="water")||(a==="water"&&d==="fire")) return 1.5;
+  if((a==="light"&&d==="dark")||(a==="dark"&&d==="light")) return 1.5;
+  if((d==="fire"&&a==="wind")||(d==="wind"&&a==="water")||(d==="water"&&a==="fire")) return 0.75; return 1; }
+const CLS={
+  blade:{n:"Swordswoman",i:"⚔️",hp:1.0,atk:1.15,def:1.0,spd:102,col:"#e8435f"},
+  guard:{n:"Guardian",i:"🛡️",hp:1.45,atk:0.75,def:1.5,spd:92,col:"#5a7dd8"},
+  archer:{n:"Archer",i:"🏹",hp:0.85,atk:1.2,def:0.8,spd:108,col:"#3fae6a"},
+  mage:{n:"Onmyoji",i:"🔮",hp:0.8,atk:1.05,def:0.75,spd:100,col:"#8e5bd8"},
+  healer:{n:"Miko",i:"🌸",hp:0.95,atk:0.9,def:0.9,spd:104,col:"#f2f2f2"},
+  ninja:{n:"Kunoichi",i:"🗡️",hp:0.85,atk:1.0,def:0.8,spd:118,col:"#2b2b3a"}};
+const RAR={R:{m:1,st:1,shard:5,c:"var(--rr)"},SR:{m:1.2,st:2,shard:10,c:"var(--sr)"},SSR:{m:1.45,st:3,shard:25,c:"var(--gd)"}};
+// look: [hair color, eye color, hair style, accessory]
+const HEROES=[
+ ["sakura","Sakura Amane","SR","light","blade","#ffb3d1","#e2557f","long","pin","A cheerful shrine swordswoman who found you at the shattered Sakura Gate.","Petal Iaigiri"],
+ ["koharu","Koharu Haruno","R","wind","healer","#c9a46a","#5aa36b","bob","ribbon","Village miko who patches up everyone's scrapes – and your pride.","Spring Prayer"],
+ ["natsu","Natsu Hiiragi","R","fire","guard","#c0392b","#f39c12","pony","band","Blacksmith's daughter. Carries a door as a shield. Literally.","Anvil Stance"],
+ ["rin","Rin Kazehaya","SSR","wind","ninja","#2fb67c","#1b6b4a","pony","mask","The fastest kunoichi in Hinomoto. Never seen standing still.","Gale Thousand Cuts"],
+ ["yuki","Yuki Shirogane","SSR","water","mage","#e9f4ff","#5aa9ff","long","snow","A quiet onmyoji whose talismans freeze rivers mid-flow.","Silver Frost Seal"],
+ ["akane","Akane Homura","SSR","fire","blade","#ff4b3a","#ffb03a","twin","horns","Half-oni swordmaster with a temper as hot as her blade.","Crimson Lotus Slash"],
+ ["hotaru","Hotaru Yozora","SSR","dark","archer","#3b2a6b","#c58bff","long","moon","Moon archer who only hunts after midnight.","Starfall Volley"],
+ ["nozomi","Nozomi Hikari","SSR","light","healer","#ffe7a3","#ffb84d","bun","halo","High priestess of the Sun Shrine. Her prayers turn wounds into light.","Amaterasu's Grace"],
+ ["ayame","Ayame Kurogane","SSR","dark","guard","#4a4a5e","#e2557f","bob","horns","Iron-clad gate warden. Has not lost a duel in 300 years.","Black Iron Bastion"],
+ ["izumi","Izumi Mikage","SSR","water","ninja","#3a6fd8","#9fe6ff","twin","mask","Mist-walking spy, raised by river spirits.","Riptide Shadow Dance"],
+ ["chiyo","Chiyo Inari","SSR","fire","mage","#ff9b42","#ffd36b","long","fox","Fox-eared shrine maiden of Inari. Plays with foxfire like candy.","Nine-Tail Foxfire"],
+ ["mio","Mio Tsukishiro","SR","dark","mage","#6b4fa8","#ff7eb6","twin","ribbon","Moon-castle princess who studies forbidden scrolls at night.","Lunar Hex"],
+ ["suzu","Suzu Mizuhara","SR","water","healer","#7fd3ff","#3a8bd8","bob","bell","Plays a tiny bell; every chime washes pain away.","Healing Tide"],
+ ["kaede","Kaede Momiji","SR","wind","archer","#d8642b","#5fdc8c","pony","leaf","Autumn hunter with arrows that ride the wind.","Maple Storm"],
+ ["tsubaki","Tsubaki Hanabi","SR","fire","archer","#ff5d73","#ffd36b","bun","pin","Firework maker. Her arrows explode. Usually on purpose.","Hanabi Barrage"],
+ ["hinata","Hinata Akebono","SR","light","guard","#ffd36b","#ff9b42","pony","band","Dawn knight who greets every sunrise with a shield bash.","Daybreak Wall"],
+ ["sayo","Sayo Kagerou","SR","dark","ninja","#2b2b3a","#ff4b3a","long","mask","Heat-haze assassin. You see her only when she wants.","Mirage Fang"],
+ ["aoi","Aoi Seiryu","SR","water","blade","#2f8fd8","#9fe6ff","long","dragon","Descendant of the Blue Dragon clan. Her blade flows like water.","Seiryu Torrent"],
+ ["miyu","Miyu Sorano","SR","wind","mage","#a8e6ff","#62e0a1","twin","ribbon","Kite-riding onmyoji who reads omens in the clouds.","Sky Seal Tempest"],
+ ["kiku","Kiku Asagiri","SR","light","archer","#f4e1ff","#c58bff","bob","flower","Chrysanthemum guard with a bow of white cedar.","Morning Mist Arrow"],
+ ["emi","Emi Tachibana","R","light","blade","#8b5a2b","#e2557f","pony","ribbon","Dojo student. Practices 1000 swings a day, 1200 on holidays.","Thousand Swings"],
+ ["kana","Kana Hoshino","R","dark","archer","#4a3a7a","#ffd36b","twin","star","Stargazer who shoots at whatever the stars point at.","Star Arrow"],
+ ["ren","Ren Ikazuchi","R","wind","ninja","#ffe066","#3a6fd8","bob","band","Thunder-quick courier ninja. Always late, somehow.","Lightning Step"],
+ ["fuyu","Fuyu Shimotsuki","R","water","guard","#d6e6f2","#3a8bd8","bun","snow","Frost-gate keeper with a very cold shield.","Ice Wall"],
+ ["haruka","Haruka Kaze","R","wind","blade","#9ad26b","#2f8f5a","long","leaf","Wandering ronin girl who never says where she's from.","Wind Cutter"],
+ ["momo","Momo Sakuragi","R","fire","healer","#ff9fb8","#e2557f","twin","flower","Tea-house girl. Her sweets heal more than medicine.","Peach Sweets"],
+ ["shizuka","Shizuka Kiri","R","water","mage","#5d6d8a","#7fd3ff","long","pin","Misty-eyed scholar of water talismans.","Mist Talisman"],
+ ["tamaki","Tamaki Oniwa","R","dark","blade","#3b2a3a","#c0392b","pony","horns","Small oni girl, big club, bigger appetite.","Oni Club"],
+ ["yume","Yume Hoshizora","R","light","mage","#fff1b8","#c58bff","bob","star","Dreams the future. Mostly about dinner.","Dream Spark"],
+ ["nanami","Nanami Umi","R","water","archer","#3fc1c9","#1b6b8a","pony","shell","Fisher-girl with a harpoon bow and endless patience.","Wave Shot"]
+].map(a=>({id:a[0],name:a[1],rar:a[2],el:a[3],cls:a[4],hair:a[5],eye:a[6],style:a[7],acc:a[8],bio:a[9],skill:a[10]}));
+const HB={}; HEROES.forEach(h=>HB[h.id]=h);
+const SKD={
+  blade:{d:"Heavy strike on one foe (2.6× ATK).",cd:3},
+  guard:{d:"Taunt all foes for 2 turns and gain a shield (25% max HP), then strike (1.0×).",cd:3},
+  archer:{d:"Piercing shot on the weakest foe (2.3× ATK, +60% crit chance).",cd:3},
+  mage:{d:"Talisman blast on all foes (1.25× ATK).",cd:4},
+  healer:{d:"Heal all allies (2.2× ATK) and cleanse burns.",cd:3},
+  ninja:{d:"Four rapid cuts on random foes (0.85× ATK each).",cd:3}};
+
+/* ================= art ================= */
+function shade(hex,f){ const n=parseInt(hex.slice(1),16); let r=n>>16,g=n>>8&255,b=n&255; const t=f<0?0:255, p=Math.abs(f); r=Math.round((t-r)*p+r); g=Math.round((t-g)*p+g); b=Math.round((t-b)*p+b); return "#"+((1<<24)+(r<<16)+(g<<8)+b).toString(16).slice(1); }
+function portrait(h,opt){ opt=opt||{}; const hc=h.hair, hd=shade(hc,-0.25), hl=shade(hc,0.35), ec=h.eye, cl=CLS[h.cls].col, cl2=shade(cl,-0.3), sk="#ffe4d6", e=EL[h.el].c;
+  const bg=opt.nobg?"":`<defs><radialGradient id="g${h.id}" cx="50%" cy="38%" r="70%"><stop offset="0" stop-color="${shade(e,0.25)}"/><stop offset="1" stop-color="${shade(e,-0.55)}"/></radialGradient></defs><rect width="100" height="120" fill="url(#g${h.id})"/><g opacity=".22" fill="#fff"><circle cx="15" cy="20" r="2"/><circle cx="85" cy="30" r="1.6"/><circle cx="78" cy="12" r="1.2"/><circle cx="20" cy="70" r="1.4"/></g>`;
+  let back="";
+  if(h.style==="long") back=`<path d="M22 50 Q20 30 50 22 Q80 30 78 50 L84 118 L16 118 Z" fill="${hd}"/>`;
+  else if(h.style==="twin") back=`<path d="M26 46 Q50 18 74 46 L72 70 L28 70Z" fill="${hd}"/><path d="M24 44 Q6 60 12 104 Q16 112 22 100 Q20 74 30 54Z" fill="${hc}"/><path d="M76 44 Q94 60 88 104 Q84 112 78 100 Q80 74 70 54Z" fill="${hc}"/><circle cx="25" cy="44" r="4" fill="${e}"/><circle cx="75" cy="44" r="4" fill="${e}"/>`;
+  else if(h.style==="pony") back=`<path d="M26 48 Q50 18 74 48 L72 72 L28 72Z" fill="${hd}"/><path d="M68 30 Q96 30 92 70 Q88 96 80 104 Q84 76 74 50Z" fill="${hc}"/><circle cx="70" cy="30" r="3.5" fill="${e}"/>`;
+  else if(h.style==="bun") back=`<circle cx="50" cy="20" r="11" fill="${hc}"/><path d="M26 48 Q50 18 74 48 L72 74 L28 74Z" fill="${hd}"/><path d="M40 18 Q50 12 60 18" stroke="${hl}" stroke-width="2" fill="none"/>`;
+  else back=`<path d="M24 48 Q50 16 76 48 L78 80 Q70 84 66 78 L34 78 Q30 84 22 80Z" fill="${hd}"/>`;
+  const body=`<rect x="44" y="72" width="12" height="12" fill="${shade(sk,-0.08)}"/>
+   <path d="M18 120 Q20 88 44 82 L56 82 Q80 88 82 120Z" fill="${cl}"/>
+   <path d="M44 82 L50 100 L56 82" fill="#fff"/><path d="M42 83 L50 104 L36 120 L30 120Z" fill="${cl2}" opacity=".55"/><path d="M58 83 L50 104 L64 120 L70 120Z" fill="${cl2}" opacity=".35"/>
+   <rect x="30" y="106" width="40" height="5" fill="${e}" opacity=".9"/>`;
+  const face=`<ellipse cx="50" cy="56" rx="21" ry="22" fill="${sk}"/>
+   <ellipse cx="38.5" cy="60" rx="5.2" ry="6.6" fill="#fff"/><ellipse cx="61.5" cy="60" rx="5.2" ry="6.6" fill="#fff"/>
+   <ellipse cx="39" cy="61" rx="4.3" ry="5.7" fill="${ec}"/><ellipse cx="61" cy="61" rx="4.3" ry="5.7" fill="${ec}"/>
+   <ellipse cx="39" cy="62.5" rx="2" ry="2.8" fill="${shade(ec,-0.6)}"/><ellipse cx="61" cy="62.5" rx="2" ry="2.8" fill="${shade(ec,-0.6)}"/>
+   <circle cx="37.3" cy="58.4" r="1.7" fill="#fff"/><circle cx="59.3" cy="58.4" r="1.7" fill="#fff"/><circle cx="40.4" cy="64.4" r=".8" fill="#fff"/><circle cx="62.4" cy="64.4" r=".8" fill="#fff"/>
+   <path d="M32.5 54.5 Q38.5 51 44.5 54.6" stroke="#2a1a22" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M55.5 54.6 Q61.5 51 67.5 54.5" stroke="#2a1a22" stroke-width="1.8" fill="none" stroke-linecap="round"/>
+   <path d="M34 49 Q38 47.5 42 48.5" stroke="${hd}" stroke-width="1.2" fill="none"/><path d="M58 48.5 Q62 47.5 66 49" stroke="${hd}" stroke-width="1.2" fill="none"/>
+   <ellipse cx="33" cy="68" rx="3.6" ry="1.8" fill="#ff8fb0" opacity=".45"/><ellipse cx="67" cy="68" rx="3.6" ry="1.8" fill="#ff8fb0" opacity=".45"/>
+   <path d="M47 71 Q50 73.4 53 71" stroke="#b2485f" stroke-width="1.3" fill="none" stroke-linecap="round"/>`;
+  const bangs=`<path d="M27 56 Q24 30 50 27 Q76 30 73 56 L69 44 L64 52 L60 40 L54 49 L50 38 L45 49 L40 40 L36 52 L31 44Z" fill="${hc}"/>
+   <path d="M34 34 Q46 28 58 31" stroke="${hl}" stroke-width="2.2" fill="none" stroke-linecap="round" opacity=".8"/>
+   <path d="M27 56 Q26 66 29 72 L31 56Z" fill="${hc}"/><path d="M73 56 Q74 66 71 72 L69 56Z" fill="${hc}"/>`;
+  const A={
+    pin:`<g transform="translate(68 36)"><circle r="4.5" fill="#ff9fc4"/><circle r="1.6" fill="#ffe08a"/><circle cx="-4" cy="-2" r="2.4" fill="#ffc2da"/><circle cx="3.5" cy="-3.2" r="2.4" fill="#ffc2da"/></g>`,
+    ribbon:`<g transform="translate(50 26)"><path d="M0 0 L-12 -7 L-12 7Z M0 0 L12 -7 L12 7Z" fill="${e}"/><circle r="3" fill="${shade(e,-0.3)}"/></g>`,
+    band:`<path d="M28 42 Q50 32 72 42" stroke="${e}" stroke-width="4" fill="none"/><circle cx="50" cy="36" r="2.5" fill="#fff"/>`,
+    mask:`<path d="M66 36 L80 30 L76 44Z" fill="#eee"/><path d="M70 36 L76 33" stroke="#c0392b" stroke-width="1.5"/>`,
+    snow:`<g transform="translate(33 34)" stroke="#bfe6ff" stroke-width="1.6"><path d="M-5 0H5M0 -5V5M-3.5 -3.5L3.5 3.5M-3.5 3.5L3.5 -3.5"/></g>`,
+    horns:`<path d="M34 32 L30 16 L40 28Z" fill="#ffe8c2" stroke="#c9a46a" stroke-width=".8"/><path d="M66 32 L70 16 L60 28Z" fill="#ffe8c2" stroke="#c9a46a" stroke-width=".8"/>`,
+    moon:`<path d="M66 30 A7 7 0 1 0 74 40 A5.5 5.5 0 1 1 66 30Z" fill="#ffe08a"/>`,
+    halo:`<ellipse cx="50" cy="16" rx="18" ry="4.5" fill="none" stroke="#ffe08a" stroke-width="2.4"/>`,
+    fox:`<path d="M30 34 L26 12 L42 28Z" fill="${hc}"/><path d="M31 31 L29 18 L38 28Z" fill="#fff3e6"/><path d="M70 34 L74 12 L58 28Z" fill="${hc}"/><path d="M69 31 L71 18 L62 28Z" fill="#fff3e6"/>`,
+    bell:`<circle cx="69" cy="40" r="3.6" fill="#ffd36b"/><path d="M69 40 v2.5" stroke="#8a5a00"/><path d="M60 34 Q66 30 72 36" stroke="#e2557f" stroke-width="2" fill="none"/>`,
+    leaf:`<path d="M64 32 Q74 24 78 34 Q70 40 64 32Z" fill="#e8742b"/><path d="M64 32 L76 32" stroke="#8a3a10" stroke-width=".8"/>`,
+    dragon:`<path d="M66 32 Q74 22 80 26 Q74 28 76 34 Q70 32 66 36Z" fill="#9fe6ff"/>`,
+    flower:`<g transform="translate(32 36)"><circle r="3.3" fill="#fff"/><circle cx="3.4" r="3" fill="#fff"/><circle cx="-3.4" r="3" fill="#fff"/><circle cy="3.4" r="3" fill="#fff"/><circle cy="-3.4" r="3" fill="#fff"/><circle r="2" fill="#ffd36b"/></g>`,
+    star:`<path d="M68 26 l2 5 5 .4 -4 3.3 1.3 5 -4.3 -2.8 -4.3 2.8 1.3 -5 -4 -3.3 5 -.4Z" fill="#ffe08a"/>`,
+    shell:`<path d="M62 38 Q68 28 74 38Z" fill="#ffd2c2" stroke="#e2557f" stroke-width=".7"/>`};
+  return `<svg viewBox="0 0 100 120" xmlns="http://www.w3.org/2000/svg">${bg}${back}${body}${face}${bangs}${A[h.acc]||""}</svg>`; }
+// monsters (yokai) – drawn as simple vector creatures
+const MON={
+ slime:{n:"Mochi Slime",draw:(c)=>`<path d="M14 82 Q10 40 50 30 Q90 40 86 82Z" fill="${c}"/><path d="M26 50 Q36 38 50 38" stroke="#fff" stroke-width="4" opacity=".5" fill="none" stroke-linecap="round"/>${eyes(38,62,62,62,"#222")}<path d="M44 72 Q50 77 56 72" stroke="#222" stroke-width="2" fill="none"/>`},
+ lantern:{n:"Chochin Obake",draw:(c)=>`<rect x="40" y="10" width="20" height="8" rx="2" fill="#333"/><ellipse cx="50" cy="52" rx="28" ry="36" fill="${c}"/><g stroke="${shade(c,-0.4)}" stroke-width="1.5" fill="none"><path d="M24 40 Q50 46 76 40"/><path d="M22 56 Q50 62 78 56"/><path d="M26 72 Q50 78 74 72"/></g><circle cx="50" cy="44" r="8" fill="#fff"/><circle cx="51" cy="45" r="4" fill="#222"/><path d="M38 64 Q50 80 62 64 Q50 70 38 64Z" fill="#8b0000"/><path d="M46 70 Q50 86 54 70" fill="#ff6b8a"/><rect x="40" y="86" width="20" height="6" rx="2" fill="#333"/>`},
+ umbrella:{n:"Karakasa",draw:(c)=>`<path d="M10 52 Q50 0 90 52 Q80 46 70 52 Q60 46 50 52 Q40 46 30 52 Q20 46 10 52Z" fill="${c}"/><g stroke="${shade(c,-0.4)}" stroke-width="1"><path d="M50 14 L30 52M50 14 L50 52M50 14 L70 52"/></g><circle cx="50" cy="36" r="7" fill="#fff"/><circle cx="51" cy="37" r="3.5" fill="#222"/><path d="M42 46 Q50 50 58 46" fill="none" stroke="#222" stroke-width="1.6"/><path d="M48 50 Q60 56 54 62" stroke="#ff6b8a" stroke-width="4" fill="none" stroke-linecap="round"/><rect x="48" y="52" width="4" height="34" fill="#7a4a1a"/><path d="M50 86 L42 96 M50 86 L58 96" stroke="#7a4a1a" stroke-width="3"/>`},
+ kappa:{n:"Kappa",draw:(c)=>`<ellipse cx="50" cy="70" rx="24" ry="22" fill="${c}"/><ellipse cx="50" cy="72" rx="15" ry="14" fill="${shade(c,0.35)}"/><circle cx="50" cy="38" r="22" fill="${c}"/><ellipse cx="50" cy="22" rx="16" ry="5" fill="#b8e6ff"/><path d="M34 22 L30 16 M42 20 L40 13 M58 20 L60 13 M66 22 L70 16" stroke="${shade(c,-0.3)}" stroke-width="3"/>${eyes(42,36,58,36,"#222")}<path d="M42 48 Q50 54 58 48 L50 46Z" fill="#ffcc4d"/><path d="M26 66 L14 74 M74 66 L86 74" stroke="${c}" stroke-width="6" stroke-linecap="round"/>`},
+ tengu:{n:"Karasu Tengu",draw:(c)=>`<path d="M10 40 Q30 50 34 76 L20 70Z M90 40 Q70 50 66 76 L80 70Z" fill="#222"/><path d="M30 92 Q32 58 50 54 Q68 58 70 92Z" fill="${c}"/><circle cx="50" cy="38" r="18" fill="#2b2b2b"/><path d="M50 40 L76 50 L50 50Z" fill="#ffb000"/><circle cx="44" cy="34" r="4" fill="#ffeb3b"/><circle cx="44" cy="34" r="1.8" fill="#000"/><rect x="40" y="16" width="20" height="6" rx="2" fill="#111"/><path d="M50 16 V10" stroke="#111" stroke-width="3"/>`},
+ oni:{n:"Oni Brute",draw:(c)=>`<path d="M20 96 Q20 60 50 56 Q80 60 80 96Z" fill="${shade(c,-0.15)}"/><rect x="26" y="74" width="48" height="8" fill="#ffd36b"/><circle cx="50" cy="40" r="22" fill="${c}"/><path d="M36 22 L32 6 L44 18Z M64 22 L68 6 L56 18Z" fill="#fff3d6"/><path d="M30 26 Q40 18 50 24 Q60 18 70 26 Q60 22 50 28 Q40 22 30 26Z" fill="#222"/>${eyes(42,38,58,38,"#ff0")}<path d="M38 52 Q50 46 62 52 L60 56 Q50 51 40 56Z" fill="#fff"/><path d="M40 52 L42 48 M60 52 L58 48" stroke="#fff" stroke-width="2"/><rect x="78" y="40" width="8" height="52" rx="3" fill="#6b4a2b" transform="rotate(14 82 66)"/>`},
+ fox:{n:"Kitsune Spirit",draw:(c)=>`<g opacity=".85">${[0,1,2,3,4].map(i=>`<path d="M50 70 Q${18+i*16} 20 ${22+i*14} ${10+Math.abs(i-2)*6} Q${36+i*8} 46 50 70Z" fill="${shade(c,0.2)}"/>`).join("")}</g><ellipse cx="50" cy="72" rx="20" ry="16" fill="${c}"/><path d="M34 50 L30 30 L44 44Z M66 50 L70 30 L56 44Z" fill="${c}"/><ellipse cx="50" cy="54" rx="18" ry="15" fill="${c}"/><path d="M42 54 Q44 50 46 54 M54 54 Q56 50 58 54" stroke="#222" stroke-width="2" fill="none"/><path d="M48 62 L50 64 L52 62" stroke="#222" stroke-width="1.5" fill="none"/><path d="M44 46 L50 50 L56 46" stroke="#e2557f" stroke-width="2" fill="none"/>`},
+ skull:{n:"Gashadokuro",draw:(c)=>`<ellipse cx="50" cy="40" rx="30" ry="28" fill="#f2efe6"/><rect x="34" y="60" width="32" height="16" rx="4" fill="#f2efe6"/><ellipse cx="38" cy="42" rx="9" ry="10" fill="#1a1020"/><ellipse cx="62" cy="42" rx="9" ry="10" fill="#1a1020"/><circle cx="38" cy="43" r="3" fill="${c}"/><circle cx="62" cy="43" r="3" fill="${c}"/><path d="M47 56 L50 50 L53 56Z" fill="#1a1020"/><path d="M38 64 V76 M44 64 V76 M50 64 V76 M56 64 V76 M62 64 V76" stroke="#555" stroke-width="1.3"/><path d="M20 90 Q50 76 80 90" stroke="#f2efe6" stroke-width="6" fill="none"/>`},
+ dragon:{n:"Orochi Head",draw:(c)=>`<path d="M20 100 Q14 60 40 50 Q30 30 50 18 Q80 14 88 36 Q92 52 76 58 Q60 60 58 74 Q56 92 70 100Z" fill="${c}"/><path d="M50 18 L44 4 L58 14Z M66 16 L68 2 L76 16Z" fill="#ffd36b"/><circle cx="66" cy="34" r="6" fill="#ffeb3b"/><ellipse cx="67" cy="34" rx="1.6" ry="5" fill="#000"/><path d="M76 50 L92 46 M80 54 L94 56" stroke="#fff" stroke-width="2"/><path d="M30 70 Q40 66 44 76 M26 84 Q36 80 40 90" stroke="${shade(c,0.35)}" stroke-width="3" fill="none"/><path d="M86 44 Q96 48 92 58" stroke="#ff4b3a" stroke-width="3" fill="none"/>`},
+ ghost:{n:"Yurei Wisp",draw:(c)=>`<path d="M26 88 Q22 40 50 22 Q78 40 74 88 Q68 80 62 90 Q56 80 50 90 Q44 80 38 90 Q32 80 26 88Z" fill="${c}" opacity=".9"/><path d="M40 30 L50 22 L60 30 L50 36Z" fill="#fff"/>${eyes(42,50,58,50,"#222")}<ellipse cx="50" cy="64" rx="4" ry="5" fill="#222"/><circle cx="18" cy="40" r="5" fill="#7fd3ff" opacity=".7"/><circle cx="84" cy="30" r="4" fill="#7fd3ff" opacity=".7"/>`}
+};
+function eyes(x1,y1,x2,y2,c){ return `<circle cx="${x1}" cy="${y1}" r="6" fill="#fff"/><circle cx="${x2}" cy="${y2}" r="6" fill="#fff"/><circle cx="${x1+1}" cy="${y1+1}" r="3" fill="${c}"/><circle cx="${x2+1}" cy="${y2+1}" r="3" fill="${c}"/>`; }
+function monSvg(type,el){ const c=shade(EL[el].c,-0.1); return `<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><ellipse cx="50" cy="96" rx="30" ry="4" fill="#0005"/>${MON[type].draw(c)}</svg>`; }
+
+/* ================= story ================= */
+const CH=[
+ {n:"Haruno Village",bg:"#2a3b2a",mons:["slime","slime","lantern"],boss:"oni",el:["wind","fire"],
+  intro:[["sakura","Hey! Over here! You... you came out of the Sakura Gate, didn't you?"],["sakura","The Gate shattered last night. Yokai are pouring out of the cracks all over Hinomoto."],["koharu","If you really are a Summoner, you can call heroines through the Gate's shards. Please – help our village!"],["natsu","I'll hold the front. You two stay behind my door. My shield. Whatever."]],
+  outro:[["sakura","We did it! Haruno is safe... for now."],["koharu","Those yokai came from the Bamboo Forest. Something is pushing them out."]]},
+ {n:"Whispering Bamboo",bg:"#1f3a2b",mons:["slime","umbrella","fox"],boss:"fox",el:["wind","water"],
+  intro:[["sakura","The bamboo is whispering... it sounds like crying."],["rin","Tch. Took you long enough. A fox spirit has sealed the forest path."],["rin","Break the seal and I'll tell you what I saw at the Gate."]],
+  outro:[["rin","Fine. I saw a shadow with eight heads behind the Gate when it broke."],["sakura","Eight heads...? The legends of Orochi?!"]]},
+ {n:"Kappa River",bg:"#183048",mons:["kappa","slime","kappa"],boss:"kappa",el:["water","wind"],
+  intro:[["suzu","The river spirits have gone wild! The kappa are stealing every cucumber in the province!"],["yuki","...That is not the main problem. The river is freezing in summer."],["yuki","Someone is draining the spirit energy from the waters."]],
+  outro:[["yuki","The flow is restored. But the energy was being sent north – toward the mountains."]]},
+ {n:"Tengu Peaks",bg:"#2b2b40",mons:["tengu","umbrella","tengu"],boss:"tengu",el:["wind","dark"],
+  intro:[["kaede","The Tengu of the peaks used to guard travellers. Now they attack anyone who climbs."],["hinata","Then we climb with the sunrise at our backs!"]],
+  outro:[["kaede","The Tengu Lord said a 'black priestess' bought his loyalty with stolen spirit energy."],["sakura","A priestess... working for Orochi?"]]},
+ {n:"Inari Fox Shrine",bg:"#3b2218",mons:["fox","lantern","fox"],boss:"fox",el:["fire","light"],
+  intro:[["chiyo","Welcome to Inari! Sorry about the foxfire... the little ones are scared and burning everything."],["chiyo","Calm them down and I'll lend you my nine tails. Well, my help. The tails stay."]],
+  outro:[["chiyo","The shrine's sacred mirror was stolen. Only the capital's priests could open its vault."]]},
+ {n:"Silver Snowfield",bg:"#25344a",mons:["ghost","slime","ghost"],boss:"skull",el:["water","dark"],
+  intro:[["fuyu","Welcome to the frost gate. Please do not touch the walls. Your fingers will stay there."],["yuki","My old teacher lived here... The ghosts are wearing her talismans."]],
+  outro:[["yuki","She wasn't the black priestess. She was trying to stop her. ...I'll carry her talismans now."]]},
+ {n:"Haunted Capital",bg:"#2a1d3a",mons:["lantern","ghost","umbrella","skull"],boss:"skull",el:["dark","light"],
+  intro:[["mio","The capital is under curfew. Every lantern in the streets has come alive."],["hotaru","Good. Night is my time. Stay close, Summoner."]],
+  outro:[["mio","The palace archive says the black priestess is Kurozome – the Gate's former keeper."],["ayame","...She was my partner. Three hundred years ago."]]},
+ {n:"Oni Fortress",bg:"#3a1414",mons:["oni","lantern","oni"],boss:"oni",el:["fire","dark"],
+  intro:[["akane","This fortress was my father's. The oni here are my kin."],["akane","I'll knock sense into every one of them. Gently. Mostly."]],
+  outro:[["akane","Father's horns were stolen to make a key. The key opens the Gate of Yomi."]]},
+ {n:"Moonlit Sea",bg:"#101c3a",mons:["kappa","ghost","dragon"],boss:"dragon",el:["water","light"],
+  intro:[["izumi","Kurozome's ship sails for the island of Yomi. The sea itself is fighting us."],["nanami","Then we ride the waves. I've done worse for a good catch."]],
+  outro:[["nozomi","The sun rises behind Yomi... The final gate is open. Orochi is waking."]]},
+ {n:"Gate of Yomi",bg:"#1a0d24",mons:["dragon","skull","oni","ghost"],boss:"dragon",el:["dark","fire"],
+  intro:[["ayame","Kurozome. Stop this. The Gate was meant to protect the living."],["sakura","Summoner – every heroine you called is with you. Let's end this together!"]],
+  outro:[["sakura","Orochi is sealed again... and the Sakura Gate shines brighter than ever."],["sakura","But its shards still call to new worlds. The Abyss Tower has risen in the east. Shall we climb it together?"]]}
+];
+const SPC=8; // stages per chapter
+const NST=CH.length*SPC;
+
+/* ================= state ================= */
+const LS="sakuraGate_v1";
+let S;
+function fresh(){ return {gold:3000,gems:3200,tickets:5,exp:2500,stam:120,stamT:Date.now(),pity:0,pitySR:0,
+  heroes:{sakura:{lv:1,stars:2,shards:0},koharu:{lv:1,stars:1,shards:0},natsu:{lv:1,stars:1,shards:0}},
+  gear:[],nextG:1,team:["natsu","sakura","koharu",null],stars:{},tower:0,afkT:Date.now(),
+  daily:{d:"",c:{},got:{}},ach:{},cnt:{wins:0,pulls:0,lvups:0,enh:0,tower:0},seen:{},music:true,sound:true,auto:false,spd:1,newH:{}}; }
+function load(){ try{ const o=JSON.parse(localStorage.getItem(LS)); if(o&&o.heroes){ S=Object.assign(fresh(),o); return; } }catch(e){} S=fresh(); }
+let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<2000) return; saveT=n; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
+load();
+
+/* ================= hero stats ================= */
+const lvCap=st=>10+st*10;
+const xpNeed=lv=>Math.round(40*Math.pow(lv,1.55));
+const goldNeed=lv=>20*lv;
+const starCost=st=>[0,10,20,40,70,120][st]||999;
+const GEARSTAT={atk:"ATK",hp:"HP",def:"DEF",spd:"SPD",crit:"CRIT%",cdmg:"CRIT DMG%"};
+function gearBonus(gid){ const g=S.gear.find(x=>x.u===gid); if(!g) return null; const m=1+g.lv*0.12; const o={}; o[g.main]=(o[g.main]||0)+g.mv*m; for(const [k,v] of g.subs) o[k]=(o[k]||0)+v; return o; }
+function stats(id){ const h=HB[id], o=S.heroes[id]; const c=CLS[h.cls], r=RAR[h.rar].m, lm=1+0.085*(o.lv-1), sm=1+0.12*(o.stars-1);
+  const s={hp:Math.round(600*c.hp*r*lm*sm),atk:Math.round(60*c.atk*r*lm*sm),def:Math.round(32*c.def*r*lm*sm),spd:c.spd+(h.rar==="SSR"?6:h.rar==="SR"?3:0),crit:10+(h.cls==="archer"?10:0)+(h.cls==="ninja"?6:0),cdmg:50};
+  for(const sl of ["w","a","c"]){ const gid=o.g&&o.g[sl]; const b=gid&&gearBonus(gid); if(b) for(const k in b){ if(k==="hp"||k==="atk"||k==="def") s[k]+=Math.round(b[k]); else s[k]+=b[k]; } }
+  s.spd=Math.round(s.spd); s.crit=Math.min(100,Math.round(s.crit)); s.cdmg=Math.round(s.cdmg); return s; }
+const power=id=>{ const s=stats(id); return Math.round(s.hp*0.25+s.atk*2.4+s.def*1.6+s.spd*2+s.crit*6+s.cdmg*1.5); };
+const teamPower=()=>S.team.filter(Boolean).reduce((a,id)=>a+power(id),0);
+
+/* ================= gear ================= */
+const GSLOT={w:{n:"Weapon",i:["🗡️","🏹","🔱","⚔️"],main:["atk"]},a:{n:"Armor",i:["🥋","👘","🛡️"],main:["hp","def"]},c:{n:"Charm",i:["📿","🧿","🎐","🪭"],main:["spd","crit","cdmg"]}};
+const GR=["N","R","SR","SSR"], GRM={N:1,R:1.35,SR:1.8,SSR:2.4};
+const GNAME={w:["Blade","Bow","Naginata","Katana"],a:["Haori","Kimono","Do-maru","Hakama"],c:["Omamori","Magatama","Wind Chime","Fan"]};
+function mkGear(tier,rar,slot){ slot=slot||pick(["w","a","c"]); rar=rar||GR[clamp(Math.floor(Math.random()*Math.random()*4+tier*0.12),0,3)];
+  const main=pick(GSLOT[slot].main), gm=GRM[rar], tm=1+tier*0.09;
+  const mv= main==="atk"?18*gm*tm : main==="hp"?150*gm*tm : main==="def"?12*gm*tm : main==="spd"?4*gm+tier*0.15 : main==="crit"?4*gm+tier*0.1 : 9*gm+tier*0.2;
+  const subs=[]; const nS=GR.indexOf(rar); const pool=Object.keys(GEARSTAT).filter(k=>k!==main);
+  for(let i=0;i<nS;i++){ const k=pool.splice(Math.floor(Math.random()*pool.length),1)[0]; const v=k==="atk"?rnd(5,10)*tm:k==="hp"?rnd(40,80)*tm:k==="def"?rnd(4,8)*tm:k==="spd"?rnd(2,4):k==="crit"?rnd(2,5):rnd(4,9); subs.push([k,Math.round(v*10)/10]); }
+  const nm=(["Plain","Fine","Masterwork","Legendary"][nS])+" "+pick(GNAME[slot]);
+  return {u:S.nextG++,s:slot,r:rar,lv:0,main,mv:Math.round(mv*10)/10,subs,n:nm,ic:pick(GSLOT[slot].i)}; }
+const enhCost=g=>Math.round(120*Math.pow(g.lv+1,1.6)*GRM[g.r]);
+const sellVal=g=>Math.round(60*GRM[g.r]*(1+g.lv*0.5));
+const gearOwner=u=>Object.keys(S.heroes).find(id=>{ const o=S.heroes[id]; return o.g&&(o.g.w===u||o.g.a===u||o.g.c===u); });
+const fmtStat=(k,v)=>(k==="crit"||k==="cdmg")?`+${(Math.round(v*10)/10)}%`:`+${Math.round(v)}`;
+
+/* ================= stamina / afk / daily ================= */
+const STAM_MAX=120, STAM_EVERY=180000;
+function tickStam(){ const n=Date.now(); if(S.stam>=STAM_MAX){ S.stamT=n; return; } const k=Math.floor((n-S.stamT)/STAM_EVERY); if(k>0){ S.stam=Math.min(STAM_MAX,S.stam+k); S.stamT+=k*STAM_EVERY; } }
+const cleared=()=>Object.keys(S.stars).length;
+function afkRate(){ const p=cleared(); return {gold:30+p*14,exp:25+p*12}; } // per minute
+function afkPending(){ const m=Math.min(12*60,(Date.now()-S.afkT)/60000); const r=afkRate(); return {m,gold:Math.floor(r.gold*m),exp:Math.floor(r.exp*m),gems:Math.floor(m/60)*5}; }
+const DQ=[["win","Win 5 battles",5,{gems:60,gold:2000}],["pull","Summon 3 times",3,{gems:50}],["lvup","Level up heroines 5 times",5,{exp:3000}],["enh","Enhance gear 3 times",3,{gold:3000}],["tower","Clear 1 Abyss Tower floor",1,{gems:40}],["afk","Collect patrol rewards",1,{gold:1500}]];
+function ensureDaily(){ const t=today(); if(S.daily.d!==t) S.daily={d:t,c:{},got:{},all:false}; }
+function bump(k,n){ ensureDaily(); S.daily.c[k]=(S.daily.c[k]||0)+(n||1); S.cnt[k]=(S.cnt[k]||0)+(n||1); }
+const ACH=[
+ ...[1,2,3,4,5,6,7,8,9,10].map(c=>({id:"ch"+c,t:`Clear Chapter ${c}: ${CH[c-1].n}`,ok:()=>chapterDone(c-1),r:{gems:c===10?1000:300,tickets:c%2===0?2:0}})),
+ ...[5,10,15,20,25,30].map(n=>({id:"own"+n,t:`Recruit ${n} heroines`,ok:()=>Object.keys(S.heroes).length>=n,r:{gems:n*20}})),
+ ...[20,40,60,70].map(n=>({id:"lv"+n,t:`Raise a heroine to Lv ${n}`,ok:()=>Object.values(S.heroes).some(o=>o.lv>=n),r:{gems:n*5,tickets:1}})),
+ ...[10,25,50,100].map(n=>({id:"tw"+n,t:`Reach Abyss Tower floor ${n}`,ok:()=>S.tower>=n,r:{gems:n*10}})),
+ ...[50,200,500].map(n=>({id:"pl"+n,t:`Summon ${n} times`,ok:()=>(S.cnt.pulls||0)>=n,r:{tickets:n>=200?5:3}})),
+ {id:"ssr6",t:"Raise any SSR heroine to ★6",ok:()=>Object.keys(S.heroes).some(id=>HB[id].rar==="SSR"&&S.heroes[id].stars>=6),r:{gems:1500}}];
+function chapterDone(c){ return !!S.stars[(c*SPC+SPC-1)]; }
+function grant(r){ const out=[]; for(const k in r){ if(!r[k]) continue; S[k]=(S[k]||0)+r[k]; out.push(icon(k)+" "+fmt(r[k])); } return out.join("  "); }
+const icon=k=>({gold:"🪙",gems:"💎",tickets:"🎫",exp:"📜",stam:"⚡"})[k]||k;
+function badges(){ ensureDaily(); const dq=DQ.some(([k,,n])=>(S.daily.c[k]||0)>=n&&!S.daily.got[k])||(DQ.every(([k,,n])=>S.daily.got[k])&&!S.daily.all); const ac=ACH.some(a=>!S.ach[a.id]&&a.ok()); return {quest:dq||ac,afk:afkPending().m>=60}; }
+
+/* ================= sound & music ================= */
+let AC=null, musicNode=null;
+function ac(){ if(!AC){ try{ AC=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){} } if(AC&&AC.state==="suspended") AC.resume(); return AC; }
+function pluck(f,t,vol,dur){ const a=ac(); if(!a) return; const o=a.createOscillator(), g=a.createGain(), fl=a.createBiquadFilter(); o.type="triangle"; o.frequency.value=f; fl.type="lowpass"; fl.frequency.value=2400; g.gain.setValueAtTime(0,t); g.gain.linearRampToValueAtTime(vol,t+0.01); g.gain.exponentialRampToValueAtTime(0.0008,t+dur); o.connect(fl).connect(g).connect(musicNode||a.destination); o.start(t); o.stop(t+dur+0.05); }
+function sfx(type){ if(!S.sound) return; const a=ac(); if(!a) return; const t=a.currentTime; const d=a.destination;
+  const tone=(f,f2,dur,vol,wave)=>{ const o=a.createOscillator(), g=a.createGain(); o.type=wave||"square"; o.frequency.setValueAtTime(f,t); o.frequency.exponentialRampToValueAtTime(f2,t+dur); g.gain.setValueAtTime(vol,t); g.gain.exponentialRampToValueAtTime(0.001,t+dur); o.connect(g).connect(d); o.start(t); o.stop(t+dur); };
+  if(type==="hit") tone(220,90,0.09,0.05); else if(type==="crit") tone(520,120,0.14,0.07,"sawtooth"); else if(type==="heal") tone(500,900,0.2,0.04,"sine");
+  else if(type==="skill") tone(300,1200,0.25,0.05,"sawtooth"); else if(type==="win"){ [523,659,784,1047].forEach((f,i)=>{ const o=a.createOscillator(), g=a.createGain(); o.type="triangle"; o.frequency.value=f; g.gain.setValueAtTime(0.07,t+i*0.12); g.gain.exponentialRampToValueAtTime(0.001,t+i*0.12+0.4); o.connect(g).connect(d); o.start(t+i*0.12); o.stop(t+i*0.12+0.45); }); }
+  else if(type==="ssr"){ [659,784,988,1319,1568].forEach((f,i)=>{ const o=a.createOscillator(), g=a.createGain(); o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(0.08,t+i*0.09); g.gain.exponentialRampToValueAtTime(0.001,t+i*0.09+0.8); o.connect(g).connect(d); o.start(t+i*0.09); o.stop(t+i*0.09+0.85); }); }
+  else if(type==="tap") tone(700,500,0.04,0.03,"sine"); }
+// generative koto-style music (In-sen pentatonic), original
+let musT=null;
+function music(on){ const a=ac(); if(!a) return; if(!musicNode){ musicNode=a.createGain(); musicNode.gain.value=0.5; const dl=a.createDelay(); dl.delayTime.value=0.33; const fb=a.createGain(); fb.gain.value=0.3; musicNode.connect(a.destination); musicNode.connect(dl); dl.connect(fb).connect(dl); dl.connect(a.destination); }
+  clearInterval(musT); musT=null; if(!on) return;
+  const sc=[0,1,5,7,8,12,13,17,19,20,24]; let step=0, root=146.83; const prog=[0,-2,3,0,5,-4];
+  musT=setInterval(()=>{ if(document.hidden) return; const t=a.currentTime+0.05; const bar=Math.floor(step/16)%prog.length, rr=root*Math.pow(2,prog[bar]/12);
+    if(step%8===0) pluck(rr/2,t,0.05,2.4);
+    if(Math.random()<(step%4===0?0.8:0.33)){ const n=sc[Math.floor(Math.random()*sc.length)]; pluck(rr*Math.pow(2,n/12),t,0.035,1.6); }
+    step++; },300); }
+function startAudio(){ ac(); if(S.music&&!musT) music(true); document.removeEventListener("pointerdown",startAudio); }
+document.addEventListener("pointerdown",startAudio);
+
+/* ================= UI shell ================= */
+let tab="home", sub={heroes:"all",gear:"all",quest:"daily",summon:0};
+function toast(m){ const t=$("toast"); t.innerHTML=m; t.style.opacity=1; clearTimeout(toast.t); toast.t=setTimeout(()=>t.style.opacity=0,2200); }
+window.ascendToast=toast;
+let apkUpdate=null; window.ascendApkUpdate=v=>{ apkUpdate=v; toast("📦 App update ready – see ☰"); };
+function buzz(){ try{ if(NATIVE&&NATIVE.buzz) NATIVE.buzz(); }catch(e){} }
+function topBar(){ tickStam(); $("top").innerHTML=`<span class="cur">⚡ ${S.stam}/${STAM_MAX}</span><span class="cur">🪙 ${fmt(S.gold)}</span><span class="cur">💎 ${fmt(S.gems)}</span><span class="cur">📜 ${fmt(S.exp)}</span><button id="menuB">☰</button>`; $("menuB").onclick=menu; }
+function nav(){ const b=badges(); const T=[["home","🏯","Story"],["summon","🌸","Summon"],["heroes","👘","Heroines"],["gear","🎒","Gear"],["quest","📜","Quests"]];
+  $("nav").innerHTML=T.map(([k,i,n])=>`<button data-t="${k}" class="${tab===k?"on":""}"><b>${i}</b>${n}${(k==="quest"&&b.quest)||(k==="home"&&b.afk)?'<span class="dot"></span>':""}</button>`).join("");
+  $("nav").querySelectorAll("button").forEach(x=>x.onclick=()=>{ tab=x.dataset.t; sfx("tap"); render(); }); }
+function render(){ topBar(); nav(); const m=$("main"); const st=m.scrollTop; ({home:vHome,summon:vSummon,heroes:vHeroes,gear:vGear,quest:vQuest})[tab](m); if(render.keep) m.scrollTop=st; render.keep=false; save(); }
+function sheet(html,onMount){ $("layer").innerHTML=`<div class="sheet">${html}</div>`; const l=$("layer"); l.onclick=e=>{ if(e.target===l) closeSheet(); }; const x=l.querySelector(".x"); if(x) x.onclick=closeSheet; if(onMount) onMount(l); }
+function closeSheet(){ $("layer").innerHTML=""; }
+const heroCard=(id,extra)=>{ const h=HB[id], o=S.heroes[id]; return `<div class="hc ${h.rar} ${o?"":"lock"}" data-h="${id}">${portrait(h)}<span class="el">${EL[h.el].i}</span>${o?`<span class="st">${"★".repeat(o.stars)}</span><span class="lv">Lv${o.lv}</span>`:""}${S.newH[id]?'<span class="new">NEW</span>':""}${extra||""}</div>`; };
+
+/* ---------- home / story ---------- */
+function stageInfo(i){ const c=Math.floor(i/SPC), s=i%SPC, ch=CH[c], boss=s===SPC-1; const P=Math.pow(1.047,i)*(1+c*0.04);
+  const n=boss?1:(s<3?3:pick([3,3,4])); return {i,c,s,ch,boss,P,lvl:Math.round(1+i*0.85),cost:boss?10:6}; }
+function vHome(m){ tickStam(); const cur=Math.min(cleared(),NST-1); const c=Math.floor(cur/SPC); sub.ch=sub.ch==null?c:sub.ch; const ch=CH[sub.ch]; const ap=afkPending();
+  let h=`<div class="card" style="background:linear-gradient(135deg,#3a2350,#1e1633)"><div class="row"><div class="grow"><div style="font-weight:900;font-size:16px">🏯 Patrol rewards</div><div class="sm mu">Your heroines patrol cleared lands while you're away (max 12 h).</div><div class="sm" style="margin-top:4px">${Math.floor(ap.m/60)}h ${Math.floor(ap.m%60)}m · 🪙 ${fmt(ap.gold)} · 📜 ${fmt(ap.exp)}${ap.gems?` · 💎 ${ap.gems}`:""}</div></div><button class="btn gold" id="afk" ${ap.m<1?"disabled":""}>Collect</button></div></div>`;
+  h+=`<div class="row" style="margin:6px 0 8px"><button class="btn gray" id="pc" ${sub.ch<=0?"disabled":""}>◀</button><div class="grow" style="text-align:center"><div style="font-weight:900">Chapter ${sub.ch+1}</div><div class="mu sm">${ch.n}</div></div><button class="btn gray" id="nc" ${sub.ch>=CH.length-1||sub.ch>=c?"disabled":""}>▶</button></div>`;
+  h+=`<div class="row" style="margin-bottom:8px"><button class="btn alt grow" id="intro">📖 Story: Prologue</button>${chapterDone(sub.ch)?`<button class="btn alt grow" id="outro">📖 Epilogue</button>`:""}</div><div class="stageGrid">`;
+  for(let s=0;s<SPC;s++){ const i=sub.ch*SPC+s, st=S.stars[i]||0, lock=i>cleared(), boss=s===SPC-1, info=stageInfo(i);
+    h+=`<div class="stg ${boss?"boss":""} ${lock?"lock":""} ${i===cleared()?"cur":""}" data-i="${i}"><div style="font-size:20px">${boss?"👹":"⛩️"}</div><b>${sub.ch+1}-${s+1}</b><div class="s">${lock?"🔒":"★".repeat(st)+"☆".repeat(3-st)}</div><div class="sm mu">Lv ${info.lvl}</div></div>`; }
+  h+=`</div><h3>Abyss Tower</h3><div class="card row"><div class="grow"><b>🗼 Floor ${S.tower+1}</b><div class="sm mu">Endless climb, harder every floor. 💎 every floor, extra every 5th. ${cleared()<16?"Unlocks after Chapter 2.":"No stamina needed."}</div></div><button class="btn alt" id="tw" ${cleared()<16?"disabled":""}>Climb</button></div>
+  <div class="card row"><div class="grow"><b>Team power ${fmt(teamPower())}</b><div class="sm mu">${S.team.filter(Boolean).map(id=>HB[id].name.split(" ")[0]).join(" · ")}</div></div><button class="btn gray" id="tme">Edit team</button></div>`;
+  m.innerHTML=h;
+  $("afk").onclick=()=>{ const a=afkPending(); S.gold+=a.gold; S.exp+=a.exp; S.gems+=a.gems; S.afkT=Date.now(); bump("afk"); toast(`Collected 🪙 ${fmt(a.gold)} 📜 ${fmt(a.exp)}${a.gems?" 💎 "+a.gems:""}`); render(); };
+  $("pc").onclick=()=>{ sub.ch--; render(); }; $("nc").onclick=()=>{ sub.ch++; render(); };
+  $("intro").onclick=()=>story(CH[sub.ch].intro); if($("outro")) $("outro").onclick=()=>story(CH[sub.ch].outro);
+  $("tw").onclick=()=>prepBattle({tower:S.tower+1}); $("tme").onclick=teamEdit;
+  m.querySelectorAll(".stg").forEach(el=>el.onclick=()=>{ const i=+el.dataset.i; if(i>cleared()) return; stageSheet(i); }); }
+function stageSheet(i){ const f=stageInfo(i); const st=S.stars[i]||0;
+  sheet(`<button class="x">✕</button><h2>${f.boss?"👹 Boss · ":""}Stage ${f.c+1}-${f.s+1}</h2><div class="mu sm">${f.ch.n} · enemy level ${f.lvl} · elements ${f.ch.el.map(e=>EL[e].i).join(" ")}</div>
+   <div class="card" style="margin-top:10px"><div class="sm">Rewards: 🪙 ${fmt(goldRew(i))} · 📜 ${fmt(expRew(i))} · 🎒 gear${st?"":` · <b>first clear 💎 ${f.boss?150:30}</b>`}</div><div class="sm mu" style="margin-top:4px">★★★ = clear with no heroine knocked out. Sweep needs ★★★.</div></div>
+   <div class="row"><button class="btn grow" id="go">⚔️ Battle  ⚡${f.cost}</button>${st===3?`<button class="btn alt" id="sw">Sweep ×5 ⚡${f.cost*5}</button>`:""}</div>`,l=>{
+    l.querySelector("#go").onclick=()=>{ closeSheet(); prepBattle({stage:i}); };
+    const sw=l.querySelector("#sw"); if(sw) sw.onclick=()=>{ tickStam(); const n=Math.min(5,Math.floor(S.stam/f.cost)); if(!n) return noStam(); S.stam-=n*f.cost; let g=0,e=0,gs=[]; for(let k=0;k<n;k++){ g+=goldRew(i); e+=expRew(i); const d=dropGear(i); gs.push(...d); bump("win"); } S.gold+=g; S.exp+=e; closeSheet(); toast(`Swept ×${n}: 🪙 ${fmt(g)} 📜 ${fmt(e)} 🎒 ${gs.length} gear`); render(); }; }); }
+const goldRew=i=>Math.round(220*Math.pow(1.055,i));
+const expRew=i=>Math.round(260*Math.pow(1.06,i));
+function dropGear(i){ const out=[]; const n=Math.random()<0.55?1:Math.random()<0.5?2:0; for(let k=0;k<n;k++){ const g=mkGear(Math.floor(i/3)); S.gear.push(g); out.push(g); } return out; }
+function noStam(){ sheet(`<button class="x">✕</button><h2>⚡ Out of stamina</h2><p class="mu">Stamina refills 1 every 3 minutes. Or refill now:</p><button class="btn" id="rf">Refill +60 ⚡ for 💎 50</button>`,l=>l.querySelector("#rf").onclick=()=>{ if(S.gems<50) return toast("Not enough 💎"); S.gems-=50; S.stam+=60; closeSheet(); render(); }); }
+function story(lines,done){ let i=0; const d=document.createElement("div"); d.id="story"; document.body.appendChild(d);
+  const show=()=>{ if(i>=lines.length){ d.remove(); if(done) done(); return; } const [who,txt]=lines[i]; const h=HB[who];
+    d.innerHTML=`<button class="btn gray skip sm">Skip ⏭</button><div class="por">${portrait(h,{nobg:true})}</div><div class="box"><div class="who">${h.name}</div><div class="txt">${txt}</div><div class="sm mu" style="text-align:right;margin-top:8px">tap ▶</div></div>`;
+    d.querySelector(".skip").onclick=e=>{ e.stopPropagation(); i=lines.length; show(); }; };
+  d.onclick=()=>{ i++; sfx("tap"); show(); }; show(); }
+function teamEdit(){ const own=Object.keys(S.heroes).sort((a,b)=>power(b)-power(a));
+  sheet(`<button class="x">✕</button><h2>Team (4)</h2><p class="sm mu">Tap a heroine to add or remove. Order = left to right.</p><div class="grid" id="tsel" style="margin-bottom:12px">${[0,1,2,3].map(k=>S.team[k]?heroCard(S.team[k]):`<div class="hc" style="display:flex;align-items:center;justify-content:center;color:var(--mu)">empty</div>`).join("")}</div><div class="grid" id="tall">${own.map(id=>heroCard(id,S.team.includes(id)?'<span class="inT">IN</span>':"")).join("")}</div>`,l=>{
+    l.querySelectorAll("#tall .hc").forEach(el=>el.onclick=()=>{ const id=el.dataset.h; const k=S.team.indexOf(id); if(k>=0){ if(S.team.filter(Boolean).length<=1) return toast("Need at least 1 heroine"); S.team[k]=null; } else { const e=S.team.indexOf(null); if(e<0) return toast("Team is full – remove someone first"); S.team[e]=id; } S.team=[...S.team.filter(Boolean),null,null,null,null].slice(0,4); teamEdit(); render(); });
+    l.querySelectorAll("#tsel .hc[data-h]").forEach(el=>el.onclick=()=>{ const id=el.dataset.h; if(S.team.filter(Boolean).length<=1) return; S.team[S.team.indexOf(id)]=null; S.team=[...S.team.filter(Boolean),null,null,null,null].slice(0,4); teamEdit(); render(); }); }); }
+
+/* ---------- summon ---------- */
+function featured(){ const ssr=HEROES.filter(h=>h.rar==="SSR"); const d=Math.floor(Date.now()/86400000/3); return ssr[d%ssr.length].id; }
+function rollOne(){ S.pity++; S.pitySR++; let p=0.03; if(S.pity>=70) p=0.03+(S.pity-69)*0.06; const r=Math.random();
+  let rar= (r<p||S.pity>=90)?"SSR" : (r<p+0.15||S.pitySR>=10)?"SR":"R";
+  if(rar==="SSR"){ S.pity=0; S.pitySR=0; } else if(rar==="SR") S.pitySR=0;
+  let pool=HEROES.filter(h=>h.rar===rar); if(rar==="SSR"&&Math.random()<0.5) return HB[featured()]; return pick(pool); }
+function addHero(h){ const o=S.heroes[h.id]; if(o){ o.shards+=RAR[h.rar].shard; return false; } S.heroes[h.id]={lv:1,stars:RAR[h.rar].st,shards:0}; S.newH[h.id]=1; if(S.team.includes(null)){ S.team[S.team.indexOf(null)]=h.id; } return true; }
+function doPull(n,cur){ const cost=cur==="tickets"?n:n*160; if(S[cur]<cost) return toast(cur==="tickets"?"Not enough 🎫":"Not enough 💎"); S[cur]-=cost;
+  const res=[]; for(let i=0;i<n;i++){ const h=rollOne(); res.push([h,addHero(h)]); } bump("pull",n); save(true); pullAnim(res); }
+function pullAnim(res){ const best=res.some(([h])=>h.rar==="SSR")?"SSR":res.some(([h])=>h.rar==="SR")?"SR":"R"; const d=document.createElement("div"); d.id="pull"; document.body.appendChild(d);
+  d.innerHTML=`<div class="gate" style="border-color:${RAR[best].c}"></div><div class="mu" style="margin-top:16px">The Sakura Gate opens…</div>`; sfx(best==="SSR"?"ssr":"skill"); buzz();
+  setTimeout(()=>{ d.innerHTML=`<div class="pgrid">${res.map(([h,isNew],i)=>`<div class="hc ${h.rar}" style="animation-delay:${i*0.08}s">${portrait(h)}<span class="el">${EL[h.el].i}</span>${isNew?'<span class="new">NEW</span>':`<span class="lv">+${RAR[h.rar].shard} shards</span>`}</div>`).join("")}</div>
+    <div style="margin-top:14px;text-align:center">${res.filter(([h])=>h.rar==="SSR").map(([h])=>`<div style="color:var(--gd);font-weight:900">✨ SSR · ${h.name} ✨</div>`).join("")}</div><button class="btn" style="margin-top:16px;width:200px" id="pok">OK</button>`;
+    d.querySelector("#pok").onclick=()=>{ d.remove(); render(); }; },1300); }
+function vSummon(m){ const f=HB[featured()]; const left=3-(Math.floor(Date.now()/86400000)%3);
+  m.innerHTML=`<div class="banner"><div style="position:relative;z-index:2;max-width:56%"><div class="tag tSSR">RATE UP</div><div style="font-size:20px;font-weight:900;margin-top:4px;text-shadow:0 2px 4px #0006">${f.name}</div><div class="sm">${EL[f.el].i} ${CLS[f.cls].n}</div><div class="sm" style="margin-top:6px;opacity:.9">${f.bio}</div><div class="sm" style="margin-top:6px">Changes in ${left} day${left>1?"s":""}</div></div><div class="feat">${portrait(f,{nobg:true})}</div></div>
+  <div class="card"><div class="row"><button class="btn grow" id="p1">Summon ×1<br><span class="sm">💎 160</span></button><button class="btn gold grow" id="p10">Summon ×10<br><span class="sm">💎 1600</span></button></div>
+  <div class="row" style="margin-top:8px"><button class="btn alt grow" id="t1" ${S.tickets<1?"disabled":""}>🎫 ×1</button><button class="btn alt grow" id="t10" ${S.tickets<10?"disabled":""}>🎫 ×10</button><span class="cur">🎫 ${S.tickets}</span></div>
+  <div class="sm mu" style="margin-top:10px">SSR 3% · SR 15% · R 82%. SR guaranteed every 10. Rates rise from pull 70; SSR guaranteed by 90 (now ${S.pity}/90). 50% of SSRs are the rate-up heroine. Duplicates give shards to raise ★.</div></div>
+  <h3>All heroines (${Object.keys(S.heroes).length}/${HEROES.length})</h3><div class="grid">${HEROES.slice().sort((a,b)=>"SSR SR R".indexOf(a.rar)-"SSR SR R".indexOf(b.rar)).map(h=>heroCard(h.id)).join("")}</div>`;
+  $("p1").onclick=()=>doPull(1,"gems"); $("p10").onclick=()=>doPull(10,"gems"); $("t1").onclick=()=>doPull(1,"tickets"); $("t10").onclick=()=>doPull(10,"tickets");
+  m.querySelectorAll(".grid .hc").forEach(el=>el.onclick=()=>heroSheet(el.dataset.h)); }
+
+/* ---------- heroes ---------- */
+function vHeroes(m){ const f=sub.heroes; const ids=Object.keys(S.heroes).filter(id=>f==="all"||HB[id].el===f).sort((a,b)=>power(b)-power(a));
+  m.innerHTML=`<div class="seg">${["all",...ELN].map(k=>`<button data-f="${k}" class="${f===k?"on":""}">${k==="all"?"All":EL[k].i}</button>`).join("")}</div><div class="grid">${ids.map(id=>heroCard(id,S.team.includes(id)?'<span class="inT">TEAM</span>':"")).join("")}</div>`;
+  m.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ sub.heroes=b.dataset.f; render(); });
+  m.querySelectorAll(".grid .hc").forEach(el=>el.onclick=()=>heroSheet(el.dataset.h)); }
+function heroSheet(id){ const h=HB[id], o=S.heroes[id]; delete S.newH[id];
+  if(!o){ return sheet(`<button class="x">✕</button><div class="row"><div style="width:110px" class="hc ${h.rar} lock">${portrait(h)}</div><div class="grow"><h2>${h.name}</h2><span class="tag t${h.rar}">${h.rar}</span> ${EL[h.el].i} ${CLS[h.cls].i} ${CLS[h.cls].n}<p class="sm mu">${h.bio}</p></div></div><div class="card"><b>${h.skill}</b><div class="sm mu">${SKD[h.cls].d}</div></div><p class="mu sm">Not recruited yet – summon her at the Sakura Gate.</p>`); }
+  const s=stats(id), cap=lvCap(o.stars), need=xpNeed(o.lv), gn=goldNeed(o.lv), sc=starCost(o.stars);
+  const gslot=sl=>{ const u=o.g&&o.g[sl]; const g=u&&S.gear.find(x=>x.u===u); return `<div class="gi ${g?g.r:""}" data-sl="${sl}"><span class="gico">${g?g.ic:"➕"}</span><div class="grow"><b>${g?g.n+(g.lv?" +"+g.lv:""):GSLOT[sl].n}</b><div class="sm mu">${g?GEARSTAT[g.main]+" "+fmtStat(g.main,g.mv*(1+g.lv*0.12)):"empty – tap to equip"}</div></div></div>`; };
+  sheet(`<button class="x">✕</button><div class="row" style="align-items:flex-start"><div style="width:120px;flex:none" class="hc ${h.rar}">${portrait(h)}</div><div class="grow"><h2 style="margin:0 0 4px">${h.name}</h2><span class="tag t${h.rar}">${h.rar}</span> <span class="sm">${EL[h.el].i} ${EL[h.el].n} · ${CLS[h.cls].i} ${CLS[h.cls].n}</span><div style="color:var(--gd);margin-top:4px">${"★".repeat(o.stars)}${"☆".repeat(6-o.stars)}</div><div class="sm mu" style="margin-top:4px">${h.bio}</div><div style="margin-top:6px;font-weight:800">⚔️ Power ${fmt(power(id))}</div></div></div>
+   <div class="card" style="margin-top:10px"><div class="row"><b class="grow">Lv ${o.lv} / ${cap}</b><span class="sm mu">${o.lv<cap?`next: 📜 ${fmt(need)} · 🪙 ${fmt(gn)}`:"level cap – raise ★"}</span></div>
+    <div class="row" style="margin-top:8px"><button class="btn grow" id="l1" ${o.lv>=cap?"disabled":""}>Level +1</button><button class="btn alt grow" id="lm" ${o.lv>=cap?"disabled":""}>Level max</button></div>
+    <div class="row" style="margin-top:8px"><div class="grow sm">Shards ${o.shards}/${o.stars<6?sc:"—"}</div><button class="btn gold" id="star" ${o.stars>=6||o.shards<sc?"disabled":""}>★ Ascend</button></div></div>
+   <div class="card"><div class="stat"><span>❤️ HP</span><b>${fmt(s.hp)}</b></div><div class="stat"><span>⚔️ ATK</span><b>${fmt(s.atk)}</b></div><div class="stat"><span>🛡️ DEF</span><b>${fmt(s.def)}</b></div><div class="stat"><span>💨 SPD</span><b>${s.spd}</b></div><div class="stat"><span>🎯 CRIT</span><b>${s.crit}%</b></div><div class="stat" style="border:0"><span>💥 CRIT DMG</span><b>+${s.cdmg}%</b></div></div>
+   <div class="card"><b>✨ ${h.skill}</b><div class="sm mu">${SKD[h.cls].d}${h.rar==="SSR"?" SSR: +30% skill power.":""} Ready every ${SKD[h.cls].cd} actions.</div></div>
+   <h3>Gear</h3>${["w","a","c"].map(gslot).join("")}
+   <div class="row" style="margin-top:8px"><button class="btn alt grow" id="auto">Auto-equip best</button><button class="btn gray grow" id="uneq">Unequip all</button></div>`,l=>{
+    const lvl=max=>{ let n=0; while(o.lv<cap&&S.exp>=xpNeed(o.lv)&&S.gold>=goldNeed(o.lv)&&(max||n<1)){ S.exp-=xpNeed(o.lv); S.gold-=goldNeed(o.lv); o.lv++; n++; } if(!n) return toast(S.exp<need?"Not enough 📜 EXP – battle or collect patrol rewards":"Not enough 🪙"); bump("lvup",n); sfx("heal"); heroSheet(id); render.keep=true; render(); };
+    l.querySelector("#l1").onclick=()=>lvl(false); l.querySelector("#lm").onclick=()=>lvl(true);
+    l.querySelector("#star").onclick=()=>{ o.shards-=sc; o.stars++; sfx("ssr"); toast(`${h.name} is now ★${o.stars}! Level cap ${lvCap(o.stars)}`); heroSheet(id); render.keep=true; render(); };
+    l.querySelectorAll(".gi").forEach(el=>el.onclick=()=>pickGear(id,el.dataset.sl));
+    l.querySelector("#auto").onclick=()=>{ autoEquip(id); heroSheet(id); render.keep=true; render(); };
+    l.querySelector("#uneq").onclick=()=>{ o.g={}; heroSheet(id); render.keep=true; render(); }; }); }
+const gScore=(g)=>{ const m=1+g.lv*0.12; const w={atk:2.4,hp:0.25,def:1.6,spd:2,crit:6,cdmg:1.5}; return g.mv*m*w[g.main]+g.subs.reduce((a,[k,v])=>a+v*w[k],0); };
+function autoEquip(id){ const o=S.heroes[id]; o.g=o.g||{}; for(const sl of ["w","a","c"]){ const cur=o.g[sl]&&S.gear.find(x=>x.u===o.g[sl]); const free=S.gear.filter(g=>g.s===sl&&(!gearOwner(g.u)||g.u===o.g[sl])).sort((a,b)=>gScore(b)-gScore(a))[0]; if(free&&(!cur||gScore(free)>gScore(cur))) o.g[sl]=free.u; } }
+function pickGear(id,sl){ const o=S.heroes[id]; o.g=o.g||{}; const list=S.gear.filter(g=>g.s===sl).sort((a,b)=>gScore(b)-gScore(a));
+  sheet(`<button class="x">✕</button><h2>${GSLOT[sl].n} for ${HB[id].name.split(" ")[0]}</h2>${o.g[sl]?`<button class="btn gray" id="un" style="width:100%;margin-bottom:8px">Unequip</button>`:""}${list.length?list.map(g=>{ const ow=gearOwner(g.u); return `<div class="gi ${g.r}" data-u="${g.u}"><span class="gico">${g.ic}</span><div class="grow"><b>${g.n}${g.lv?" +"+g.lv:""}</b> <span class="tag t${g.r}">${g.r}</span><div class="sm mu">${GEARSTAT[g.main]} ${fmtStat(g.main,g.mv*(1+g.lv*0.12))} · ${g.subs.map(([k,v])=>GEARSTAT[k]+" "+fmtStat(k,v)).join(" · ")}</div>${ow?`<div class="sm" style="color:var(--pk)">on ${HB[ow].name.split(" ")[0]}</div>`:""}</div></div>`; }).join(""):'<p class="mu">No gear of this type yet – clear stages to find some.</p>'}`,l=>{
+    const un=l.querySelector("#un"); if(un) un.onclick=()=>{ delete o.g[sl]; heroSheet(id); render.keep=true; render(); };
+    l.querySelectorAll(".gi").forEach(el=>el.onclick=()=>{ const u=+el.dataset.u; const ow=gearOwner(u); if(ow&&ow!==id) delete S.heroes[ow].g[sl]; o.g[sl]=u; heroSheet(id); render.keep=true; render(); }); }); }
+
+/* ---------- gear bag ---------- */
+function vGear(m){ const f=sub.gear; const list=S.gear.filter(g=>f==="all"||g.s===f).sort((a,b)=>GR.indexOf(b.r)-GR.indexOf(a.r)||b.lv-a.lv||gScore(b)-gScore(a));
+  m.innerHTML=`<div class="seg">${[["all","All"],["w","🗡️ Weapon"],["a","👘 Armor"],["c","📿 Charm"]].map(([k,n])=>`<button data-f="${k}" class="${f===k?"on":""}">${n}</button>`).join("")}</div>
+   <div class="row" style="margin-bottom:10px"><span class="mu sm grow">${S.gear.length} items</span><button class="btn gray sm" id="sellN">Sell unused N/R</button></div>
+   ${list.map(g=>{ const ow=gearOwner(g.u); return `<div class="gi ${g.r}" data-u="${g.u}"><span class="gico">${g.ic}</span><div class="grow"><b>${g.n}${g.lv?" +"+g.lv:""}</b> <span class="tag t${g.r}">${g.r}</span><div class="sm mu">${GEARSTAT[g.main]} ${fmtStat(g.main,g.mv*(1+g.lv*0.12))}${g.subs.length?" · "+g.subs.map(([k,v])=>GEARSTAT[k]+" "+fmtStat(k,v)).join(" · "):""}</div>${ow?`<div class="sm" style="color:var(--pk)">equipped · ${HB[ow].name.split(" ")[0]}</div>`:""}</div></div>`; }).join("")||'<p class="mu">Your bag is empty. Clear stages to find gear!</p>'}`;
+  m.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ sub.gear=b.dataset.f; render(); });
+  $("sellN").onclick=()=>{ let n=0,g=0; S.gear=S.gear.filter(x=>{ if((x.r==="N"||x.r==="R")&&x.lv===0&&!gearOwner(x.u)){ n++; g+=sellVal(x); return false; } return true; }); S.gold+=g; toast(n?`Sold ${n} items for 🪙 ${fmt(g)}`:"Nothing to sell"); render(); };
+  m.querySelectorAll(".gi").forEach(el=>el.onclick=()=>gearSheet(+el.dataset.u)); }
+function gearSheet(u){ const g=S.gear.find(x=>x.u===u); if(!g) return closeSheet(); const ow=gearOwner(u), c=enhCost(g);
+  sheet(`<button class="x">✕</button><div class="row"><span style="font-size:42px">${g.ic}</span><div><h2 style="margin:0">${g.n}${g.lv?" +"+g.lv:""}</h2><span class="tag t${g.r}">${g.r}</span> <span class="sm mu">${GSLOT[g.s].n}${ow?" · on "+HB[ow].name:""}</span></div></div>
+   <div class="card" style="margin-top:10px"><div class="stat"><span>Main · ${GEARSTAT[g.main]}</span><b>${fmtStat(g.main,g.mv*(1+g.lv*0.12))}</b></div>${g.subs.map(([k,v])=>`<div class="stat"><span>${GEARSTAT[k]}</span><b>${fmtStat(k,v)}</b></div>`).join("")}</div>
+   <div class="sm mu">Every enhance: main stat +12%. At +3/+6/+9/+12 a random sub stat grows.</div>
+   <div class="row" style="margin-top:10px"><button class="btn grow" id="enh" ${g.lv>=15?"disabled":""}>${g.lv>=15?"Max +15":`Enhance +${g.lv+1} · 🪙 ${fmt(c)}`}</button><button class="btn gray" id="sell" ${ow?"disabled":""}>Sell 🪙 ${fmt(sellVal(g))}</button></div>`,l=>{
+    l.querySelector("#enh").onclick=()=>{ if(S.gold<c) return toast("Not enough 🪙"); S.gold-=c; g.lv++; if(g.lv%3===0&&g.subs.length){ const sb=pick(g.subs); sb[1]=Math.round(sb[1]*1.35*10)/10; } bump("enh"); sfx("heal"); gearSheet(u); render.keep=true; render(); };
+    l.querySelector("#sell").onclick=()=>{ S.gold+=sellVal(g); S.gear=S.gear.filter(x=>x.u!==u); closeSheet(); render.keep=true; render(); }; }); }
+
+/* ---------- quests ---------- */
+function vQuest(m){ ensureDaily(); const f=sub.quest;
+  let h=`<div class="seg"><button data-f="daily" class="${f==="daily"?"on":""}">Daily</button><button data-f="ach" class="${f==="ach"?"on":""}">Missions</button></div>`;
+  if(f==="daily"){ h+=DQ.map(([k,t,n,r])=>{ const c=Math.min(n,S.daily.c[k]||0), got=S.daily.got[k]; return `<div class="card"><div class="row"><div class="grow"><b>${t}</b><div class="sm mu">${Object.entries(r).map(([a,b])=>icon(a)+" "+fmt(b)).join(" ")}</div><div class="bar" style="margin-top:6px"><i style="width:${c/n*100}%"></i></div></div><button class="btn ${got?"gray":""}" data-q="${k}" ${got||c<n?"disabled":""}>${got?"Done":c+"/"+n}</button></div></div>`; }).join("");
+    const all=DQ.every(([k])=>S.daily.got[k]); h+=`<div class="card row"><div class="grow"><b>All dailies done</b><div class="sm mu">🎫 1 · 💎 100</div></div><button class="btn gold" id="all" ${!all||S.daily.all?"disabled":""}>${S.daily.all?"Done":"Claim"}</button></div><p class="sm mu">Dailies reset at midnight.</p>`; }
+  else h+=ACH.map(a=>{ const got=S.ach[a.id], ok=a.ok(); return `<div class="card row"><div class="grow"><b>${a.t}</b><div class="sm mu">${Object.entries(a.r).filter(([,b])=>b).map(([k,b])=>icon(k)+" "+fmt(b)).join(" ")}</div></div><button class="btn ${got?"gray":""}" data-a="${a.id}" ${got||!ok?"disabled":""}>${got?"Done":ok?"Claim":"—"}</button></div>`; }).join("");
+  m.innerHTML=h;
+  m.querySelectorAll(".seg button").forEach(b=>b.onclick=()=>{ sub.quest=b.dataset.f; render(); });
+  m.querySelectorAll("[data-q]").forEach(b=>b.onclick=()=>{ const q=DQ.find(x=>x[0]===b.dataset.q); S.daily.got[q[0]]=1; toast(grant(q[3])); render.keep=true; render(); });
+  m.querySelectorAll("[data-a]").forEach(b=>b.onclick=()=>{ const a=ACH.find(x=>x.id===b.dataset.a); S.ach[a.id]=1; toast(grant(a.r)); render.keep=true; render(); });
+  const al=$("all"); if(al) al.onclick=()=>{ S.daily.all=true; toast(grant({tickets:1,gems:100})); render(); }; }
+
+/* ---------- menu ---------- */
+function menu(){ sheet(`<button class="x">✕</button><h2>☰ Menu</h2>
+  <div class="stat"><span>🎵 Music</span><button class="btn gray sm" id="mus">${S.music?"On":"Off"}</button></div>
+  <div class="stat"><span>🔊 Sounds</span><button class="btn gray sm" id="snd">${S.sound?"On":"Off"}</button></div>
+  <div class="stat"><span>Version</span><span class="mu">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${SAKURA_WEB_VERSION} ${NATIVE&&NATIVE.checkUpdates?'<button class="btn gray sm" id="upd">Check updates</button>':""}</span></div>
+  ${apkUpdate&&NATIVE&&NATIVE.installApk?'<button class="btn" id="inst" style="width:100%;margin-top:8px">📦 Install app update</button>':""}
+  <h3>ℹ️ How to play</h3><div class="sm mu" style="line-height:1.55">
+  • <b>Story</b>: clear stages (costs ⚡ stamina) for 🪙 gold, 📜 EXP, gear and 💎 on first clear. Bosses close each chapter.<br>
+  • <b>Elements</b>: 🔥 beats 🍃, 🍃 beats 💧, 💧 beats 🔥 (×1.5, reverse ×0.75). ☀️ and 🌙 beat each other.<br>
+  • <b>Battle</b>: heroines act by SPD. When a card glows, tap it to unleash her skill – or switch on AUTO.<br>
+  • <b>Level up</b> with 📜 EXP + 🪙. The level cap is 10 + 10 per ★. Duplicates give shards → ★ Ascend (max ★6).<br>
+  • <b>Gear</b>: weapon, armor, charm. Enhance up to +15. Higher chapters drop better gear.<br>
+  • <b>Summon</b>: 💎 160 per pull. SSR guaranteed by pull 90, SR every 10.<br>
+  • <b>Patrol</b> rewards build up while you're away (12 h max). Abyss Tower opens after Chapter 2.</div>
+  <h3>Data</h3><button class="btn gray" id="rst" style="width:100%">Reset game</button>`,l=>{
+   l.querySelector("#mus").onclick=()=>{ S.music=!S.music; music(S.music); menu(); };
+   l.querySelector("#snd").onclick=()=>{ S.sound=!S.sound; menu(); };
+   const u=l.querySelector("#upd"); if(u) u.onclick=()=>{ try{ NATIVE.checkUpdates(); toast("Checking…"); }catch(e){} };
+   const ins=l.querySelector("#inst"); if(ins) ins.onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} };
+   l.querySelector("#rst").onclick=()=>{ if(!confirm("Delete ALL progress?")) return; localStorage.removeItem(LS); load(); closeSheet(); render(); }; }); }
+
+/* ================= battle ================= */
+let B=null;
+function prepBattle(o){ tickStam(); const team=S.team.filter(Boolean); if(!team.length) return toast("Pick a team first");
+  if(o.stage!=null){ const f=stageInfo(o.stage); if(S.stam<f.cost) return noStam(); }
+  const go=()=>startBattle(o);
+  if(o.stage!=null&&o.stage%SPC===0&&!S.seen["i"+Math.floor(o.stage/SPC)]){ S.seen["i"+Math.floor(o.stage/SPC)]=1; story(CH[Math.floor(o.stage/SPC)].intro,go); } else go(); }
+function mkWaves(o){ const W=[]; let P,lvl,ch,els,mons,boss;
+  if(o.tower){ const f=o.tower; P=Math.pow(1.047,Math.min(NST,16+f*1.3))*Math.pow(1.03,Math.max(0,16+f*1.3-NST))*1.15; lvl=Math.round(14+f*1.1); const c=CH[(f-1)%CH.length]; els=ELN; mons=c.mons; boss=c.boss; ch=c; }
+  else { const f=stageInfo(o.stage); P=f.P; lvl=f.lvl; ch=f.ch; els=ch.el; mons=ch.mons; boss=ch.boss; }
+  const isBoss=o.tower?o.tower%5===0:stageInfo(o.stage).boss; const nW=isBoss?3:o.tower?2:(stageInfo(o.stage).s<2?2:3);
+  const mk=(type,bossy,el)=>({type,el,boss:bossy,name:(bossy?"👑 ":"")+MON[type].n,lvl,hp:Math.round(380*P*(bossy?6.5:1)),atk:Math.round(52*P*(bossy?1.5:1)),def:Math.round(26*P),spd:88+Math.random()*20+(bossy?6:0),crit:5,cdmg:50});
+  for(let w=0;w<nW;w++){ const last=w===nW-1; if(last&&isBoss) W.push([mk(boss,true,pick(els))]); else { const n=w===0?2+Math.floor(Math.random()*2):3; const arr=[]; for(let k=0;k<n;k++) arr.push(mk(pick(mons),false,pick(els))); W.push(arr); } }
+  return {W,ch}; }
+function startBattle(o){ if(o.stage!=null){ S.stam-=stageInfo(o.stage).cost; } const {W,ch}=mkWaves(o);
+  const team=S.team.filter(Boolean).map(id=>{ const s=stats(id); return {id,h:HB[id],hero:true,...s,max:s.hp,el:HB[id].el,cls:HB[id].cls,en:0,cd:SKD[HB[id].cls].cd,shield:0,taunt:0,g:Math.random()*30,dead:false}; });
+  B={o,W,wave:0,team,foes:[],ch,t:0,over:false,log:"",turn:null,busy:0,target:null};
+  const d=document.createElement("div"); d.id="bt"; document.body.appendChild(d);
+  d.innerHTML=`<svg class="bg" viewBox="0 0 100 160" preserveAspectRatio="xMidYMid slice"><rect width="100" height="160" fill="${ch.bg}"/><circle cx="78" cy="22" r="12" fill="#fff6" /><path d="M0 120 Q25 96 50 112 Q75 96 100 116 V160 H0Z" fill="#0004"/><g fill="#ffb3d1" opacity=".5">${Array.from({length:14},()=>`<circle cx="${Math.random()*100}" cy="${Math.random()*150}" r="${0.6+Math.random()*1.2}"/>`).join("")}</g><path d="M30 120 V84 M70 120 V84 M24 86 H76 M27 92 H73" stroke="#c0392b" stroke-width="3" opacity=".45"/></svg>
+   <div id="btTop"><b id="wv"></b><span class="grow"></span><button class="sbtn ${S.auto?"on":""}" id="bAuto">AUTO</button><button class="sbtn" id="bSpd">${S.spd}×</button><button class="sbtn" id="bQuit">✕</button></div>
+   <div id="foes"></div><div id="btLog"></div><div id="team"></div>`;
+  $("bAuto").onclick=()=>{ S.auto=!S.auto; $("bAuto").classList.toggle("on",S.auto); };
+  $("bSpd").onclick=()=>{ S.spd=S.spd>=3?1:S.spd+1; $("bSpd").textContent=S.spd+"×"; };
+  $("bQuit").onclick=()=>{ if(B&&!B.over&&!confirm("Retreat? Stamina is not refunded.")) return; endBattle(false,true); };
+  nextWave(); drawTeam(); loopBattle(); }
+function nextWave(){ B.foes=B.W[B.wave].map(m=>({...m,max:m.hp,g:Math.random()*40,dead:false,en:0,burn:0})); B.target=null; drawFoes(); $("wv").textContent=`Wave ${B.wave+1}/${B.W.length}`; }
+function drawFoes(){ $("foes").innerHTML=B.foes.map((f,i)=>`<div class="foe ${f.boss?"boss":""} ${f.dead?"dead":""} ${B.target===i?"tgt":""}" id="f${i}"><div class="nm">${EL[f.el].i} ${f.name} <span class="mu">Lv${f.lvl}</span></div>${monSvg(f.type,f.el)}<div class="hp"><i style="width:${f.hp/f.max*100}%"></i></div></div>`).join("");
+  B.foes.forEach((f,i)=>{ const el=$("f"+i); el.onclick=()=>{ if(f.dead) return; B.target=B.target===i?null:i; drawFoes(); }; }); }
+function drawTeam(){ $("team").innerHTML=B.team.map((u,i)=>`<div class="tm ${u.dead?"dead":""}" id="t${i}"><div class="pt">${portrait(u.h)}</div><div class="hp"><i style="width:${u.hp/u.max*100}%"></i></div><div class="en"><i style="width:${Math.min(1,u.en/u.cd)*100}%"></i></div><div class="sk">✨ ${u.h.skill}</div>${u.shield>0?'<span class="shd">🛡️</span>':""}</div>`).join("");
+  B.team.forEach((u,i)=>{ $("t"+i).onclick=()=>{ if(u.dead||u.en<u.cd||B.over) return; u.queued=true; sfx("tap"); }; }); updTeam(); }
+function updTeam(){ B.team.forEach((u,i)=>{ const el=$("t"+i); if(!el) return; el.classList.toggle("dead",u.dead); el.classList.toggle("ready",!u.dead&&u.en>=u.cd&&!S.auto); el.querySelector(".hp i").style.width=Math.max(0,u.hp/u.max*100)+"%"; el.querySelector(".en i").style.width=Math.min(1,u.en/u.cd)*100+"%"; const sh=el.querySelector(".shd"); if(u.shield>0&&!sh) el.insertAdjacentHTML("beforeend",'<span class="shd">🛡️</span>'); if(u.shield<=0&&sh) sh.remove(); }); }
+function fx(el,txt,cls){ if(!el) return; const r=el.getBoundingClientRect(); const d=document.createElement("div"); d.className="fx "+(cls||""); d.textContent=txt; d.style.left=(r.left+r.width/2-20+rnd(-14,14))+"px"; d.style.top=(r.top+r.height*0.3)+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),1000); }
+function hitEl(u){ return u.hero?$("t"+B.team.indexOf(u)):$("f"+B.foes.indexOf(u)); }
+function dmg(a,d,mult,critBonus){ let x=a.atk*mult*(100/(100+d.def*0.9))*elemMod(a.el,d.el)*rnd(0.93,1.07); const cr=Math.random()*100<(a.crit+(critBonus||0)); if(cr) x*=1+a.cdmg/100;
+  x=Math.max(1,Math.round(x)); if(d.shield>0){ const s=Math.min(d.shield,x); d.shield-=s; x-=s; } d.hp-=x; const el=hitEl(d); const em=elemMod(a.el,d.el);
+  fx(el,(cr?"💥":"")+fmt(x+0),cr?"crit":em>1?"weak":""); if(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); } sfx(cr?"crit":"hit");
+  if(d.hp<=0){ d.hp=0; d.dead=true; } return x; }
+const alive=a=>a.filter(u=>!u.dead);
+function heroAct(u){ const foes=alive(B.foes); if(!foes.length) return; const sk=u.en>=u.cd&&(S.auto||u.queued); u.queued=false;
+  const tgt=()=>{ const t=B.target!=null&&!B.foes[B.target].dead?B.foes[B.target]:null; return t||foes.slice().sort((a,b)=>a.hp-b.hp)[0]; };
+  const P=u.h.rar==="SSR"?1.3:1;
+  if(!sk){ dmg(u,tgt(),1); u.en++; return; }
+  u.en=0; sfx("skill"); B.log=`✨ ${u.h.name.split(" ")[0]}: ${u.h.skill}!`; fx(hitEl(u),"✨"+u.h.skill,"heal");
+  switch(u.cls){
+    case "blade": dmg(u,tgt(),2.6*P); break;
+    case "guard": u.shield=Math.round(u.max*0.25*P); u.taunt=2; dmg(u,tgt(),1.0*P); break;
+    case "archer": dmg(u,foes.slice().sort((a,b)=>a.hp-b.hp)[0],2.3*P,60); break;
+    case "mage": foes.forEach(f=>dmg(u,f,1.25*P)); break;
+    case "healer": alive(B.team).forEach(t=>{ const h=Math.round(u.atk*2.2*P); t.hp=Math.min(t.max,t.hp+h); t.burn=0; fx(hitEl(t),"+"+fmt(h),"heal"); }); sfx("heal"); break;
+    case "ninja": for(let k=0;k<4;k++){ const a=alive(B.foes); if(!a.length) break; dmg(u,pick(a),0.85*P); } break; } }
+function foeAct(f){ const t=alive(B.team); if(!t.length) return; const taunter=t.find(u=>u.taunt>0); const target=taunter||(Math.random()<0.6?t.slice().sort((a,b)=>a.hp/a.max-b.hp/b.max)[0]:pick(t));
+  f.en++; if(f.boss&&f.en>=3){ f.en=0; B.log=`👑 ${f.name} unleashes a fury attack!`; t.forEach(u=>dmg(f,u,0.9)); return; }
+  dmg(f,target,1); }
+function loopBattle(){ if(!B||B.over) return; const steps=S.spd; for(let s=0;s<steps;s++){ if(B.over) break; tickBattle(); } requestAnimationFrame(()=>setTimeout(loopBattle,90)); }
+function tickBattle(){ if(B.busy>0){ B.busy--; return; }
+  const units=[...alive(B.team),...alive(B.foes)]; if(!units.length) return;
+  // advance gauges until someone reaches 100
+  let best=null; for(const u of units){ const need=(100-u.g)/u.spd; if(!best||need<best.n) best={u,n:need}; }
+  for(const u of units) u.g+=u.spd*Math.max(0,best.n); const u=best.u; u.g=0;
+  document.querySelectorAll(".act").forEach(e=>e.classList.remove("act")); const el=hitEl(u); if(el) el.classList.add("act");
+  if(u.hero){ heroAct(u); if(u.taunt>0) u.taunt--; } else foeAct(u);
+  B.busy=3; $("btLog").textContent=B.log; B.log="";
+  B.foes.forEach((f,i)=>{ const e=$("f"+i); if(!e) return; e.querySelector(".hp i").style.width=(f.hp/f.max*100)+"%"; if(f.dead&&!e.classList.contains("dead")) e.classList.add("dead"); });
+  updTeam();
+  if(!alive(B.team).length) return endBattle(false);
+  if(!alive(B.foes).length){ if(B.wave<B.W.length-1){ B.wave++; B.busy=8; setTimeout(()=>{ if(B&&!B.over){ nextWave(); } },350); } else endBattle(true); } }
+function endBattle(win,quit){ if(!B) return; B.over=true; const o=B.o; const ko=B.team.filter(u=>u.dead).length;
+  if(quit){ document.getElementById("bt").remove(); B=null; render(); return; }
+  let rew="", afterStory=null;
+  if(win){ sfx("win"); bump("win"); buzz();
+    if(o.stage!=null){ const i=o.stage, first=!S.stars[i]; const st=ko===0?3:ko===1?2:1; S.stars[i]=Math.max(S.stars[i]||0,st); const g=goldRew(i), e=expRew(i); S.gold+=g; S.exp+=e; const gs=dropGear(i);
+      rew=`<div style="color:var(--gd);font-size:30px;letter-spacing:4px">${"★".repeat(st)}${"☆".repeat(3-st)}</div>🪙 ${fmt(g)} · 📜 ${fmt(e)}${first?` · 💎 ${stageInfo(i).boss?150:30}`:""}${gs.map(x=>`<div class="sm">🎒 <span class="tag t${x.r}">${x.r}</span> ${x.n}</div>`).join("")}`;
+      if(first) S.gems+=stageInfo(i).boss?150:30;
+      if(first&&stageInfo(i).boss) afterStory=CH[Math.floor(i/SPC)].outro; }
+    else { const f=o.tower; S.tower=Math.max(S.tower,f); bump("tower"); const gm=f%5===0?100:20; const g=Math.round(goldRew(Math.min(NST,16+f))*1.2); S.gems+=gm; S.gold+=g; const gs=[mkGear(Math.floor((16+f)/3))]; S.gear.push(...gs);
+      rew=`🗼 Floor ${f} cleared!<br>💎 ${gm} · 🪙 ${fmt(g)}${gs.map(x=>`<div class="sm">🎒 <span class="tag t${x.r}">${x.r}</span> ${x.n}</div>`).join("")}`; } }
+  const nextOk= o.stage!=null? (o.stage+1<NST&&o.stage+1<=cleared()) : true;
+  const d=document.createElement("div"); d.id="layer2"; d.style.cssText="position:fixed;inset:0;z-index:45;background:#000a;display:flex;align-items:center;justify-content:center";
+  d.innerHTML=`<div class="card" style="width:86%;max-width:380px;text-align:center"><h2 style="font-size:24px">${win?"🌸 Victory!":"💀 Defeat"}</h2>${win?rew:`<p class="mu">Level up your heroines, equip better gear, or bring an element that beats ${B.ch?B.ch.el.map(e=>EL[e].i).join(" "):"them"}.</p>`}
+   <div class="row" style="margin-top:14px"><button class="btn gray grow" id="eb">Back</button>${win?(o.stage!=null?`<button class="btn alt grow" id="rp">Repeat ⚡</button>${nextOk&&!afterStory?'<button class="btn grow" id="nx">Next ▶</button>':""}`:`<button class="btn grow" id="nx">Floor ${o.tower+1} ▶</button>`):`<button class="btn grow" id="rp">Retry</button>`}</div></div>`;
+  document.body.appendChild(d);
+  const close=()=>{ d.remove(); const b=$("bt"); if(b) b.remove(); B=null; save(true); render(); };
+  d.querySelector("#eb").onclick=()=>{ close(); if(afterStory) story(afterStory); };
+  const rp=d.querySelector("#rp"); if(rp) rp.onclick=()=>{ close(); prepBattle(o); };
+  const nx=d.querySelector("#nx"); if(nx) nx.onclick=()=>{ close(); prepBattle(o.stage!=null?{stage:o.stage+1}:{tower:o.tower+1}); };
+  save(true); }
+
+/* ================= boot ================= */
+function intro(){ if(S.seen.prologue) return; S.seen.prologue=1; S.seen.i0=1; story(CH[0].intro.concat([["sakura","Here – take this. 3200 Gate-crystals 💎 and 5 summon tickets 🎫. Call some friends! Then meet me at stage 1-1."]])); }
+setInterval(()=>{ tickStam(); if(!B&&!$("layer").innerHTML) { topBar(); nav(); } },15000);
+document.addEventListener("visibilitychange",()=>{ if(document.hidden) save(true); });
+window.addEventListener("focus",()=>{ if(!B) render(); });
+render(); intro();
+window.__g={S:()=>S,stats,power,mkWaves,startBattle,doPull,heroSheet,stageInfo,endBattle,tickBattle,get B(){return B;},render,mkGear};
+</script>
+</body>
+</html>
