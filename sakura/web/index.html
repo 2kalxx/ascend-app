@@ -128,7 +128,7 @@ h3{margin:14px 2px 8px;font-size:15px;color:var(--mu);font-weight:600}
 <div id="layer"></div>
 <div id="toast"></div>
 <script>
-const SAKURA_WEB_VERSION = 2; // bump on every web update (the Android app reads this)
+const SAKURA_WEB_VERSION = 3; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const $=id=>document.getElementById(id);
 const fmt=n=>{ n=Math.floor(n); if(n<1e4) return ""+n; const u=["K","M","B","T","Qa","Qi"]; let i=-1; while(n>=1000&&i<u.length-1){ n/=1000; i++; } return (n<100?n.toFixed(1):Math.floor(n))+u[i]; };
@@ -674,12 +674,15 @@ function endBattle(win,quit){ if(!B) return; B.over=true; const o=B.o; const ko=
   const nextOk= o.stage!=null? (o.stage+1<NST&&o.stage+1<=cleared()) : true;
   const d=document.createElement("div"); d.id="layer2"; d.style.cssText="position:fixed;inset:0;z-index:45;background:#000a;display:flex;align-items:center;justify-content:center";
   d.innerHTML=`<div class="card" style="width:86%;max-width:380px;text-align:center"><h2 style="font-size:24px">${win?"🌸 Victory!":"💀 Defeat"}</h2>${win?rew:`<p class="mu">Level up your heroines, equip better gear, or bring an element that beats ${B.ch?B.ch.el.map(e=>EL[e].i).join(" "):"them"}.</p>`}
-   <div class="row" style="margin-top:14px"><button class="btn gray grow" id="eb">Back</button>${win?(o.stage!=null?`<button class="btn alt grow" id="rp">Repeat ⚡</button>${nextOk&&!afterStory?'<button class="btn grow" id="nx">Next ▶</button>':""}`:`<button class="btn grow" id="nx">Floor ${o.tower+1} ▶</button>`):`<button class="btn grow" id="rp">Retry</button>`}</div></div>`;
+   <div class="row" style="margin-top:14px"><button class="btn gray grow" id="eb">Back</button>${win?(o.stage!=null?`<button class="btn alt grow" id="rp">Repeat ⚡</button>${nextOk?'<button class="btn grow" id="nx">Next ▶</button>':""}`:`<button class="btn grow" id="nx">Floor ${o.tower+1} ▶</button>`):`<button class="btn grow" id="rp">Retry</button>`}</div></div>`;
   document.body.appendChild(d);
-  const close=()=>{ d.remove(); const b=$("bt"); if(b) b.remove(); B=null; save(true); render(); };
+  const close=()=>{ clearInterval(d.tm); d.remove(); const b=$("bt"); if(b) b.remove(); B=null; save(true); render(); };
   d.querySelector("#eb").onclick=()=>{ close(); if(afterStory) story(afterStory); };
   const rp=d.querySelector("#rp"); if(rp) rp.onclick=()=>{ close(); prepBattle(o); };
-  const nx=d.querySelector("#nx"); if(nx) nx.onclick=()=>{ close(); prepBattle(o.stage!=null?{stage:o.stage+1}:{tower:o.tower+1}); };
+  const goNext=()=>{ close(); const nxt=()=>prepBattle(o.stage!=null?{stage:o.stage+1}:{tower:o.tower+1}); if(afterStory) story(afterStory,nxt); else nxt(); };
+  const nx=d.querySelector("#nx"); if(nx) nx.onclick=goNext;
+  // story stages: continue to the next stage by itself after 3 seconds (tap Back to stop)
+  if(win&&o.stage!=null&&nx){ let c=3; nx.textContent=`Next ▶ ${c}`; d.tm=setInterval(()=>{ c--; if(c<=0){ clearInterval(d.tm); if(S.stam<stageInfo(o.stage+1).cost){ nx.textContent="Next ▶"; return; } goNext(); } else nx.textContent=`Next ▶ ${c}`; },1000); }
   save(true); }
 
 /* ================= boot ================= */

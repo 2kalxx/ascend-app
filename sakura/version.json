@@ -1,7 +1,7 @@
 {
-  "web": 2,
+  "web": 3,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/SakuraGate.apk",
-  "notes": "100 heroines, ranks R-B-E-SR-SSR-SSS, team of 5, synergy, collection, bounty board"
+  "notes": "Auto-continue to the next story stage after 3 s"
 }
