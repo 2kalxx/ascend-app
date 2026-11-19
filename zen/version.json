@@ -1,7 +1,7 @@
 {
-  "web": 32,
+  "web": 33,
   "apk": 1,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "No ball cap"
+  "notes": "Ball cap adapts to your phone's fps (60-120)"
 }

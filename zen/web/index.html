@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 32; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 33; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -261,12 +261,14 @@ let balls=[], acc=new Array(20).fill(0), gt=0, earnWin=0, winStart=0, rateNow=0,
 const MAXB_ABS=5000;
 // measured: how many balls each stage holds while it still flows (×10, from a 30 balls/s stress test of every stage)
 const STAGE_CAP=[78,65,24,113,92,70,52,96,57,145,66,142,64,83,61,30,118,127,74,119,105,52,147,57,145,82,67,49,21,85,90,59,112,96,44,146,46,141,64,84,61,32,112,128,74,127,105,53,147,57,146,82,68,50,23,87,89,59,121,96,42,146,47,142,64,82,61,34,103,127,73,136,105,54,146,58,146,81,68,50,23,91,89,58,135,96,41,145,44,141,64,83,62,34,109,127,73,140,105,51,146,59,146,81,68,50,23,84,90,59,136,96,40,146,46,141,63,84,61,33,111,127,74,141,105,53,145,56,146,82,67,50,22,81,89,59,136,96,43,146,45,141,63,84,61,33,101,127,75,141];
-let tankN=0; const capMemo=[]; const capOf=U=>{ if(capMemo[U]) return capMemo[U]; let c=0; for(let L=1;L<=U&&c<MAXB_ABS;L++) c+=STAGE_CAP[L-1]*10; return capMemo[U]=Math.min(MAXB_ABS,Math.max(300,c)); };
+let tankN=0; const capMemo=[]; const capOf=U=>{ if(capMemo[U]) return capMemo[U]; let c=0; for(let L=1;L<=U;L++) c+=STAGE_CAP[L-1]*10; return capMemo[U]=Math.max(300,c); };
+// the real limit: as many balls as this phone can move at its full refresh rate (60–120 fps), measured live and saved
+const ballCap=()=>Math.min(capOf(S.unlocked),S.perfCap||4000);
 const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
 function pay(v){ S.coins+=v; S.total+=v; earnWin+=v; }
 // more balls than the unlocked stages can hold while flowing: the extra ones pay what an average ball earned on its way down
-function spawn(k,x,y){ 
+function spawn(k,x,y){ if(balls.length+tankN>=ballCap()){ pay(ballVal(k)*worldMult()*avgNorm); return; } 
   const sp=getStage(1).spawn; balls.push({k,x:x!=null?x:sp[0]+Math.random()*(sp[1]-sp[0]),y:y!=null?y:-8,vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0}); }
 function collide(b,cx,cy,cr,e,ovx,ovy){ const dx=b.x-cx, dy=b.y-cy, d2=dx*dx+dy*dy, m=b.r+cr; if(d2>=m*m) return false; const d=Math.sqrt(d2)||0.01;
   const nx=dx/d, ny=dy/d; b.x=cx+nx*m; b.y=cy+ny*m; const rvx=b.vx-(ovx||0), rvy=b.vy-(ovy||0), vn=rvx*nx+rvy*ny; if(vn<0){ b.vx-=(1+e)*vn*nx; b.vy-=(1+e)*vn*ny; b.vx+=(Math.random()-.5)*10; return vn<-60; } return false; }
@@ -470,7 +472,7 @@ document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset
 document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 function tankBalls(){ let n=0; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(s) for(const d of s.doors) n+=d.pile.length; } return n; }
 function uiTop(){ if(typeof syncAuto==='function') syncAuto();
-  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" balls";
+  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+ballCap().toLocaleString("de-DE")+" balls";
   const L=S.unlocked+1, u=$("unlockB");
   if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+" · gates ×1.35"; u.className=S.coins>=priceOf(L)?"ok":""; }
   $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);
@@ -551,7 +553,12 @@ window.addEventListener("pointerdown",()=>{ if(S.music&&!MUSIC.on) syncMusic(); 
 document.addEventListener("visibilitychange",()=>{ syncMusic(); try{ if(AC){ document.hidden?AC.suspend():AC.resume(); } }catch(e){} if(document.hidden) save(true); else lastT=performance.now(); });
 window.addEventListener("pagehide",()=>save(true));
 let lastT=performance.now(), uiT=0;
-function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const n=(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); uiT+=dt; if(uiT>0.25){ uiT=0; uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
+let workA=0, refI=1/60, perfT=0;
+function tunePerf(dt,work){ if(dt>0.004&&dt<0.04) refI=Math.min(refI*1.002,dt); workA=workA*0.9+work*0.1; perfT+=dt; if(perfT<1) return; perfT=0;
+  const target=Math.max(6.5,Math.min(13,refI*1000*0.8)), cap=S.perfCap||4000, n=balls.length+tankN;
+  if(workA>target&&n>800&&n<=cap*1.02) S.perfCap=Math.max(800,Math.round(n*0.92)); /* only while at the cap: extra balls already on the map just drain away */
+  else if(workA<target*0.7&&n>cap*0.9) S.perfCap=Math.min(100000,Math.round(cap*1.06)); }
+function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const w0=performance.now(); const n=(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); if(!document.hidden) tunePerf(dt,performance.now()-w0); uiT+=dt; if(uiT>0.25){ uiT=0; uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 /* test hooks */
 const simOpts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(S.unlocked>=GATE[k]) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); }
