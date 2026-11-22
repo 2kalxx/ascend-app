@@ -63,6 +63,8 @@ canvas{display:block;touch-action:none}
 #showB{display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:3;padding:9px 18px;border-radius:12px;border:0;background:#ffd400;color:#222;font:inherit;font-weight:900;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 #unlockBar{display:flex;align-items:center;gap:8px;padding:6px 10px 2px}
 #unlockB{flex:1;padding:9px 10px;border-radius:10px;border:0;font:inherit;font-weight:900;font-size:14px;background:#3a3c43;color:#888}
+#rebB{padding:9px 10px;border-radius:10px;border:0;font:inherit;font-weight:900;font-size:13px;background:#3a3c43;color:#c9b6ff;flex:none}#rebB.ok{background:#b86bff;color:#fff;animation:pulse 1.1s ease-in-out infinite}
+.bp{display:inline-block;margin-top:2px;padding:2px 7px;border-radius:6px;border:0;font:inherit;font-weight:900;font-size:10px;background:#b86bff;color:#fff}
 #unlockB.ok{background:#ffd400;color:#222;animation:pulse 1.1s ease-in-out infinite}
 #jump{position:absolute;right:8px;bottom:10px;display:flex;flex-direction:column;gap:6px;z-index:3}
 #jump button{width:36px;height:36px;border-radius:10px;border:0;background:rgba(20,21,24,.85);color:#ffd400;font-size:16px;font-weight:900}
@@ -74,7 +76,7 @@ canvas{display:block;touch-action:none}
 <div id="app">
   <div id="top"><button class="icon" id="menuB">☰</button><div class="money"><b id="coinT">$0</b><small id="rateT">$0/s</small></div>
     <button class="icon" id="cardB">🃏<span class="badge" id="cardN" style="display:none"></span></button><button class="icon" id="perkB">⭐</button><button class="icon" id="musB">🎵</button><button class="icon" id="sndB">🔔</button></div>
-  <div id="unlockBar"><button id="unlockB"></button></div>
+  <div id="unlockBar"><button id="unlockB"></button><button id="rebB" style="display:none">♻️</button></div>
   <div id="wrap"><canvas id="cv"></canvas><div id="ballCount"></div><button id="showB">▲ Upgrades</button><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
   <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button><button id="autoB">AUTO</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
 </div>
@@ -82,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 34; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 35; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -132,9 +134,15 @@ const C=id=>(S.cards&&S.cards[id])||0; // level
 const cardNeed=l=>l; // copies needed to go from level l to l+1
 
 
-const valueMult=()=>Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"));
+const valueMult=()=>(S.pm||1)*Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"));
 const rateMult=()=>Math.pow(1.15,P("rate"))*(1+0.05*C("sr"));
-const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(k===0?1+C("wp"):1);
+const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(S.bpm[k]||1)*(k===0?1+C("wp"):1);
+/* prestige: REBIRTH resets stages + ball upgrades for a permanent profit multiplier based on how far you got;
+   BALL PRESTIGE resets one ball's value level for a permanent multiplier on that ball */
+const REB_MIN=10;
+const rebGain=()=>S.unlocked/5;                 // stage 10 → ×2, 20 → ×4, 50 → ×10, 150 → ×30 (stacks with earlier rebirths)
+const bpNeed=k=>50+25*(S.bstar[k]||0);          // value level needed for the next ball prestige
+const bpGain=k=>1+S.val[k]/25;                  // level 50 → ×3, 100 → ×5
 const stOf=L=>{ S.st[L]=S.st[L]||{o:0,g:0}; return S.st[L]; };
 // money is paid every time a ball passes a gate: ball value × section × stage gate level × (1.35 per unlocked stage)
 const STAGE_MULT=1.35;
@@ -144,9 +152,11 @@ const shrinkOf=L=>(1-0.04*stOf(L).o)*Math.pow(0.97,P("hits"));
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0}; }
+function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(20).fill(0),bpm:Array(20).fill(1)}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
 while(S.rate.length<TYPES.length) S.rate.push(0); while(S.val.length<TYPES.length) S.val.push(1);
+while(S.bstar.length<TYPES.length) S.bstar.push(0); while(S.bpm.length<TYPES.length) S.bpm.push(1);
+if(!(S.pm>0)) S.pm=1; S.best=Math.max(S.best||1,S.unlocked||1);
 if((S.ver||0)<2){ for(const k in S.st) S.st[k].o=0; S.ver=2; } // v2: "o" is now obstacle shrink (0..8)
 let saveT=0; function save(force){ const n=Date.now(); if(!force&&n-saveT<3000) return; saveT=n; S.last=n; S.cam=cam; try{ localStorage.setItem(LS,JSON.stringify(S)); }catch(e){} }
 
@@ -441,14 +451,14 @@ function uiList(force){
   let h="";
   if(S.tab==="balls"){ h+=`<div class="hd"><span>BALLS</span><span>VALUE</span><span>TIME</span></div>`;
     for(let k=0;k<TYPES.length;k++){ const t=TYPES[k];
-      if(S.rate[k]>0){ h+=`<div class="row"><div class="dot" style="background:${t.col}"></div><div class="rt"><b>${money(ballVal(k))}</b><small>${(spawnTime(S.rate[k])/rateMult()).toFixed(2)} sec</small></div>${btn("v"+k,S.val[k],1e9,l=>costVal(k,l))}${btn("r"+k,S.rate[k],RMAX,l=>costRate(k,l))}</div>`; continue; }
+      if(S.rate[k]>0){ h+=`<div class="row"><div class="dot" style="background:${t.col}"></div><div class="rt"><b>${money(ballVal(k))}</b><small>${(spawnTime(S.rate[k])/rateMult()).toFixed(2)} sec${S.bstar[k]?` · ✨${S.bstar[k]} ×${fmt(S.bpm[k])}`:""}</small>${S.val[k]>=bpNeed(k)?`<button class="bp" data-bp="${k}">✨ PRESTIGE ×${bpGain(k).toFixed(1)}</button>`:""}</div>${btn("v"+k,S.val[k],1e9,l=>costVal(k,l))}${btn("r"+k,S.rate[k],RMAX,l=>costRate(k,l))}</div>`; continue; }
       if(S.unlocked<GATE[k]){ h+=`<div class="row"><div class="dot" style="background:#26272c"></div><div class="rt"><b style="color:#777">${t.name} ball</b><small>🔒 Unlock stage ${GATE[k]}</small></div></div>`; break; }
       const c=costUnlock(k); h+=`<div class="row"><div class="dot" style="background:${t.col};opacity:.5"></div><div class="rt"><b>${t.name} ball</b><small>New ball · 6× value</small></div><button class="buy ${S.coins>=c?"ok":""}" data-b="u${k}" style="width:172px"><span>${money(c)}</span><em>UNLOCK</em></button></div>`; break; } }
   else { h+=`<div class="hd"><span>STAGES</span><span>SHRINK</span><span>GATES</span></div>`;
     for(let L=1;L<=S.unlocked;L++){ const st=stOf(L);
       h+=`<div class="srow2"><div class="num">${L}</div><div class="rt" data-go="${L}"><b>${stageName(L)}</b><small>size ${Math.round(shrinkOf(L)*100)}% · gates ×${gateBoost(L).toFixed(2)}</small></div>${btn("o"+L,st.o,OMAX,l=>costObs(L,l))}${btn("g"+L,st.g,GMAX,l=>costGate(L,l))}</div>`; } }
   if(!force&&h===listSig) return; const sc_=$("list").scrollTop; listSig=h; $("list").innerHTML=h; $("list").scrollTop=sc_; }
-$("list").addEventListener("click",e=>{ const b=e.target.closest("[data-b]"); if(b) return buy(b.dataset.b); const g=e.target.closest("[data-go]"); if(g) goTo(+g.dataset.go); });
+$("list").addEventListener("click",e=>{ const bp=e.target.closest("[data-bp]"); if(bp) return ballPrestige(+bp.dataset.bp); const b=e.target.closest("[data-b]"); if(b) return buy(b.dataset.b); const g=e.target.closest("[data-go]"); if(g) goTo(+g.dataset.go); });
 function buy(id,quiet){
   const t=id[0], k=+id.slice(1); let n=0;
   const run=(get,set,max,cf)=>{ const [cnt]=bulk(cf,get(),max); for(let i=0;i<cnt;i++){ const l=get(); if(l>=max) break; const c=cf(l); if(S.coins<c) break; S.coins-=c; set(l+1); n++; } };
@@ -459,7 +469,9 @@ function buy(id,quiet){
   if(t==="g"&&k<=S.unlocked){ const st=stOf(k); run(()=>st.g,v=>st.g=v,GMAX,l=>costGate(k,l)); }
   if(!quiet){ if(n){ if(S.sound){ tone(660,0.04,0.035); setTimeout(()=>tone(990,0.05,0.035),60); } buzz(12); save(true); } else if(S.sound) tone(160,0.05,0.03); uiList(true); uiTop(); }
   return n; }
-function unlockNext(sim,quiet){ const L=S.unlocked+1; if(L>NST||S.coins<priceOf(L)) return false; S.coins-=priceOf(L); S.unlocked=L; S.pendPerk++; S.newCards++; const [card,up]=drawCard();
+function unlockNext(sim,quiet){ const L=S.unlocked+1; if(L>NST||S.coins<priceOf(L)) return false; S.coins-=priceOf(L); S.unlocked=L;
+  if(L<=S.best){ /* already reached before a rebirth: no new perk/card */ if(!sim){ buzz(40); if(S.sound) [523,784].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*90)); save(true); uiList(true); uiTop(); floatText("🔓 Stage "+L+" unlocked again",innerWidth/2-90,140); } return true; }
+  S.best=L; S.pendPerk++; S.newCards++; const [card,up]=drawCard();
   if(sim){ const p=PERKS[Math.floor(Math.random()*4)]; S.perks[p.id]=P(p.id)+1; S.pendPerk--; return true; }
   buzz(60); if(S.sound) [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.08,0.05),i*100)); save(true); uiList(true); uiTop();
   if(quiet){ floatText("🔓 Stage "+L+" unlocked! Tap ⭐ for your perk",innerWidth/2-130,140); return true; } goTo(L);
@@ -472,9 +484,10 @@ document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset
 document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 function tankBalls(){ let n=0; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(s) for(const d of s.doors) n+=d.pile.length; } return n; }
 function uiTop(){ if(typeof syncAuto==='function') syncAuto();
-  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+ballCap().toLocaleString("de-DE")+" balls";
+  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"+(S.pm>1?" · ♻️×"+fmt(S.pm):"");
+  const rb=$("rebB"); rb.style.display=(S.unlocked>=REB_MIN||S.rebirths)?"block":"none"; rb.textContent=S.unlocked>=REB_MIN?"♻️ ×"+fmt(rebGain()):"♻️"; rb.className=S.unlocked>=REB_MIN?"ok":""; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+ballCap().toLocaleString("de-DE")+" balls";
   const L=S.unlocked+1, u=$("unlockB");
-  if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+" · gates ×1.35"; u.className=S.coins>=priceOf(L)?"ok":""; }
+  if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+((S.unlocked>=REB_MIN||S.rebirths)?"":" · gates ×1.35"); u.className=S.coins>=priceOf(L)?"ok":""; }
   $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);
   $("cardN").style.display=S.newCards?"block":"none"; $("cardN").textContent=S.newCards; $("perkB").style.boxShadow=S.pendPerk?"0 0 0 2px #ffd400":"none"; }
 function popup(html,acts){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; L.querySelectorAll("button[id]").forEach(b=>b.onclick=()=>{ L.innerHTML=""; (acts&&acts[b.id]||(()=>{}))(); }); return L; }
@@ -491,6 +504,21 @@ $("cardB").onclick=()=>{ S.newCards=0; uiTop(); save(true);
   popup(`<h1>Cards 🃏</h1><p>You get a card for every stage you unlock. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):["","Common","Rare","Epic"][c.r]}</small></div>`; }).join("")}</div><button class="btn" id="ok">Close</button>`); };
 $("musB").onclick=()=>{ S.music=!S.music; syncMusic(); uiTop(); save(true); };
 $("sndB").onclick=()=>{ S.sound=!S.sound; uiTop(); save(true); };
+function rebirth(){ const g=rebGain(); S.pm*=g; S.rebirths=(S.rebirths||0)+1;
+  S.coins=0; S.unlocked=1; S.rate=[1].concat(Array(TYPES.length-1).fill(0)); S.val=Array(TYPES.length).fill(1); S.st={}; S.avg=0;
+  balls=[]; acc.fill(0); rateNow=0; earnWin=0; STG.length=1; getStage(1); goTo(1); save(true); uiList(true); uiTop(); buzz(80);
+  if(S.sound) [392,523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.09,0.05),i*90));
+  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth ${S.rebirths}!</h1><p>All profit is now <b>×${fmt(S.pm)}</b> – forever.</p><button class="btn" id="ok">Let's go</button>`); }
+$("rebB").onclick=()=>{ if(S.unlocked<REB_MIN) return popup(`<h1>♻️ Rebirth</h1><p>Reach stage <b>${REB_MIN}</b> to rebirth.</p><p style="margin-top:6px">Current profit multiplier: <b>×${fmt(S.pm)}</b> (${S.rebirths||0} rebirths)</p><button class="btn" id="ok">OK</button>`);
+  const g=rebGain();
+  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth?</h1><p>You're on stage <b>${S.unlocked}</b>. Rebirth now and all profit gets <b>×${g.toFixed(1)}</b> – forever.</p>
+    <p style="margin-top:8px;font-size:15px">×${fmt(S.pm)} → <b style="color:#c9b6ff">×${fmt(S.pm*g)}</b></p>
+    <p style="margin-top:8px;font-size:12px;color:#9aa0aa">Resets: money, stages, stage upgrades, ball levels.<br>Keeps: perks, cards, ✨ ball prestiges. Further = bigger bonus. Stages you already reached give no new perk/card.</p>
+    <button class="btn" id="yes">♻️ Rebirth ×${g.toFixed(1)}</button><button class="btn g" id="no">Not yet</button>`,{yes:rebirth}); };
+function ballPrestige(k){ if(S.val[k]<bpNeed(k)) return; const g=bpGain(k), t=TYPES[k];
+  popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> goes back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p>
+    <p style="margin-top:8px;font-size:15px">×${fmt(S.bpm[k])} → <b style="color:#c9b6ff">×${fmt(S.bpm[k]*g)}</b></p><p style="margin-top:6px;font-size:12px;color:#9aa0aa">Next prestige needs level ${bpNeed(k)+25}. Survives rebirths.</p>
+    <button class="btn" id="yes">✨ Prestige</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ S.bpm[k]*=g; S.bstar[k]=(S.bstar[k]||0)+1; S.val[k]=1; save(true); uiList(true); uiTop(); buzz(50); if(S.sound) [659,880,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*80)); floatText("✨ "+t.name+" ×"+fmt(S.bpm[k]),innerWidth/2-60,innerHeight-260); }}); }
 function syncAuto(){ $("autoB").classList.toggle("on",!!S.auto); $("autoB").textContent=S.auto?"AUTO ✓":"AUTO"; }
 $("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.auto?"🤖 Auto on: buys the cheapest thing as soon as you can afford it":"Auto-buy off",innerWidth/2-110,innerHeight-260); };
 let autoT=0;
@@ -520,18 +548,19 @@ function openMenu(){ const L=$("layer");
     <div class="srow"><span>📳 Vibration</span><button class="tg ${S.haptic?"on":""}" id="th">${S.haptic?"On":"Off"}</button></div>
     <div class="srow"><span>ℹ️ How to play</span><button class="tg" id="info">Open</button></div>
     <div class="srow"><span>Total earned</span><b>${money(S.total)}</b></div>
+    <div class="srow"><span>♻️ Rebirths</span><b>${S.rebirths||0} · ×${fmt(S.pm||1)} · best stage ${S.best}</b></div>
     <div class="srow"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ZEN_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
     ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
     <button class="btn g" id="rst">Start over</button><button class="btn" id="cl">Close</button></div></div>`;
   const q=s=>L.querySelector(s);
   q("#cl").onclick=()=>{ L.innerHTML=""; };
-  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
+  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, but all profit is multiplied – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
   q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
   q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
   q("#th").onclick=()=>{ S.haptic=!S.haptic; save(true); if(S.haptic) buzz(); openMenu(); };
   q("#upd")&&(q("#upd").onclick=()=>{ try{ NATIVE.checkUpdates(); }catch(e){} });
   q("#inst")&&(q("#inst").onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} });
-  q("#rst").onclick=()=>popup(`<h1>Start over?</h1><p>Money, upgrades, stages, perks and cards are reset.</p><button class="btn" id="yes">Yes, start over</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ const keep={sound:S.sound,music:S.music,haptic:S.haptic,seen:1}; S=Object.assign(fresh(),keep); balls=[]; goTo(1); uiList(true); uiTop(); save(true); }}); }
+  q("#rst").onclick=()=>popup(`<h1>Start over?</h1><p>Money, upgrades, stages, perks and cards are reset.</p><button class="btn" id="yes">Yes, start over</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ const keep={sound:S.sound,music:S.music,haptic:S.haptic,seen:1}; S=Object.assign(fresh(),keep); balls=[]; STG.length=1; getStage(1); goTo(1); uiList(true); uiTop(); save(true); }}); }
 let apkUpdate=null;
 window.ascendApkUpdate=v=>{ apkUpdate=v; floatText("📦 Update ready – see ☰",innerWidth/2-90,90); };
 window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
