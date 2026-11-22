@@ -1,7 +1,7 @@
 {
-  "web": 33,
+  "web": 34,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "App update: checks & installs updates automatically when opened"
+  "notes": "Auto-buy: no more cooldown timer"
 }

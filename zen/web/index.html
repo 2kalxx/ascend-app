@@ -82,7 +82,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 33; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 34; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -491,14 +491,13 @@ $("cardB").onclick=()=>{ S.newCards=0; uiTop(); save(true);
   popup(`<h1>Cards 🃏</h1><p>You get a card for every stage you unlock. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):["","Common","Rare","Epic"][c.r]}</small></div>`; }).join("")}</div><button class="btn" id="ok">Close</button>`); };
 $("musB").onclick=()=>{ S.music=!S.music; syncMusic(); uiTop(); save(true); };
 $("sndB").onclick=()=>{ S.sound=!S.sound; uiTop(); save(true); };
-function syncAuto(){ $("autoB").classList.toggle("on",!!S.auto); $("autoB").textContent=S.auto?(autoWait>0?"AUTO "+Math.ceil(autoWait)+"s":"AUTO ✓"):"AUTO"; }
-$("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.auto?"🤖 Auto on: buys the cheapest thing every 3 s":"Auto-buy off",innerWidth/2-110,innerHeight-260); };
+function syncAuto(){ $("autoB").classList.toggle("on",!!S.auto); $("autoB").textContent=S.auto?"AUTO ✓":"AUTO"; }
+$("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.auto?"🤖 Auto on: buys the cheapest thing as soon as you can afford it":"Auto-buy off",innerWidth/2-110,innerHeight-260); };
 let autoT=0;
-let autoWait=0;
-// AUTO: buys the cheapest thing (upgrade or next stage), then waits 3 seconds before the next purchase
-function autoBuy(dt){ if(!S.auto) return; if(autoWait>0){ autoWait-=dt; return; } autoT+=dt; if(autoT<0.5) return; autoT=0;
+// AUTO: buys the cheapest thing (upgrade or next stage) as soon as it is affordable – no cooldown
+function autoBuy(dt){ if(!S.auto) return; autoT+=dt; if(autoT<0.5) return; autoT=0;
   const o=simOpts(); if(S.unlocked<NST) o.push(["next",priceOf(S.unlocked+1)]); o.sort((a,b)=>a[1]-b[1]); const c=o[0]; if(!c||S.coins<c[1]) return;
-  const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true); if(ok){ autoWait=3; uiList(true); uiTop(); } }
+  const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true); if(ok){ uiList(true); uiTop(); } }
 function syncPanel(){ $("panel").classList.toggle("hid",!!S.panelHidden); $("showB").style.display=S.panelHidden?"block":"none"; resize(); }
 $("hideB").onclick=()=>{ S.panelHidden=true; syncPanel(); save(true); };
 $("showB").onclick=()=>{ S.panelHidden=false; syncPanel(); save(true); uiList(true); };
