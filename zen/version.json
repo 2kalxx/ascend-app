@@ -1,7 +1,7 @@
 {
-  "web": 35,
+  "web": 36,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Rebirth (stage prestige) and ball prestige"
+  "notes": "Rebirth bonuses now add up instead of multiplying"
 }
