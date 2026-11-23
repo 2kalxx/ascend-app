@@ -1,7 +1,7 @@
 {
-  "web": 37,
+  "web": 38,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Balls resting on obstacles are no longer pushed off"
+  "notes": "No more jam breaker: balls stay put and keep their size"
 }

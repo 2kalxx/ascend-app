@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 37; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 38; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -337,9 +337,7 @@ function step(dt,sim){ tankN=tankBalls();
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
     // (no more random kicks: balls resting on an obstacle stay there)
-    // jam breaker: a ball that hasn't moved for 3 s squeezes a little (smaller hitbox) until it is rolling again – nothing disappears
-    if(b.slow>3&&!b.sq){ b.sq=1; b.r0=b.r; b.r=b.r*0.62; }
-    if(b.sq){ if(sp>70) b.sqT=(b.sqT||0)+dt; else b.sqT=0; if(b.sqT>0.4){ b.r=b.r0; b.sq=0; b.sqT=0; } }
+    // (jam breaker removed: stuck balls keep their full size)
     if(b.st!==L){ b.st=L; b.stT=0; } else b.stT+=dt;
     for(const d of s.doors){ if(b.y>d.top-170&&b.y<d.y){ b.stT=0; b.slow=0; }
       // the space under the two ramps is solid: a squeezed ball can't be pushed through a ramp
