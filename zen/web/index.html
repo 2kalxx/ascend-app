@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 40; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 41; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -140,8 +140,9 @@ const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(S.bpm[k]||1
 /* prestige: REBIRTH resets stages + ball upgrades for a permanent profit multiplier based on how far you got;
    BALL PRESTIGE resets one ball's value level for a permanent multiplier on that ball */
 const REB_MIN=10;
-const rebGain=()=>S.unlocked/5;                 // stage 10 → 2, 20 → 4, 50 → 10, 150 → 30; rebirth bonuses ADD up (×4.2 + 3.2 = ×7.4)
-const rebAfter=()=>(S.rebirths?S.pm:0)+rebGain(); // first rebirth replaces the base ×1
+const rebGain=()=>S.unlocked;                   // the button shows ×N → exactly N is added to your multiplier (stage 10 → +10, 25 → +25)
+const mx=n=>n<1000?String(+n.toFixed(1)):fmt(n); // multiplier display: 17.8, not 17
+const rebAfter=()=>(S.pm||1)+rebGain();
 const bpNeed=k=>50+25*(S.bstar[k]||0);          // value level needed for the next ball prestige
 const bpGain=k=>1+S.val[k]/25;                  // level 50 → ×3, 100 → ×5
 const stOf=L=>{ S.st[L]=S.st[L]||{o:0,g:0}; return S.st[L]; };
@@ -483,8 +484,8 @@ document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset
 document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 function tankBalls(){ let n=0; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(s) for(const d of s.doors) n+=d.pile.length; } return n; }
 function uiTop(){ if(typeof syncAuto==='function') syncAuto();
-  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"+(S.pm>1?" · ♻️×"+fmt(S.pm):"");
-  const rb=$("rebB"); rb.style.display=(S.unlocked>=REB_MIN||S.rebirths)?"block":"none"; rb.textContent=S.unlocked>=REB_MIN?"♻️ +"+(S.rebirths?rebGain():rebGain()-1).toFixed(1):"♻️"; rb.className=S.unlocked>=REB_MIN?"ok":""; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+ballCap().toLocaleString("de-DE")+" balls";
+  $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"+(S.pm>1?" · ♻️×"+mx(S.pm):"");
+  const rb=$("rebB"); rb.style.display=(S.unlocked>=REB_MIN||S.rebirths)?"block":"none"; rb.textContent=S.unlocked>=REB_MIN?"♻️ ×"+mx(rebGain()):"♻️"; rb.className=S.unlocked>=REB_MIN?"ok":""; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+ballCap().toLocaleString("de-DE")+" balls";
   const L=S.unlocked+1, u=$("unlockB");
   if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+((S.unlocked>=REB_MIN||S.rebirths)?"":" · gates ×1.35"); u.className=S.coins>=priceOf(L)?"ok":""; }
   $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);
@@ -507,13 +508,13 @@ function rebirth(){ S.pm=rebAfter(); S.rebirths=(S.rebirths||0)+1;
   S.coins=0; S.unlocked=1; S.rate=[1].concat(Array(TYPES.length-1).fill(0)); S.val=Array(TYPES.length).fill(1); S.st={}; S.avg=0;
   balls=[]; acc.fill(0); rateNow=0; earnWin=0; STG.length=1; getStage(1); goTo(1); save(true); uiList(true); uiTop(); buzz(80);
   if(S.sound) [392,523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.09,0.05),i*90));
-  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth ${S.rebirths}!</h1><p>All profit is now <b>×${fmt(S.pm)}</b> – forever.</p><button class="btn" id="ok">Let's go</button>`); }
-$("rebB").onclick=()=>{ if(S.unlocked<REB_MIN) return popup(`<h1>♻️ Rebirth</h1><p>Reach stage <b>${REB_MIN}</b> to rebirth.</p><p style="margin-top:6px">Current profit multiplier: <b>×${fmt(S.pm)}</b> (${S.rebirths||0} rebirths)</p><button class="btn" id="ok">OK</button>`);
+  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth ${S.rebirths}!</h1><p>All profit is now <b>×${mx(S.pm)}</b> – forever.</p><button class="btn" id="ok">Let's go</button>`); }
+$("rebB").onclick=()=>{ if(S.unlocked<REB_MIN) return popup(`<h1>♻️ Rebirth</h1><p>Reach stage <b>${REB_MIN}</b> to rebirth.</p><p style="margin-top:6px">Current profit multiplier: <b>×${mx(S.pm)}</b> (${S.rebirths||0} rebirths)</p><button class="btn" id="ok">OK</button>`);
   const g=rebGain();
-  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth?</h1><p>You're on stage <b>${S.unlocked}</b>. Rebirth now and your profit multiplier gets <b>+${(S.rebirths?g:g-1).toFixed(1)}</b> – forever. The bonus grows with every stage you reach (stage ÷ 5).</p>
-    <p style="margin-top:8px;font-size:15px">×${fmt(S.pm)} + ${(S.rebirths?g:g-1).toFixed(1)} = <b style="color:#c9b6ff">×${fmt(rebAfter())}</b></p>
+  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth?</h1><p>You're on stage <b>${S.unlocked}</b>. Rebirth now and your profit multiplier gets <b>+${mx(g)}</b> – forever. The bonus grows with every stage you reach (+1 per stage).</p>
+    <p style="margin-top:8px;font-size:15px">×${mx(S.pm)} + ${mx(g)} = <b style="color:#c9b6ff">×${mx(rebAfter())}</b></p>
     <p style="margin-top:8px;font-size:12px;color:#9aa0aa">Resets: money, stages, stage upgrades, ball levels.<br>Keeps: perks, cards, ✨ ball prestiges. Further = bigger bonus. Stages you already reached give no new perk/card.</p>
-    <button class="btn" id="yes">♻️ Rebirth → ×${fmt(rebAfter())}</button><button class="btn g" id="no">Not yet</button>`,{yes:rebirth}); };
+    <button class="btn" id="yes">♻️ Rebirth → ×${mx(rebAfter())}</button><button class="btn g" id="no">Not yet</button>`,{yes:rebirth}); };
 function ballPrestige(k){ if(S.val[k]<bpNeed(k)) return; const g=bpGain(k), t=TYPES[k];
   popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> goes back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p>
     <p style="margin-top:8px;font-size:15px">×${fmt(S.bpm[k])} → <b style="color:#c9b6ff">×${fmt(S.bpm[k]*g)}</b></p><p style="margin-top:6px;font-size:12px;color:#9aa0aa">Next prestige needs level ${bpNeed(k)+25}. Survives rebirths.</p>
@@ -547,13 +548,13 @@ function openMenu(){ const L=$("layer");
     <div class="srow"><span>📳 Vibration</span><button class="tg ${S.haptic?"on":""}" id="th">${S.haptic?"On":"Off"}</button></div>
     <div class="srow"><span>ℹ️ How to play</span><button class="tg" id="info">Open</button></div>
     <div class="srow"><span>Total earned</span><b>${money(S.total)}</b></div>
-    <div class="srow"><span>♻️ Rebirths</span><b>${S.rebirths||0} · ×${fmt(S.pm||1)} · best stage ${S.best}</b></div>
+    <div class="srow"><span>♻️ Rebirths</span><b>${S.rebirths||0} · ×${mx(S.pm||1)} · best stage ${S.best}</b></div>
     <div class="srow"><span>Version</span><span style="color:#888">app ${NATIVE&&NATIVE.apkVersion?NATIVE.apkVersion():"web"} · v${ZEN_WEB_VERSION}${NATIVE&&NATIVE.checkUpdates?` · <button class="tg" id="upd">Check updates</button>`:""}</span></div>
     ${apkUpdate&&NATIVE&&NATIVE.installApk?`<button class="btn" id="inst">📦 Install app update</button>`:""}
     <button class="btn g" id="rst">Start over</button><button class="btn" id="cl">Close</button></div></div>`;
   const q=s=>L.querySelector(s);
   q("#cl").onclick=()=>{ L.innerHTML=""; };
-  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and your profit multiplier grows by stage ÷ 5 (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
+  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and your stage number is added to your profit multiplier (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
   q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
   q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
   q("#th").onclick=()=>{ S.haptic=!S.haptic; save(true); if(S.haptic) buzz(); openMenu(); };

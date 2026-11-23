@@ -1,7 +1,7 @@
 {
-  "web": 40,
+  "web": 41,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Rebirth button shows the bonus you add"
+  "notes": "Rebirth adds exactly the shown ×N (= your stage) to your multiplier"
 }
