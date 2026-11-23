@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 38; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 39; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -441,8 +441,8 @@ function render(){
 function goTo(L){ cam=OY[L]-10; camV=0; clampCam(); }
 
 /* ================= UI ================= */
-function bulk(costFn,lvl,max){ const m=S.mode; let n=0,c=0,l=lvl; const lim=m==="max"?5000:+m;
-  while(n<lim&&l<max){ const x=costFn(l); if(m!=="1"&&c+x>S.coins&&n>0) break; if(m==="max"&&c+x>S.coins) break; c+=x; n++; l++; } if(n===0){ n=1; c=costFn(lvl); } return [n,c]; }
+function bulk(costFn,lvl,max,mode){ const m=mode||S.mode; let n=0,c=0,l=lvl; const lim=m==="max"?5000:+m;
+  while(n<lim&&l<max){ const x=costFn(l); if(m==="max"&&c+x>S.coins) break; c+=x; n++; l++; } if(n===0){ n=1; c=costFn(lvl); } return [n,c]; }
 function btn(id,lvl,max,costFn,label){ if(lvl>=max) return `<button class="buy max" disabled><span>MAX</span><em>${label||"Lv "+lvl}</em></button>`;
   const [n,c]=bulk(costFn,lvl,max); return `<button class="buy ${S.coins>=c?"ok":""}" data-b="${id}"><span>${money(c)}</span><em>${label||"Lv "+lvl}${n>1?" +"+n:""}</em></button>`; }
 let listSig="";
@@ -458,9 +458,9 @@ function uiList(force){
       h+=`<div class="srow2"><div class="num">${L}</div><div class="rt" data-go="${L}"><b>${stageName(L)}</b><small>size ${Math.round(shrinkOf(L)*100)}% · gates ×${gateBoost(L).toFixed(2)}</small></div>${btn("o"+L,st.o,OMAX,l=>costObs(L,l))}${btn("g"+L,st.g,GMAX,l=>costGate(L,l))}</div>`; } }
   if(!force&&h===listSig) return; const sc_=$("list").scrollTop; listSig=h; $("list").innerHTML=h; $("list").scrollTop=sc_; }
 $("list").addEventListener("click",e=>{ const bp=e.target.closest("[data-bp]"); if(bp) return ballPrestige(+bp.dataset.bp); const b=e.target.closest("[data-b]"); if(b) return buy(b.dataset.b); const g=e.target.closest("[data-go]"); if(g) goTo(+g.dataset.go); });
-function buy(id,quiet){
+function buy(id,quiet,one){
   const t=id[0], k=+id.slice(1); let n=0;
-  const run=(get,set,max,cf)=>{ const [cnt]=bulk(cf,get(),max); for(let i=0;i<cnt;i++){ const l=get(); if(l>=max) break; const c=cf(l); if(S.coins<c) break; S.coins-=c; set(l+1); n++; } };
+  const run=(get,set,max,cf)=>{ const [cnt,tot]=bulk(cf,get(),max,one?"1":null); if(S.coins<tot) return; /* x10 only buys when all 10 are affordable */ for(let i=0;i<cnt;i++){ const l=get(); if(l>=max) break; const c=cf(l); if(S.coins<c) break; S.coins-=c; set(l+1); n++; } };
   if(t==="u"){ const c=costUnlock(k); if(S.coins>=c&&S.unlocked>=GATE[k]&&!S.rate[k]){ S.coins-=c; S.rate[k]=1; n=1; } }
   if(t==="r") run(()=>S.rate[k],v=>S.rate[k]=v,RMAX,l=>costRate(k,l));
   if(t==="v") run(()=>S.val[k],v=>S.val[k]=v,1e9,l=>costVal(k,l));
@@ -524,7 +524,7 @@ let autoT=0;
 // AUTO: buys the cheapest thing (upgrade or next stage) as soon as it is affordable – no cooldown
 function autoBuy(dt){ if(!S.auto) return; autoT+=dt; if(autoT<0.5) return; autoT=0;
   const o=simOpts(); if(S.unlocked<NST) o.push(["next",priceOf(S.unlocked+1)]); o.sort((a,b)=>a[1]-b[1]); const c=o[0]; if(!c||S.coins<c[1]) return;
-  const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true); if(ok){ uiList(true); uiTop(); } }
+  const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true,true); if(ok){ uiList(true); uiTop(); } }
 function syncPanel(){ $("panel").classList.toggle("hid",!!S.panelHidden); $("showB").style.display=S.panelHidden?"block":"none"; resize(); }
 $("hideB").onclick=()=>{ S.panelHidden=true; syncPanel(); save(true); };
 $("showB").onclick=()=>{ S.panelHidden=false; syncPanel(); save(true); uiList(true); };
