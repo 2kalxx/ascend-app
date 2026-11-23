@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 44; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 45; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -188,6 +188,8 @@ const TIPS=[[1,0.42,"Spend your cash on upgrades like ball value and spawn time!
  [3,0.4,"Unlock the next stage: every new stage makes ALL gates pay ×1.35!"],[4,0.4,"Tap anywhere on the board to drop extra balls."],[5,0.35,"Every new stage gives you a ⭐ perk and a 🃏 card."],
  [6,0.3,"Turn on AUTO to buy the cheapest upgrade (and stages) for you."],[8,0.3,"The middle part of a gate slides – catch it for the best multiplier!"]];
 function spinEdges(s){ const L=s.len, a=s.a;
+  if(s.kind==="fan"){ const o=[]; for(let i=0;i<s.n;i++){ const q=a+i*2*Math.PI/s.n; o.push({x1:s.x,y1:s.y,x2:s.x+Math.cos(q)*L,y2:s.y+Math.sin(q)*L,w:s.th}); } return o; }
+  if(s.kind==="wiper") return [{x1:s.x,y1:s.y,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:s.th}];
   if(s.kind==="xballs"||s.kind==="plus"){ const w=s.kind==="plus"?s.th:10; return [{x1:s.x-Math.cos(a)*L,y1:s.y-Math.sin(a)*L,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w},{x1:s.x+Math.sin(a)*L,y1:s.y-Math.cos(a)*L,x2:s.x-Math.sin(a)*L,y2:s.y+Math.cos(a)*L,w}]; }
   return [{x1:s.x-Math.cos(a)*L,y1:s.y-Math.sin(a)*L,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:12}]; }
 function spinBalls(s){ if(s.kind!=="xballs") return null; const L=s.len, a=s.a; return [0,1,2,3].map(i=>[s.x+Math.cos(a+i*Math.PI/2)*L,s.y+Math.sin(a+i*Math.PI/2)*L]); }
@@ -228,13 +230,27 @@ function buildStage(L){
       case "lanes": S_(120,c-28,120,c+28,12); S_(240,c-28,240,c+28,12); break;
       case "stars": star(180,c,34,24,8,0); break;
       default: diamond(180,c,40,20); } };
-  const mills3=y=>{ const xs=[60,180,300]; xs.forEach((x,i)=>b.spins.push({x:MX(x),y:oy+y+70,len:54*k,a:i%2?Math.PI/4:0,w:(i%2?-1:1)*1.4,kind:"plus",th:10,hub:1})); };
-  const mills2=y=>{ [90,270].forEach((x,i)=>b.spins.push({x:MX(x),y:oy+y+95,len:84*k,a:i?Math.PI/4:0,w:(i?-1:1)*0.9,kind:"plus",th:11,hub:1})); };
-  const cupBlock=y=>{ const rim=y+90; /* W-shaped funnel into two cups */ S_(0,y+10,76,rim-14,14); S_(144,rim-14,180,y+40,14); S_(180,y+40,216,rim-14,14); S_(W,y+10,W-76,rim-14,14);
-    [110,250].forEach((cx,i)=>b.cups.push({x:MX(cx),y:oy+rim+28,a:0,av:0,st:0,dir:i?-1:1,t:0,pile:[],pileN:[]})); };
-  const SECT={flavor:[90,flavor],mills3:[150,mills3],mills2:[200,mills2],cup:[260,cupBlock]};
-  const ORDER=["flavor","mills3","cup","mills2","flavor","cup","mills3","mills2"];
-  if(L<=NEWL){ let zi=0; for(const [y0,y1] of zones){ let y=y0, i=(L*3+zi++*2)%ORDER.length; while(true){ const [hh,fn]=SECT[ORDER[i%ORDER.length]]; if(y+hh>y1) break; fn(y); y+=hh; i++; } } }
+  /* ---- stages 1-10: every stage has its own machine ---- */
+  const PLUS=(x,y,len,w,a,th)=>b.spins.push({x:MX(x),y:oy+y,len:len*k,a:a||0,w,kind:"plus",th:th||10,hub:1});
+  const BAR=(x,y,len,w,a)=>b.spins.push({x:MX(x),y:oy+y,len:len*k,a:a||0,w,kind:"bar",hub:1});
+  const FAN=(x,y,len,n,w,a)=>b.spins.push({x:MX(x),y:oy+y,len:len*k,a:a||0,w,kind:"fan",n,th:10,hub:1});
+  const XB=(x,y,len,w,a)=>b.spins.push({x:MX(x),y:oy+y,len:len*k,a:a||0,w,kind:"xballs",br:16*k,hub:1});
+  const WIPER=(x,y,len,a0,amp,f)=>b.spins.push({x:MX(x),y:oy+y,len,a:a0,a0:mir?Math.PI-a0:a0,amp:mir?-amp:amp,f,t:r()*6,w:0,kind:"wiper",th:12,hub:1});
+  const CUP=(x,y,o)=>b.cups.push(Object.assign({x:MX(x),y:oy+y,a:0,av:0,st:0,dir:1,t:0,pile:[],pileN:[],w:40,h:28,cols:5,rows:4,spd:5},o||{}));
+  const DESIGN={
+   1:[300,(y,i)=>{ const m=i%2?-1:1; PLUS(i%2?250:110,y+100,80,1.0*m); PLUS(i%2?85:275,y+175,62,-1.3*m,Math.PI/4); C_(i%2?60:300,y+40,18); C_(i%2?300:60,y+255,18); }], // windmill garden
+   2:[280,(y,i)=>{ FAN(180,y+80,70,3,i%2?1.1:-1.1); FAN(80,y+200,60,3,i%2?-1.4:1.4); FAN(280,y+200,60,3,i%2?-1.4:1.4,1); tri(180,y+225,22); }], // three-blade fans in triangles
+   3:[230,(y,i)=>{ const L_=i%2===0; WIPER(L_?4:W-4,y+50,205,L_?0.4:Math.PI-0.4,0.55,1.5+0.2*(i%3)); for(const x of (L_?[250,320]:[40,110])) tri(x,y+165,15); }], // pendulum wipers
+   4:[230,(y,i)=>{ const L_=i%2===0; S_(L_?0:W,y,L_?150:W-150,y+50,14); CUP(L_?190:170,y+92,{fix:L_?1:-1}); }], // cup ladder: shelf → cup → spills onto the next shelf
+   5:[430,(y,i)=>{ S_(0,y,88,y+110,14); S_(W,y,W-88,y+110,14); CUP(180,y+176,{w:85,h:50,cols:11,rows:7,spd:2.6}); PLUS(60,y+350,54,1.4); PLUS(180,y+350,54,-1.4,Math.PI/4); PLUS(300,y+350,54,1.4); }], // giant bucket + mills
+   6:[260,(y,i)=>{ XB(i%2?250:110,y+90,70,i%2?-1.2:1.2); XB(i%2?110:250,y+180,70,i%2?1.2:-1.2,Math.PI/4); C_(i%2?60:300,y+45,15,{bump:1}); C_(i%2?300:60,y+235,15,{bump:1}); }], // bumper crosses
+   7:[240,(y,i)=>{ [45,135,225,315].forEach((x,j)=>PLUS(x,y+60,42,(j%2?-1:1)*1.6,j%2?Math.PI/4:0,9)); diamond(90,y+175,30,30); diamond(270,y+175,30,30); BAR(180,y+175,48,i%2?2:-2); }], // gear wall
+   8:[640,(y,i)=>{ S_(120,y,120,y+455,14); S_(240,y,240,y+455,14); for(let j=0;j<4;j++) for(const [x,q] of [[60,0],[180,1],[300,2]]) BAR(x,y+70+j*110,50,((j+q)%2?-1:1)*1.8,j*0.7);
+       for(const x of [60,180,300]) CUP(x,y+508,{fix:x<180?1:x>180?-1:0}); }], // paddle lanes into three cups
+   9:[300,(y,i)=>{ FAN(180,y+110,82,6,i%2?0.8:-0.8); FAN(55,y+240,46,5,1.5); FAN(305,y+240,46,5,-1.5); star(180,y+255,28,20,8,0); }], // star fans
+   10:[390,(y,i)=>{ FAN(95,y+95,78,3,1.2); FAN(265,y+95,78,3,-1.2,Math.PI/3); S_(0,y+190,48,y+225,12); S_(W,y+190,W-48,y+225,12); for(const x of [60,180,300]) CUP(x,y+290,{}); }] // twin turbines + spill row
+  };
+  if(L<=NEWL){ const [uh,fn]=DESIGN[L]; let ui=0; for(const [y0,y1] of zones){ let y=y0; while(y+uh<=y1){ fn(y,ui++); y+=uh; } if(y1-y>120) flavor(y); } }
   else for(const [y0,y1] of zones){ if(y1-y0<60) continue;
     switch(th.id){
       case "dots": { const rows=[]; for(let y=y0+20,i=0;y<=y1-20;y+=74,i++) rows.push([y,i]);
@@ -267,8 +283,8 @@ function buildStage(L){
     for(const side of [0,1]) for(let y=90+r()*40;y<h-90;y+=120+r()*40){ if(gy.some(g=>Math.abs(g-y)<95)) continue; const X=side?W:0, d=side?-1:1, pts=[[X,y],[X+d*34,y+30],[X,y+60]];
       if(pts.some(([x,yy])=>near(x,oy+yy))||near(X+d*18,oy+y+30)) continue; const id=b.polys.length+1, P2=pts.map(([x,yy])=>[x,oy+yy]); b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const a=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:a[0],y1:a[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } } }
   // fill straight drop channels: no ball may fall far along a wall or down an open column (wall wedges at the edges, small pegs inside)
-  { const R=7, hitAt=(x,y)=>b.circ.some(c=>Math.abs(c.y-y)<c.r+R&&Math.hypot(c.x-x,c.y-y)<c.r+R)||b.segs.some(g=>y>=Math.min(g.y1,g.y2)-20&&y<=Math.max(g.y1,g.y2)+20&&ptSeg(x,y,g)<g.w/2+R)||b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+R)||b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<46+R);
-    const clear=(x,y,rad)=>!b.circ.some(c=>{ const g=Math.hypot(c.x-x,c.y-y)-c.r-rad; return g<26; })&&!b.segs.some(g=>y>=Math.min(g.y1,g.y2)-60&&y<=Math.max(g.y1,g.y2)+60&&ptSeg(x,y,g)<g.w/2+rad+26)&&!b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+rad+26)&&!b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<46+rad+26)&&!b.doors.length;
+  { const R=7, hitAt=(x,y)=>b.circ.some(c=>Math.abs(c.y-y)<c.r+R&&Math.hypot(c.x-x,c.y-y)<c.r+R)||b.segs.some(g=>y>=Math.min(g.y1,g.y2)-20&&y<=Math.max(g.y1,g.y2)+20&&ptSeg(x,y,g)<g.w/2+R)||b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+R)||b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<c.w+c.h+R);
+    const clear=(x,y,rad)=>!b.circ.some(c=>{ const g=Math.hypot(c.x-x,c.y-y)-c.r-rad; return g<26; })&&!b.segs.some(g=>y>=Math.min(g.y1,g.y2)-60&&y<=Math.max(g.y1,g.y2)+60&&ptSeg(x,y,g)<g.w/2+rad+26)&&!b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+rad+26)&&!b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<c.w+c.h+rad+20)&&!b.doors.length;
     const wedge=(side,y,dep)=>{ const X=side?W:0, d=side?-1:1, P2=[[X,y-30-dep*0.3],[X+d*dep,y],[X,y+30+dep*0.3]]; const smp=[]; for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; for(let t=0;t<1;t+=0.2) smp.push([q[0]+(c[0]-q[0])*t,q[1]+(c[1]-q[1])*t]); } const nar=d=>d>-3&&d<26; /* overlapping a solid is fine, a narrow slit is not; never overlap another polygon */ if(smp.some(([x,yy])=>b.segs.some(g=>g.poly?ptSeg(x,yy,g)<g.w/2+26:nar(ptSeg(x,yy,g)-g.w/2))||b.circ.some(c=>nar(Math.hypot(c.x-x,c.y-yy)-c.r))||b.spins.some(p=>Math.hypot(p.x-x,p.y-yy)<p.len+26))) return false; const id=b.polys.length+1; b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:q[0],y1:q[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } return true; };
     const inGate=y=>gy.some(g=>Math.abs(oy+g-y)<64);
     for(let pass=0;pass<6;pass++){ let added=0;
@@ -320,16 +336,17 @@ const tankSurface=d=>d.y-7-Math.ceil(d.pile.length/PCOL)*PROW;
 const tankCap=d=>Math.floor((d.y-7-(d.top+14))/PROW)*PCOL;
 function pilePos(d,i){ const row=Math.floor(i/PCOL), col=i%PCOL, w=d.x2-d.x1-14; return [d.x1+7+PR+col*((w-2*PR)/(PCOL-1))+(row%2?2:0), d.y-7-PR-row*PROW]; }
 /* ---- tipping cups (stages 1-10): fill up, tip over to one side, spill everything, swing back ---- */
-const NEWL=10, CUPW=40, CUPH=28, CUPCAP=20;
-function cupPile(c,i){ const row=Math.floor(i/5), col=i%5, lx=-CUPW+5+PR+col*13.6+(row%2?2:0), ly=CUPH-4-PR-row*12, ca=Math.cos(c.a), sa=Math.sin(c.a); return [c.x+ca*lx-sa*ly, c.y+sa*lx+ca*ly, lx, ly]; }
-function cupEdges(c){ const ca=Math.cos(c.a), sa=Math.sin(c.a), P=[[-CUPW,-CUPH],[-CUPW,CUPH],[CUPW,CUPH],[CUPW,-CUPH]].map(([x,y])=>[c.x+ca*x-sa*y,c.y+sa*x+ca*y]);
+const NEWL=10;
+const cupCap=c=>c.cols*c.rows;
+function cupPile(c,i){ const row=Math.floor(i/c.cols), col=i%c.cols, lx=-c.w+5+PR+col*13.6+(row%2?2:0), ly=c.h-4-PR-row*12, ca=Math.cos(c.a), sa=Math.sin(c.a); return [c.x+ca*lx-sa*ly, c.y+sa*lx+ca*ly, lx, ly]; }
+function cupEdges(c){ const ca=Math.cos(c.a), sa=Math.sin(c.a), P=[[-c.w,-c.h],[-c.w,c.h],[c.w,c.h],[c.w,-c.h]].map(([x,y])=>[c.x+ca*x-sa*y,c.y+sa*x+ca*y]);
   return [0,1,2].map(i=>({x1:P[i][0],y1:P[i][1],x2:P[i+1][0],y2:P[i+1][1],w:6})); }
 function dumpCup(c,push){ for(let i=0;i<c.pile.length;i++){ const [x,y]=cupPile(c,i), k=c.pile[i]; balls.push({k,x,y,vx:-(y-c.y)*c.av+c.dir*push+(Math.random()-.5)*20,vy:(x-c.x)*c.av,r:radius(k),norm:c.pileN[i],gm:0,slow:0,life:0,st:0,stT:0}); } c.pile=[]; c.pileN=[]; }
 function updCup(c,dt,sim){
-  if(c.st===0){ c.t+=dt; if(c.pile.length>=CUPCAP||(c.t>20&&c.pile.length)){ c.st=1; c.dir=-c.dir; c.t=0; if(!sim&&S.sound) tone(300,0.06,0.03); } }
-  else if(c.st===1){ c.av=c.dir*5; c.a+=c.av*dt; if(Math.abs(c.a)>=1.6&&c.pile.length) dumpCup(c,50); if(Math.abs(c.a)>=2.3){ c.a=c.dir*2.3; c.av=0; c.st=2; c.t=0; } }
+  if(c.st===0){ c.t+=dt; if(c.pile.length>=cupCap(c)||(c.t>20&&c.pile.length)){ c.st=1; c.dir=c.fix||-c.dir; c.t=0; if(!sim&&S.sound) tone(300,0.06,0.03); } }
+  else if(c.st===1){ c.av=c.dir*c.spd; c.a+=c.av*dt; if(Math.abs(c.a)>=1.6&&c.pile.length) dumpCup(c,50); if(Math.abs(c.a)>=2.3){ c.a=c.dir*2.3; c.av=0; c.st=2; c.t=0; } }
   else if(c.st===2){ c.t+=dt; if(c.t>0.2) c.st=3; }
-  else { c.av=-c.dir*4; c.a+=c.av*dt; if(c.a*c.dir<=0){ c.a=0; c.av=0; c.st=0; c.t=0; } } }
+  else { c.av=-c.dir*c.spd*0.8; c.a+=c.av*dt; if(c.a*c.dir<=0){ c.a=0; c.av=0; c.st=0; c.t=0; } } }
 function releaseTank(d,sim){ for(let i=0;i<d.pile.length;i++){ const [x,y]=pilePos(d,i), k=d.pile[i]; balls.push({k,x,y,vx:(Math.random()-.5)*20,vy:20,r:radius(k),norm:d.pileN[i],gm:0,slow:0,life:0,st:0,stT:0}); }
   d.pile=[]; d.pileN=[]; d.open=true; d.openT=0; if(!sim&&S.sound) tone(220,0.08,0.04); }
 function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
@@ -338,14 +355,14 @@ function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
     for(const sg of cell.g) segHit(b,sg,0.25);
     for(const pg of cell.p) if(inPoly(b.x,b.y,pg.pts)) popOut(b,pg); }
   for(const d of s.doors) if(!d.open&&Math.abs(b.y-d.y)<b.r+10&&b.x>d.x1-10&&b.x<d.x2+10) segHit(b,{x1:d.x1,y1:d.y,x2:d.x2,y2:d.y,w:14},0.2);
-  for(const c of s.cups){ const dx=b.x-c.x, dy=b.y-c.y; if(dx*dx+dy*dy>4900) continue; for(const e of cupEdges(c)) segHit(b,e,0.3,-dy*c.av,dx*c.av); }
+  for(const c of s.cups){ const dx=b.x-c.x, dy=b.y-c.y; const rr=c.w+c.h+20; if(dx*dx+dy*dy>rr*rr) continue; for(const e of cupEdges(c)) segHit(b,e,0.3,-dy*c.av,dx*c.av); }
   for(const sp of s.spins){ const dx=b.x-sp.x, dy=b.y-sp.y, R=sp.len+(sp.br||0)+b.r+8; if(dx*dx+dy*dy>R*R) continue; for(const e of spinEdges(sp)) segHit(b,e,0.4,-dy*sp.w,dx*sp.w);
     const bl=spinBalls(sp); if(bl) for(const [x,y] of bl) if(collide(b,x,y,sp.br,0.7,-(y-sp.y)*sp.w,(x-sp.x)*sp.w)&&!sim) tick(y-s.oy); } }
 function step(dt,sim){ tankN=tankBalls();
   gt+=dt; if(fever>0) fever-=dt;
   const rm=rateMult()*(fever>0?2:1);
   for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); } }
-  const doorStages=[]; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(!s) continue; for(const sp of s.spins) sp.a+=sp.w*dt; for(const q of s.gates) moveGate(q,gt); for(const c of s.cups) updCup(c,dt,sim); if(s.doors.length){ doorStages.push(s); for(const d of s.doors) d.cnt=0; } }
+  const doorStages=[]; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(!s) continue; for(const sp of s.spins){ if(sp.kind==="wiper"){ sp.t+=dt; sp.a=sp.a0+sp.amp*Math.sin(sp.t*sp.f); sp.w=sp.amp*sp.f*Math.cos(sp.t*sp.f); } else sp.a+=sp.w*dt; } for(const q of s.gates) moveGate(q,gt); for(const c of s.cups) updCup(c,dt,sim); if(s.doors.length){ doorStages.push(s); for(const d of s.doors) d.cnt=0; } }
   const g=G0*(1-0.05*C("gw")), EY=exitY(), wm=worldMult(), lucky=1+0.1*C("hh");
   // ball ↔ ball (linked-list grid, only touched cells are cleared)
   const nb=balls.length; let nu=0; if(nb>gNext.length){ const n2=Math.ceil(nb*1.5); gNext=new Int32Array(n2); gUsed=new Int32Array(n2); }
@@ -374,7 +391,7 @@ function step(dt,sim){ tankN=tankBalls();
       // the space under the two ramps is solid: a squeezed ball can't be pushed through a ramp
       if(b.y<d.y&&(b.x<d.x1||b.x>d.x2)){ const dx=b.x<d.x1?b.x:W-b.x, ry=d.rampY0+dx*d.rampK-7-b.r; if(b.y>ry&&b.y<ry+60){ b.y=ry; if(b.vy>0) b.vy=0; } } }
     let gone=false;
-    for(const c of s.cups){ if(c.st) continue; const dx=b.x-c.x, dy=b.y-c.y; if(Math.abs(dx)<CUPW-3-b.r+3&&dy>-CUPH&&dy<CUPH&&dy>=CUPH-4-Math.ceil((c.pile.length+1)/5)*12-b.r){ c.pile.push(b.k); c.pileN.push(b.norm); gone=true; break; } }
+    for(const c of s.cups){ if(c.st) continue; const dx=b.x-c.x, dy=b.y-c.y; if(Math.abs(dx)<c.w-b.r&&dy>-c.h&&dy<c.h&&dy>=c.h-4-Math.ceil((c.pile.length+1)/c.cols)*12-b.r){ c.pile.push(b.k); c.pileN.push(b.norm); gone=true; break; } }
     for(const d of s.doors){ if(b.x>d.x1&&b.x<d.x2&&b.y>d.top&&b.y<d.y+40) d.cnt++;
       // tank closed: a ball that reaches the pile becomes part of it (stacked neatly until the pile reaches the top)
       if(!d.open&&b.x>d.x1+4&&b.x<d.x2-4&&b.y>d.top&&b.y>=tankSurface(d)-b.r){ d.pile.push(b.k); d.pileN.push(b.norm); gone=true; break; } }
@@ -451,7 +468,7 @@ function render(){
       const bl=spinBalls(p); if(bl) for(const [x,y] of bl){ ctx.beginPath(); ctx.arc(x,y,p.br,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#39e639"; ctx.lineWidth=2.5; ctx.stroke(); ctx.strokeStyle="#141518"; } }
     for(const c of s.cups){ for(let i=0;i<c.pile.length;i++){ const [x,y]=cupPile(c,i), t=TYPES[c.pile[i]]; ctx.fillStyle=t.rainbow?`hsl(${(gt*120)%360},90%,65%)`:t.col; ctx.beginPath(); ctx.arc(x,y,PR,0,Math.PI*2); ctx.fill(); }
       ctx.strokeStyle="#141518"; ctx.lineWidth=6; ctx.lineJoin="round"; const e=cupEdges(c); ctx.beginPath(); ctx.moveTo(e[0].x1,e[0].y1); for(const q of e) ctx.lineTo(q.x2,q.y2); ctx.stroke();
-      if(!c.st&&c.pile.length){ ctx.fillStyle="#ffd400"; ctx.fillRect(c.x-CUPW,c.y+CUPH+6,2*CUPW*c.pile.length/CUPCAP,3); } }
+      if(!c.st&&c.pile.length){ ctx.fillStyle="#ffd400"; ctx.fillRect(c.x-c.w,c.y+c.h+6,2*c.w*c.pile.length/cupCap(c),3); } }
     for(const d of s.doors){ for(let k=0;k<TYPES.length;k++){ let any=false; ctx.beginPath(); for(let i=0;i<d.pile.length;i++){ if(d.pile[i]!==k) continue; const [x,y]=pilePos(d,i); ctx.moveTo(x+PR,y); ctx.arc(x,y,PR,0,Math.PI*2); any=true; } if(any){ ctx.fillStyle=TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col; ctx.fill(); } }
       if(!d.open){ ctx.fillStyle="#141518"; ctx.fillRect(d.x1,d.y-7,d.x2-d.x1,14); }
       else { ctx.fillStyle="rgba(255,212,0,.35)"; ctx.fillRect(d.x1,d.y-2,d.x2-d.x1,4); } }
