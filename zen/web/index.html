@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 42; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 43; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -461,7 +461,7 @@ function uiList(force){
 $("list").addEventListener("click",e=>{ const bp=e.target.closest("[data-bp]"); if(bp) return ballPrestige(+bp.dataset.bp); const b=e.target.closest("[data-b]"); if(b) return buy(b.dataset.b); const g=e.target.closest("[data-go]"); if(g) goTo(+g.dataset.go); });
 function buy(id,quiet,one){
   const t=id[0], k=+id.slice(1); let n=0;
-  const run=(get,set,max,cf)=>{ const [cnt,tot]=bulk(cf,get(),max,one?"1":null); if(S.coins<tot) return; /* x10 only buys when all 10 are affordable */ for(let i=0;i<cnt;i++){ const l=get(); if(l>=max) break; const c=cf(l); if(S.coins<c) break; S.coins-=c; set(l+1); n++; } };
+  const run=(get,set,max,cf)=>{ const [cnt,tot]=bulk(cf,get(),max,one||null); if(S.coins<tot) return; /* x10 only buys when all 10 are affordable */ for(let i=0;i<cnt;i++){ const l=get(); if(l>=max) break; const c=cf(l); if(S.coins<c) break; S.coins-=c; set(l+1); n++; } };
   if(t==="u"){ const c=costUnlock(k); if(S.coins>=c&&S.unlocked>=GATE[k]&&!S.rate[k]){ S.coins-=c; S.rate[k]=1; n=1; } }
   if(t==="r") run(()=>S.rate[k],v=>S.rate[k]=v,RMAX,l=>costRate(k,l));
   if(t==="v") run(()=>S.val[k],v=>S.val[k]=v,1e9,l=>costVal(k,l));
@@ -526,7 +526,7 @@ let autoT=0;
 function autoBuy(dt){ if(!S.auto) return; autoT+=dt; if(autoT<0.5) return; autoT=0;
   if(S.unlocked<NST&&S.coins>=priceOf(S.unlocked+1)){ if(unlockNext(false,true)){ uiList(true); uiTop(); } return; } // next stage first whenever it is affordable
   const o=simOpts(); if(S.unlocked<NST) o.push(["next",priceOf(S.unlocked+1)]); o.sort((a,b)=>a[1]-b[1]); const c=o[0]; if(!c||S.coins<c[1]) return;
-  const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true,true); if(ok){ uiList(true); uiTop(); } }
+  const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true,S.mode==="max"?"max":"1"); /* MAX mode: AUTO buys as many levels as it can right away */ if(ok){ uiList(true); uiTop(); } }
 function syncPanel(){ $("panel").classList.toggle("hid",!!S.panelHidden); $("showB").style.display=S.panelHidden?"block":"none"; resize(); }
 $("hideB").onclick=()=>{ S.panelHidden=true; syncPanel(); save(true); };
 $("showB").onclick=()=>{ S.panelHidden=false; syncPanel(); save(true); uiList(true); };

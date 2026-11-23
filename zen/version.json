@@ -1,7 +1,7 @@
 {
-  "web": 42,
+  "web": 43,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "AUTO unlocks the next stage first whenever it is affordable"
+  "notes": "MAX buys instantly (also with AUTO)"
 }
