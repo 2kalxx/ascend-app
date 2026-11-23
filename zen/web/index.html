@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 41; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 42; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -524,6 +524,7 @@ $("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.aut
 let autoT=0;
 // AUTO: buys the cheapest thing (upgrade or next stage) as soon as it is affordable – no cooldown
 function autoBuy(dt){ if(!S.auto) return; autoT+=dt; if(autoT<0.5) return; autoT=0;
+  if(S.unlocked<NST&&S.coins>=priceOf(S.unlocked+1)){ if(unlockNext(false,true)){ uiList(true); uiTop(); } return; } // next stage first whenever it is affordable
   const o=simOpts(); if(S.unlocked<NST) o.push(["next",priceOf(S.unlocked+1)]); o.sort((a,b)=>a[1]-b[1]); const c=o[0]; if(!c||S.coins<c[1]) return;
   const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true,true); if(ok){ uiList(true); uiTop(); } }
 function syncPanel(){ $("panel").classList.toggle("hid",!!S.panelHidden); $("showB").style.display=S.panelHidden?"block":"none"; resize(); }
