@@ -1,7 +1,7 @@
 {
-  "web": 39,
+  "web": 40,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "x10 only buys when all 10 levels are affordable"
+  "notes": "Rebirth button shows the bonus you add"
 }

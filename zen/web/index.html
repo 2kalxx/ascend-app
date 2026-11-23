@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 39; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 40; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -484,7 +484,7 @@ document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b
 function tankBalls(){ let n=0; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(s) for(const d of s.doors) n+=d.pile.length; } return n; }
 function uiTop(){ if(typeof syncAuto==='function') syncAuto();
   $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"+(S.pm>1?" · ♻️×"+fmt(S.pm):"");
-  const rb=$("rebB"); rb.style.display=(S.unlocked>=REB_MIN||S.rebirths)?"block":"none"; rb.textContent=S.unlocked>=REB_MIN?"♻️ ×"+fmt(rebAfter()):"♻️"; rb.className=S.unlocked>=REB_MIN?"ok":""; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+ballCap().toLocaleString("de-DE")+" balls";
+  const rb=$("rebB"); rb.style.display=(S.unlocked>=REB_MIN||S.rebirths)?"block":"none"; rb.textContent=S.unlocked>=REB_MIN?"♻️ +"+(S.rebirths?rebGain():rebGain()-1).toFixed(1):"♻️"; rb.className=S.unlocked>=REB_MIN?"ok":""; $("ballCount").textContent="● "+(balls.length+tankBalls()).toLocaleString("de-DE")+" / "+ballCap().toLocaleString("de-DE")+" balls";
   const L=S.unlocked+1, u=$("unlockB");
   if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+((S.unlocked>=REB_MIN||S.rebirths)?"":" · gates ×1.35"); u.className=S.coins>=priceOf(L)?"ok":""; }
   $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);
@@ -510,8 +510,8 @@ function rebirth(){ S.pm=rebAfter(); S.rebirths=(S.rebirths||0)+1;
   popup(`<div style="font-size:40px">♻️</div><h1>Rebirth ${S.rebirths}!</h1><p>All profit is now <b>×${fmt(S.pm)}</b> – forever.</p><button class="btn" id="ok">Let's go</button>`); }
 $("rebB").onclick=()=>{ if(S.unlocked<REB_MIN) return popup(`<h1>♻️ Rebirth</h1><p>Reach stage <b>${REB_MIN}</b> to rebirth.</p><p style="margin-top:6px">Current profit multiplier: <b>×${fmt(S.pm)}</b> (${S.rebirths||0} rebirths)</p><button class="btn" id="ok">OK</button>`);
   const g=rebGain();
-  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth?</h1><p>You're on stage <b>${S.unlocked}</b>. Rebirth now and your profit multiplier gets <b>+${g.toFixed(1)}</b> – forever.</p>
-    <p style="margin-top:8px;font-size:15px">×${fmt(S.pm)} → <b style="color:#c9b6ff">×${fmt(rebAfter())}</b></p>
+  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth?</h1><p>You're on stage <b>${S.unlocked}</b>. Rebirth now and your profit multiplier gets <b>+${(S.rebirths?g:g-1).toFixed(1)}</b> – forever. The bonus grows with every stage you reach (stage ÷ 5).</p>
+    <p style="margin-top:8px;font-size:15px">×${fmt(S.pm)} + ${(S.rebirths?g:g-1).toFixed(1)} = <b style="color:#c9b6ff">×${fmt(rebAfter())}</b></p>
     <p style="margin-top:8px;font-size:12px;color:#9aa0aa">Resets: money, stages, stage upgrades, ball levels.<br>Keeps: perks, cards, ✨ ball prestiges. Further = bigger bonus. Stages you already reached give no new perk/card.</p>
     <button class="btn" id="yes">♻️ Rebirth → ×${fmt(rebAfter())}</button><button class="btn g" id="no">Not yet</button>`,{yes:rebirth}); };
 function ballPrestige(k){ if(S.val[k]<bpNeed(k)) return; const g=bpGain(k), t=TYPES[k];
