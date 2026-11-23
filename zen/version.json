@@ -1,7 +1,7 @@
 {
-  "web": 36,
+  "web": 37,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Rebirth bonuses now add up instead of multiplying"
+  "notes": "Balls resting on obstacles are no longer pushed off"
 }

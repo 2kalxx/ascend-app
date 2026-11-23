@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 36; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 37; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -336,7 +336,7 @@ function step(dt,sim){ tankN=tankBalls();
     for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L); const v=ballVal(b.k)*m*wm; pay(v); b.norm+=m;
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
-    if(b.slow>2&&((b.slow*120)|0)%240===0){ b.vx+=(Math.random()<.5?-1:1)*140; b.vy=-90; }
+    // (no more random kicks: balls resting on an obstacle stay there)
     // jam breaker: a ball that hasn't moved for 3 s squeezes a little (smaller hitbox) until it is rolling again – nothing disappears
     if(b.slow>3&&!b.sq){ b.sq=1; b.r0=b.r; b.r=b.r*0.62; }
     if(b.sq){ if(sp>70) b.sqT=(b.sqT||0)+dt; else b.sqT=0; if(b.sqT>0.4){ b.r=b.r0; b.sq=0; b.sqT=0; } }
