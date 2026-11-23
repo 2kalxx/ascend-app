@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 47; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 48; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -140,7 +140,7 @@ const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(S.bpm[k]||1
 /* prestige: REBIRTH resets stages + ball upgrades for a permanent profit multiplier based on how far you got;
    BALL PRESTIGE resets one ball's value level for a permanent multiplier on that ball */
 const REB_MIN=10;
-const rebGain=()=>S.unlocked;                   // the button shows ×N → exactly N is added to your multiplier (stage 10 → +10, 25 → +25)
+const rebGain=()=>1+0.5*Math.max(0,S.unlocked-REB_MIN); // the button shows ×N → exactly N is added: stage 10 → +1, 20 → +6, 50 → +21
 const mx=n=>n<1000?String(+n.toFixed(1)):fmt(n); // multiplier display: 17.8, not 17
 const rebAfter=()=>(S.pm||1)+rebGain();
 const bpNeed=k=>50+25*(S.bstar[k]||0);          // value level needed for the next ball prestige
@@ -175,18 +175,21 @@ const ROMAN=["","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"];
 const themeOf=L=>THEMES[(L-1)%THEMES.length];
 const variantOf=L=>Math.floor((L-1)/THEMES.length);
 /* stages 11-150: 14 machine types × 10 variants, every stage has its own main machine, settings, extras, shapes, colour and name */
-const MODLIST=["drum","sluice","piston","swings","sliders","clock","stirrer","gears","fans","wipers","cups","bucket","paddles","crosses"];
-const MODNAME={drum:"Tumble Drums",sluice:"Sluice Gates",piston:"Piston Pinch",swings:"Pendulums",sliders:"Sliders",clock:"Clock Tower",stirrer:"Stir Necks",gears:"Gearworks",fans:"Fan Hall",wipers:"Wiper Walk",cups:"Spill Cups",bucket:"Bucket Drop",paddles:"Paddle Mill",crosses:"Cross Bumpers"};
+const MODLIST=["drum","hourglass","sluice","swings","comb","sliders","piston","clock","sieve","gears","offset","fans","stirrer","wipers","slalom","cups","crosses","bucket","paddles"];
+const FUNNELS=["sluice","piston","cups","bucket","stirrer","hourglass","comb","sieve","offset","slalom"];
+const MODNAME={hourglass:"Hourglass",comb:"Comb Slots",sieve:"Diamond Sieve",offset:"Offset Funnels",slalom:"Slalom Baffles",drum:"Tumble Drums",sluice:"Sluice Gates",piston:"Piston Pinch",swings:"Pendulums",sliders:"Sliders",clock:"Clock Tower",stirrer:"Stir Necks",gears:"Gearworks",fans:"Fan Hall",wipers:"Wiper Walk",cups:"Spill Cups",bucket:"Bucket Drop",paddles:"Paddle Mill",crosses:"Cross Bumpers"};
 // 10 mechanics; machine = i%14, mechanic = (i/14 + i%14)%10 → all 140 (machine, mechanic) pairs are different and both change from one stage to the next
-const MECHS=["wind","float","bouncy","flip","pulse","belt","portal","magnet","gold","split"];
+const MECHS=["wind","float","bouncy","flip","pulse","belt","portal","magnet","gold","split","heavy","sticky","boost","jackpot"];
 const MECH={wind:["🌬️","Windy","Gusts push the balls left and right"],float:["🪶","Floaty","Low gravity – balls drift down slowly"],bouncy:["🏀","Bouncy","Every obstacle is super bouncy"],
   flip:["🔄","Flip","All spinners reverse direction every few seconds"],pulse:["💓","Pulse","Spinners speed up and slow down in pulses"],belt:["➡️","Conveyor","Ramps are conveyor belts that carry the balls"],
   portal:["🌀","Portal","Orange portals teleport balls to the blue ones below"],magnet:["🧲","Magnet","Magnets grab balls for a moment, then let go"],
-  gold:["🪙","Golden","Gold pegs pay cash every time a ball hits them"],split:["✂️","Split","Pink pegs can split a ball into two"]};
+  gold:["🪙","Golden","Gold pegs pay cash every time a ball hits them"],split:["✂️","Split","Pink pegs can split a ball into two"],
+  heavy:["🪨","Heavy","Strong gravity – balls fall fast and hit hard"],sticky:["🍯","Sticky","Thick air – balls move slowly and pile up"],
+  boost:["🚀","Boost","Green pads shoot balls downwards"],jackpot:["🎰","Jackpot","Every gate in this stage pays double"]};
 // visual identity: 15 palettes × 8 background patterns × 3 drawing styles, plus 6 connector types between machines
-const PAL=[["Lava","#3a1410","#120605","#ff6a3d"],["Glacier","#1d3a4f","#0a1a26","#9fe8ff"],["Toxic","#23361a","#0c1608","#b6ff3b"],["Royal","#2b1f4f","#120b26","#c9a2ff"],["Desert","#4f3d22","#1e160a","#ffcf70"],
-  ["Abyss","#12324a","#06141f","#3fd6e8"],["Candy","#4a2342","#1f0b1b","#ff8ad8"],["Steel","#3d434c","#15181c","#d0d6e0"],["Jungle","#1f3a2a","#0a1a10","#7dffa8"],["Ember","#4a2a1a","#1a0d06","#ffa040"],
-  ["Midnight","#17193a","#05060f","#7f8dff"],["Rose","#4a1f2a","#1c0910","#ff6f8f"],["Copper","#3f2a1c","#170e07","#e08a4a"],["Lagoon","#1e4444","#0a1a1a","#7fffd4"],["Void","#120a1f","#000000","#39ff14"]];
+const PAL=[["Lava","#3a1410","#120605","#ff6a3d"],["Honey","#55421a","#201806","#ffd86b"],["Rose","#4a1f2a","#1c0910","#ff6f8f"],["Ember","#4a2a1a","#1a0d06","#ffa040"],["Plum","#3d1e3a","#150914","#e59bd6"],
+  ["Desert","#4f3d22","#1e160a","#ffcf70"],["Crimson","#451219","#170407","#ff4d5e"],["Terracotta","#5a3326","#22110b","#f2a07b"],["Amber","#4d3a14","#1c1405","#ffc23d"],["Magenta","#4a1a3a","#1a0614","#ff5fc8"],
+  ["Sunset","#52301f","#1f0f07","#ff8c5a"],["Cocoa","#3b2a22","#140d09","#d9a57c"],["Candy","#4a2342","#1f0b1b","#ff8ad8"],["Brick","#4a2620","#1a0c09","#ff9b7a"],["Copper","#3f2a1c","#170e07","#e08a4a"]];
 const PATS=["stripes","grid","dots","waves","chevrons","rings","bricks","crosses"], CONNS=["zig","posts","split","steps","bumpers","none"];
 const styleOf=L=>{ const i=L-11; return {pal:PAL[i%PAL.length],pat:PATS[i%PATS.length],draw:i%3,conn:CONNS[(i*5)%CONNS.length]}; };
 const sigOf=L=>MODLIST[(L-11)%MODLIST.length], roundOf=L=>Math.floor((L-11)/MODLIST.length);
@@ -270,7 +273,13 @@ function buildStage(L){
   };
   /* movers: segments that slide (timed hatches, pistons, sliding bars) */
   const MOV=(x1,y1,x2,y2,dx,dy,o)=>b.movs.push(Object.assign({x1,y1:oy+y1,x2,y2:oy+y2,dx,dy,w:12,per:3,open:0.4,ph:r()*10,mode:"gate",p:0,vx:0,vy:0,cur:{x1,y1:oy+y1,x2,y2:oy+y2,w:12}},o||{}));
+  const GUARD=y=>{ S_(0,y,46,y+42,12); S_(W,y,W-46,y+42,12); }; // keeps balls off the walls so every ball meets the spinners
   const MODS={
+    hourglass:q=>{ const n1=48+q()*8, n2=50+q()*10, c=150+q()*60; return {h:290,f:y=>{ S_(0,y,c-n1/2,y+95,14); S_(W,y,c+n1/2,y+95,14); S_(0,y+140,180-n2/2,y+245,14); S_(W,y+140,180+n2/2,y+245,14); }}; },
+    comb:q=>{ const gap=46+q()*8, n=Math.floor((W-60)/(gap+10))+1, off=(W-(n-1)*(gap+10))/2; return {h:120,f:y=>{ for(let j=0;j<n;j++){ const x=off+j*(gap+10); POLY([[x,y],[x+5,y+20],[x-5,y+20]]); S_(x,y+20,x,y+90,10); } }}; },
+    sieve:q=>{ const hx=20+q()*6, sp=2*hx+28+q()*6, rows=3+Math.floor(q()*2); return {h:rows*58+40,f:y=>{ for(let rr=0;rr<rows;rr++){ const yy=y+30+rr*58, o=rr%2?sp/2:sp/4; diamond(0,yy,hx,22); diamond(W,yy,hx,22); for(let x=o;x<W;x+=sp){ if(x<2*hx+26||x>W-2*hx-26) continue; diamond(x,yy,hx,22); } } }}; },
+    offset:q=>{ const nk=46+q()*10, st=3; return {h:st*105+20,f:y=>{ for(let j=0;j<st;j++){ const yy=y+j*105, c=j%2?110:250; S_(0,yy,c-nk/2,yy+75,14); S_(W,yy,c+nk/2,yy+75,14); } }}; },
+    slalom:q=>{ const gap=70+q()*10, n=2+Math.floor(q()*2); return {h:n*125+30,f:y=>{ (b.nw=b.nw||[]).push([oy+y-20,oy+y+n*125+30]); for(let j=0;j<n;j++){ const yy=y+j*125; if(j%2) S_(W,yy,gap,yy+105,12); else S_(0,yy,W-gap,yy+105,12); } }}; },
     drum:q=>{ const two=q()<0.5, R=two?62+q()*8:80+q()*14, gaps=q()<0.5?1:2, w=(q()<.5?-1:1)*(0.6+q()*0.6); return {h:2*R+70,f:y=>(two?[95,265]:[180]).forEach((x,j)=>b.spins.push({x,y:oy+y+R+35,len:R,a:q()*6,w:j?-w:w,kind:"drum",gaps,th:10}))}; },
     sluice:q=>{ const cl=2+q()*2, op=1.2+q()*0.5, nw=110+q()*30, c=125+q()*110, dirR=c<180; return {h:250,f:y=>{ const a=c-nw/2, z=c+nw/2; S_(0,y+(c>180?40:0),a,y+90,14); S_(W,y+(c<180?40:0),z,y+90,14); S_(a,y+90,a,y+140,12); S_(z,y+90,z,y+140,12);
         MOV(a,y+150,z,y+150,dirR?nw+10:-(nw+10),0,{per:cl+op,open:op/(cl+op),w:12}); }}; },
@@ -291,8 +300,9 @@ function buildStage(L){
     paddles:q=>{ const n=q()<0.5?2:3, rows=2+Math.floor(q()*2), lw=W/n, w=1.4+q()*0.8; return {h:rows*110+50,f:y=>{ for(let j=1;j<n;j++) S_(j*lw,y,j*lw,y+rows*110,14); for(let i=0;i<rows;i++) for(let j=0;j<n;j++) BAR(lw/2+j*lw,y+60+i*110,lw/2-12,((i+j)%2?-w:w),i*0.8); }}; },
     crosses:q=>{ const two=q()<0.6, len=two?62:80, w=1+q()*0.6; return {h:two?250:2*len+60,f:y=>{ if(two){ XB(105,y+80,len,w); XB(255,y+170,len,-w,0.7); C_(300,y+40,14,{bump:1}); C_(60,y+215,14,{bump:1}); } else { XB(180,y+len+30,len,w); C_(40,y+40,14,{bump:1}); C_(320,y+40,14,{bump:1}); } }}; }
   };
+  for(const k_ of ["drum","swings","clock","fans","crosses","gears","sliders"]){ const base=MODS[k_]; MODS[k_]=q=>{ const m=base(q); return {h:m.h+50,f:y=>{ GUARD(y); m.f(y+50); }}; }; }
   const SHAPES=[(x,y)=>C_(x,y,16),(x,y)=>tri(x,y,20),(x,y)=>diamond(x,y,24,24),(x,y)=>hexa(x,y,22),(x,y)=>star(x,y,24,17,7,0),(x,y)=>C_(x,y,13,{bump:1}),(x,y)=>diamond(x,y,34,14)];
-  if(L>NEWL){ const sig=sigOf(L), q=rng(L*104729+7), shape=SHAPES[Math.floor(q()*SHAPES.length)], main=MODS[sig](q), pool=MODLIST.filter(m=>m!==sig&&!["sluice","piston","cups","bucket","stirrer"].includes(m));
+  if(L>NEWL){ const sig=sigOf(L), q=rng(L*104729+7), shape=SHAPES[Math.floor(q()*SHAPES.length)], main=MODS[sig](q), pool=MODLIST.filter(m=>m!==sig&&!FUNNELS.includes(m));
     const extras=[0,1,2].map(()=>pool[Math.floor(q()*pool.length)]);
     for(const [y0,y1] of zones){ let y=y0+10, n=0;
       const CON={zig:[90,(y,j)=>{ if(j%2) S_(W,y+10,75,y+70,14); else S_(0,y+10,W-75,y+70,14); }],posts:[90,(y,j)=>{ for(let t=0;t<5;t++){ const x=36+t*72+(j%2?36:0); if(x<W-20) S_(x,y+15,x,y+70,10); } }],
@@ -337,7 +347,7 @@ function buildStage(L){
   // fill straight drop channels: no ball may fall far along a wall or down an open column (wall wedges at the edges, small pegs inside)
   { const R=7, hitAt=(x,y)=>b.circ.some(c=>Math.abs(c.y-y)<c.r+R&&Math.hypot(c.x-x,c.y-y)<c.r+R)||b.segs.some(g=>y>=Math.min(g.y1,g.y2)-20&&y<=Math.max(g.y1,g.y2)+20&&ptSeg(x,y,g)<g.w/2+R)||b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+R)||b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<c.w+c.h+R)||b.movs.some(m=>y>m.y1-40&&y<m.y2+40&&x>Math.min(m.x1,m.x1+m.dx)-20&&x<Math.max(m.x2,m.x2+m.dx)+20);
     const clear=(x,y,rad)=>!b.circ.some(c=>{ const g=Math.hypot(c.x-x,c.y-y)-c.r-rad; return g<26; })&&!b.segs.some(g=>y>=Math.min(g.y1,g.y2)-60&&y<=Math.max(g.y1,g.y2)+60&&ptSeg(x,y,g)<g.w/2+rad+26)&&!b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<p.len+rad+26)&&!b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<c.w+c.h+rad+20)&&!b.movs.some(m=>y>Math.min(m.y1,m.y2)-70&&y<Math.max(m.y1,m.y2)+70&&x>Math.min(m.x1,m.x1+m.dx)-40&&x<Math.max(m.x2,m.x2+m.dx)+40)&&!b.doors.length;
-    const wedge=(side,y,dep)=>{ const X=side?W:0, d=side?-1:1, P2=[[X,y-30-dep*0.3],[X+d*dep,y],[X,y+30+dep*0.3]]; const smp=[]; for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; for(let t=0;t<1;t+=0.2) smp.push([q[0]+(c[0]-q[0])*t,q[1]+(c[1]-q[1])*t]); } const nar=d=>d>-3&&d<26; /* overlapping a solid is fine, a narrow slit is not; never overlap another polygon */ if(smp.some(([x,yy])=>b.segs.some(g=>g.poly?ptSeg(x,yy,g)<g.w/2+26:nar(ptSeg(x,yy,g)-g.w/2))||b.circ.some(c=>nar(Math.hypot(c.x-x,c.y-yy)-c.r))||b.spins.some(p=>Math.hypot(p.x-x,p.y-yy)<p.len+26))) return false; const id=b.polys.length+1; b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:q[0],y1:q[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } return true; };
+    const wedge=(side,y,dep)=>{ if(b.nw&&b.nw.some(([a,z])=>y>a&&y<z)) return false; const X=side?W:0, d=side?-1:1, P2=[[X,y-30-dep*0.3],[X+d*dep,y],[X,y+30+dep*0.3]]; const smp=[]; for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; for(let t=0;t<1;t+=0.2) smp.push([q[0]+(c[0]-q[0])*t,q[1]+(c[1]-q[1])*t]); } const nar=d=>d>-3&&d<26; /* overlapping a solid is fine, a narrow slit is not; never overlap another polygon */ if(smp.some(([x,yy])=>b.segs.some(g=>g.poly?ptSeg(x,yy,g)<g.w/2+26:nar(ptSeg(x,yy,g)-g.w/2))||b.circ.some(c=>nar(Math.hypot(c.x-x,c.y-yy)-c.r))||b.spins.some(p=>Math.hypot(p.x-x,p.y-yy)<p.len+26))) return false; const id=b.polys.length+1; b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:q[0],y1:q[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } return true; };
     const inGate=y=>gy.some(g=>Math.abs(oy+g-y)<64);
     for(let pass=0;pass<6;pass++){ let added=0;
       for(let x=8;x<=352;x+=6){ if(th.id==="lanes"&&x>100&&x<260) continue; const edge=x<54||x>306, lim=edge?230:380; let last=oy;
@@ -359,7 +369,8 @@ function buildStage(L){
     if(b.mech==="flip"||b.mech==="pulse"){ for(let n=0;n<8;n++){ const p=spot(40,oy,oy+h); if(p) b.spins.push({x:p[0],y:p[1],len:24,a:q()*6,w:(q()<.5?-1:1)*(2+q()*1.5),kind:"bar",hub:1}); } }
     if(b.mech==="belt"){ for(let n=0;n<7;n++){ const p=spot(72,oy,oy+h); if(p){ const t=(p[0]<180?1:-1)*(8+q()*10); /* the low end (where the belt carries balls) always points away from the walls */ b.segs.push({x1:p[0]-48,y1:p[1]-t,x2:p[0]+48,y2:p[1]+t,w:12,lit:0}); } }
       let i=0; for(const g of b.segs){ if(g.poly) continue; const dx=g.x2-g.x1, dy=g.y2-g.y1, l=Math.hypot(dx,dy)||1; let d=dy>4?1:dy<-4?-1:(i++%2?1:-1); g.belt=[dx/l*d,dy/l*d]; } }
-    if(b.mech==="float") b.gmul=0.55; if(b.mech==="bouncy") b.emul=2.2; }
+    if(b.mech==="boost"){ b.pads=[]; for(let n=0;n<7;n++){ const p=spot(44,oy,oy+h); if(p) b.pads.push({x:p[0],y:p[1]}); } }
+    if(b.mech==="float") b.gmul=0.55; if(b.mech==="heavy") b.gmul=1.6; if(b.mech==="bouncy") b.emul=2.2; }
   // gates
   for(const y of gy){ const pat=GPAT[Math.floor(r()*GPAT.length)], w=Math.max(70,120-v*4); b.gates.push({y:oy+y,pat,w,xa:16,xb:W-16-w,sp:40+r()*30,ph:r()*20,x1:16,x2:16+w,lit:0}); }
   for(const t of TIPS) if(t[0]===L) b.tips.push({y:oy+h*t[1],txt:t[2]});
@@ -456,11 +467,13 @@ function step(dt,sim){ tankN=tankBalls();
     const sp=Math.hypot(b.vx,b.vy); if(sp>VMAX){ b.vx*=VMAX/sp; b.vy*=VMAX/sp; }
     const L=stageAt(b.y), s=getStage(L); stageHits(b,L,sim); const lt=b.y-s.oy; if(lt<b.r+30) stageHits(b,L-1,sim); else if(lt>s.h-b.r-30) stageHits(b,L+1,sim);
     if(s.mech){ if(s.gmul) b.vy-=g*(1-s.gmul)*dt;
+      if(s.mech==="sticky"){ const f=Math.pow(0.35,dt); b.vx*=f; b.vy*=Math.pow(0.6,dt); }
+      if(s.pads) for(const p of s.pads){ if(Math.abs(b.x-p.x)<30&&Math.abs(b.y-p.y)<9&&b.vy<240){ b.vy=260; b.vx*=0.5; } }
       if(s.mech==="wind") b.vx+=Math.sin(gt*0.9+s.ph)*130*dt;
       else if(s.mech==="magnet") for(const m of s.mags){ if(Math.sin(gt*2.1+m.ph)<0) continue; const dx=m.x-b.x, dy=m.y-b.y, d=Math.hypot(dx,dy); if(d>95||d<1) continue; const f=700*(1-d/95)*dt; b.vx+=dx/d*f-dy/d*f*0.5; b.vy+=dy/d*f+dx/d*f*0.5; }
       else if(s.mech==="portal"&&!(b.pc>gt)) for(const p of s.ports){ if(Math.abs(b.x-p.x)<14&&Math.abs(b.y-p.y)<14){ b.x=p.bx; b.y=p.by; b.vx*=0.5; b.vy=Math.max(40,b.vy*0.5); b.pc=gt+0.6; break; } } }
     // gates pay money when a ball passes them
-    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L); const v=ballVal(b.k)*m*wm; pay(v); b.norm+=m;
+    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1); const v=ballVal(b.k)*m*wm; pay(v); b.norm+=m;
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
     // (no more random kicks: balls resting on an obstacle stay there)
@@ -529,7 +542,7 @@ function syncMusic(){ if(S.music&&!document.hidden) MUSIC.start(); else MUSIC.st
 
 /* ================= camera & render ================= */
 const cv=$("cv"), ctx=cv.getContext("2d"); let sc=1, viewH=SCR, cam=+S.cam||0, camV=0, dragging=false;
-function resize(){ const w=$("wrap").clientWidth, h=$("wrap").clientHeight; const s=w/W; const dpr=Math.min(2.5,devicePixelRatio||1);
+function resize(){ const w=$("wrap").clientWidth, h=$("wrap").clientHeight; const s=w/W; const dpr=S.eco?1:Math.min(2.5,devicePixelRatio||1);
   const cw=Math.floor(W*s), ch=Math.floor(h); cv.style.width=cw+"px"; cv.style.height=ch+"px"; cv.width=Math.floor(cw*dpr); cv.height=Math.floor(ch*dpr); sc=cv.width/W; viewH=cv.height/sc; clampCam(); }
 function clampCam(){ const max=WORLD_H-viewH+40; cam=Math.max(-10,Math.min(max,cam)); }
 function roundBox(x,y,w,h,r){ ctx.beginPath(); if(ctx.roundRect) ctx.roundRect(x,y,w,h,r); else ctx.rect(x,y,w,h); }
@@ -547,12 +560,12 @@ function drawPattern(st,y0,y1){ if(y1<=y0) return; const ac=st.pal[3]; ctx.save(
     case "crosses": ctx.lineWidth=3; for(let y=a;y<z;y+=44) for(let x=(y/44%2)*22+11;x<=W;x+=44){ ctx.moveTo(x-6,y); ctx.lineTo(x+6,y); ctx.moveTo(x,y-6); ctx.lineTo(x,y+6); } break; }
   ctx.stroke(); ctx.restore(); }
 function render(){
-  ctx.setTransform(sc,0,0,sc,0,-cam*sc); ctx.fillStyle="#2a2c31"; ctx.fillRect(0,cam,W,viewH);
+  ctx.setTransform(sc,0,0,sc,0,-cam*sc); ctx.fillStyle="#2e2624"; ctx.fillRect(0,cam,W,viewH);
   const L0=stageAt(cam), L1=stageAt(cam+viewH), EY=exitY();
   for(let L=L0;L<=L1;L++){ const s=getStage(L), oy=s.oy, locked=L>S.unlocked;
     ctx.globalAlpha=locked?0.3:1; const st=s.sty, OB=st?st.pal[2]:"#141518", AC=st?st.pal[3]:"#3fd6e8";
-    ctx.fillStyle=st?st.pal[1]:L%2?"#474a5a":"#444757"; ctx.fillRect(0,oy,W,s.h); if(st) drawPattern(st,Math.max(oy,cam),Math.min(oy+s.h,cam+viewH));
-    if(st&&st.draw){ /* outlined / glowing obstacle style */ ctx.strokeStyle=AC; ctx.globalAlpha=(locked?0.3:1)*(st.draw===1?0.9:0.35); ctx.lineJoin="round"; ctx.lineCap="round";
+    ctx.fillStyle=st?st.pal[1]:L%2?"#4d4240":"#4a3f3c"; ctx.fillRect(0,oy,W,s.h); if(st&&!S.eco) drawPattern(st,Math.max(oy,cam),Math.min(oy+s.h,cam+viewH));
+    if(st&&st.draw&&!S.eco){ /* outlined / glowing obstacle style */ ctx.strokeStyle=AC; ctx.globalAlpha=(locked?0.3:1)*(st.draw===1?0.9:0.35); ctx.lineJoin="round"; ctx.lineCap="round";
       const ow=st.draw===1?3:9;
       for(const c of s.circ){ if(c.y+c.r<cam||c.y-c.r>cam+viewH||c.gold||c.split) continue; ctx.lineWidth=ow; ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.stroke(); }
       for(const pg of s.polys){ ctx.lineWidth=ow; ctx.beginPath(); ctx.moveTo(pg.pts[0][0],pg.pts[0][1]); for(let i=1;i<pg.pts.length;i++) ctx.lineTo(pg.pts[i][0],pg.pts[i][1]); ctx.closePath(); ctx.stroke(); }
@@ -567,6 +580,7 @@ function render(){
       const bl=spinBalls(p); if(bl) for(const [x,y] of bl){ ctx.beginPath(); ctx.arc(x,y,p.br,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#39e639"; ctx.lineWidth=2.5; ctx.stroke(); ctx.strokeStyle=OB; } }
     if(s.mech){ ctx.lineCap="round";
       for(const c of s.circ) if(c.gold||c.split){ if(c.y+c.r<cam||c.y-c.r>cam+viewH) continue; ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fillStyle=c.gold?(c.lit>0?"#fff3a0":"#ffd400"):(c.lit>0?"#ffd0ee":"#ff7fd1"); ctx.fill(); }
+      if(s.pads) for(const p of s.pads){ ctx.fillStyle="#2bd97a"; roundBox(p.x-30,p.y-5,60,10,5); ctx.fill(); ctx.strokeStyle="#0b3d22"; ctx.lineWidth=2; ctx.beginPath(); for(const dx of [-14,0,14]){ ctx.moveTo(p.x+dx-5,p.y-3+((gt*3)%1)*2); ctx.lineTo(p.x+dx,p.y+2+((gt*3)%1)*2); ctx.lineTo(p.x+dx+5,p.y-3+((gt*3)%1)*2); } ctx.stroke(); }
       for(const m of s.mags){ const on=Math.sin(gt*2.1+m.ph)>=0; ctx.strokeStyle=on?"#c06bff":"rgba(192,107,255,.35)"; ctx.lineWidth=3; for(const rr of [10,30,55]){ ctx.beginPath(); ctx.arc(m.x,m.y,rr+(on?Math.sin(gt*8)*3:0),0,Math.PI*2); ctx.stroke(); } }
       for(const p of s.ports){ ctx.lineWidth=4; ctx.strokeStyle="#ff9f1c"; ctx.beginPath(); ctx.arc(p.x,p.y,13+Math.sin(gt*5)*1.5,0,Math.PI*2); ctx.stroke(); ctx.strokeStyle="#3fa8ff"; ctx.beginPath(); ctx.arc(p.bx,p.by,13+Math.cos(gt*5)*1.5,0,Math.PI*2); ctx.stroke(); }
       if(s.mech==="belt"){ ctx.setLineDash([6,10]); ctx.lineDashOffset=-gt*40; ctx.strokeStyle="#ffd400"; ctx.lineWidth=2; for(const g of s.segs){ if(!g.belt) continue; const d=g.belt; const fw=(g.x2-g.x1)*d[0]+(g.y2-g.y1)*d[1]>0; ctx.beginPath(); if(fw){ ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); } else { ctx.moveTo(g.x2,g.y2); ctx.lineTo(g.x1,g.y1); } ctx.stroke(); } ctx.setLineDash([]); }
@@ -582,8 +596,8 @@ function render(){
     const gb=gateBoost(L), lucky=1+0.1*C("hh");
     for(const q of s.gates){ if(locked) moveGate(q,0); const hgt=22, y0=q.y-hgt/2, xs=[[0,q.x1],[q.x1,q.x2],[q.x2,W]];
       ctx.font="800 11px system-ui"; ctx.textAlign="center";
-      for(let i=0;i<3;i++){ const [a,c]=xs[i]; if(c-a<4) continue; const lit=q.lit>0&&q.hit===i; ctx.fillStyle=lit?"#ff7a63":"#d4483a"; ctx.fillRect(a,y0,c-a,hgt);
-        if(c-a>40){ ctx.fillStyle="#fff"; ctx.fillText("x"+(q.pat[i]*(i===1?lucky:1)*gb).toFixed(2),(a+c)/2,q.y+4); } }
+      for(let i=0;i<3;i++){ const [a,c]=xs[i]; if(c-a<4) continue; const lit=q.lit>0&&q.hit===i; const jp=s.mech==="jackpot"; ctx.fillStyle=jp?(lit?"#fff3a0":"#e0a800"):lit?"#ff7a63":"#d4483a"; ctx.fillRect(a,y0,c-a,hgt);
+        if(c-a>40){ ctx.fillStyle=jp?"#2a1d00":"#fff"; ctx.fillText("x"+(q.pat[i]*(i===1?lucky:1)*gb*(jp?2:1)).toFixed(2),(a+c)/2,q.y+4); } }
       ctx.fillStyle=OB; ctx.fillRect(q.x1-3,y0-2,6,hgt+4); ctx.fillRect(q.x2-3,y0-2,6,hgt+4); }
     // tips (dark boxes like in the video)
     if(false) for(const t of s.tips){ ctx.font="700 11px system-ui"; const lines=wrapText(t.txt,150), bh=14*lines.length+14; ctx.fillStyle="rgba(24,25,30,.92)"; roundBox(W/2-88,t.y-bh/2,176,bh,8); ctx.fill(); ctx.fillStyle="#fff"; ctx.textAlign="center"; lines.forEach((ln,i)=>ctx.fillText(ln,W/2,t.y-bh/2+18+i*14)); }
@@ -669,7 +683,7 @@ function rebirth(){ S.pm=rebAfter(); S.rebirths=(S.rebirths||0)+1;
   popup(`<div style="font-size:40px">♻️</div><h1>Rebirth ${S.rebirths}!</h1><p>All profit is now <b>×${mx(S.pm)}</b> – forever.</p><button class="btn" id="ok">Let's go</button>`); }
 $("rebB").onclick=()=>{ if(S.unlocked<REB_MIN) return popup(`<h1>♻️ Rebirth</h1><p>Reach stage <b>${REB_MIN}</b> to rebirth.</p><p style="margin-top:6px">Current profit multiplier: <b>×${mx(S.pm)}</b> (${S.rebirths||0} rebirths)</p><button class="btn" id="ok">OK</button>`);
   const g=rebGain();
-  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth?</h1><p>You're on stage <b>${S.unlocked}</b>. Rebirth now and your profit multiplier gets <b>+${mx(g)}</b> – forever. The bonus grows with every stage you reach (+1 per stage).</p>
+  popup(`<div style="font-size:40px">♻️</div><h1>Rebirth?</h1><p>You're on stage <b>${S.unlocked}</b>. Rebirth now and your profit multiplier gets <b>+${mx(g)}</b> – forever. The bonus starts at +1 on stage ${REB_MIN} and grows +0.5 with every stage you reach.</p>
     <p style="margin-top:8px;font-size:15px">×${mx(S.pm)} + ${mx(g)} = <b style="color:#c9b6ff">×${mx(rebAfter())}</b></p>
     <p style="margin-top:8px;font-size:12px;color:#9aa0aa">Resets: money, stages, stage upgrades, ball levels.<br>Keeps: perks, cards, ✨ ball prestiges. Further = bigger bonus. Stages you already reached give no new perk/card.</p>
     <button class="btn" id="yes">♻️ Rebirth → ×${mx(rebAfter())}</button><button class="btn g" id="no">Not yet</button>`,{yes:rebirth}); };
@@ -705,6 +719,7 @@ function openMenu(){ const L=$("layer");
     <div class="srow"><span>🎵 Lo-fi music</span><button class="tg ${S.music?"on":""}" id="tm">${S.music?"On":"Off"}</button></div>
     <div class="srow"><span>🔔 Sounds</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
     <div class="srow"><span>📳 Vibration</span><button class="tg ${S.haptic?"on":""}" id="th">${S.haptic?"On":"Off"}</button></div>
+    <div class="srow"><span>🔋 Power saving<br><small style="color:#9aa0aa;font-size:11px">30 fps, lower resolution, simpler graphics</small></span><button class="tg ${S.eco?"on":""}" id="teco">${S.eco?"On":"Off"}</button></div>
     <div class="srow"><span>ℹ️ How to play</span><button class="tg" id="info">Open</button></div>
     <div class="srow"><span>Total earned</span><b>${money(S.total)}</b></div>
     <div class="srow"><span>♻️ Rebirths</span><b>${S.rebirths||0} · ×${mx(S.pm||1)} · best stage ${S.best}</b></div>
@@ -713,10 +728,11 @@ function openMenu(){ const L=$("layer");
     <button class="btn g" id="rst">Start over</button><button class="btn" id="cl">Close</button></div></div>`;
   const q=s=>L.querySelector(s);
   q("#cl").onclick=()=>{ L.innerHTML=""; };
-  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and your stage number is added to your profit multiplier (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
+  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and you add +1 at stage 10 and +0.5 more for every stage beyond (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
   q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
   q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
   q("#th").onclick=()=>{ S.haptic=!S.haptic; save(true); if(S.haptic) buzz(); openMenu(); };
+  q("#teco").onclick=()=>{ S.eco=!S.eco; save(true); resize(); openMenu(); };
   q("#upd")&&(q("#upd").onclick=()=>{ try{ NATIVE.checkUpdates(); }catch(e){} });
   q("#inst")&&(q("#inst").onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} });
   q("#rst").onclick=()=>popup(`<h1>Start over?</h1><p>Money, upgrades, stages, perks and cards are reset.</p><button class="btn" id="yes">Yes, start over</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ const keep={sound:S.sound,music:S.music,haptic:S.haptic,seen:1}; S=Object.assign(fresh(),keep); balls=[]; STG.length=1; getStage(1); goTo(1); uiList(true); uiTop(); save(true); }}); }
@@ -745,7 +761,9 @@ function tunePerf(dt,work){ if(dt>0.004&&dt<0.04) refI=Math.min(refI*1.002,dt); 
   const target=Math.max(6.5,Math.min(13,refI*1000*0.8)), cap=S.perfCap||4000, n=balls.length+tankN;
   if(workA>target&&n>800&&n<=cap*1.02) S.perfCap=Math.max(800,Math.round(n*0.92)); /* only while at the cap: extra balls already on the map just drain away */
   else if(workA<target*0.7&&n>cap*0.9) S.perfCap=Math.min(100000,Math.round(cap*1.06)); }
-function frame(t){ const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const w0=performance.now(); const n=(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); if(!document.hidden) tunePerf(dt,performance.now()-w0); uiT+=dt; if(uiT>0.25){ uiT=0; uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
+let ecoSkip=false;
+function frame(t){ if(S.eco){ ecoSkip=!ecoSkip; if(ecoSkip){ requestAnimationFrame(frame); return; } } /* power saving: ~30 fps, fewer physics steps, 1× resolution, no background patterns */
+  const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const w0=performance.now(); const n=S.eco?2:(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); if(!document.hidden) tunePerf(dt,performance.now()-w0); uiT+=dt; if(uiT>0.25){ uiT=0; uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 /* test hooks */
 const simOpts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(S.unlocked>=GATE[k]) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); }
