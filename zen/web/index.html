@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 51; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 52; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -400,10 +400,12 @@ const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
 function pay(v){ S.coins+=v; S.total+=v; earnWin+=v; }
 // more balls than the unlocked stages can hold while flowing: the extra ones pay what an average ball earned on its way down
+/* spawn slots: every ball type has its own spot in two rows of 10 at the top of stage 1 */
+const slotX=k=>18+(k%10)*36, slotY=k=>52+Math.floor(k/10)*33;
 /* VIP balls: any ball type has a small chance to spawn as a gold-crowned VIP that pays ×10 */
 const VIP_CHANCE=0.006, VIP_PAY=10;
 function spawn(k,x,y){ const vip=Math.random()<VIP_CHANCE*(1+0.5*P("tap")); if(balls.length+tankN>=ballCap()){ pay(ballVal(k)*worldMult()*avgNorm*(vip?VIP_PAY:1)); return; } 
-  const sp=getStage(1).spawn; balls.push({k,x:x!=null?x:sp[0]+Math.random()*(sp[1]-sp[0]),y:y!=null?y:-8,vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0,vip}); }
+  balls.push({k,x:x!=null?x:slotX(k)+(Math.random()-.5)*3,y:y!=null?y:slotY(k),vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0,vip}); }
 const packN=b=>b.vip?-b.norm-1:b.norm, unN=n=>n<0?-n-1:n; // cups & tanks remember VIP balls via the sign of the stored norm
 function collide(b,cx,cy,cr,e,ovx,ovy){ const dx=b.x-cx, dy=b.y-cy, d2=dx*dx+dy*dy, m=b.r+cr; if(d2>=m*m) return false; const d=Math.sqrt(d2)||0.01;
   const nx=dx/d, ny=dy/d; b.x=cx+nx*m; b.y=cy+ny*m; const rvx=b.vx-(ovx||0), rvy=b.vy-(ovy||0), vn=rvx*nx+rvy*ny; if(vn<0){ b.vx-=(1+e)*vn*nx; b.vy-=(1+e)*vn*ny; b.vx+=(Math.random()-.5)*10; return vn<-60; } return false; }
@@ -620,6 +622,7 @@ function render(){
   if(EY>cam-20&&EY<cam+viewH+20){ ctx.fillStyle="#ffd400"; ctx.fillRect(0,EY-3,W,3); ctx.font="900 10px system-ui"; ctx.textAlign="center"; ctx.fillStyle="#ffd400"; ctx.fillText("▼ END ▼",W/2,EY+12); }
   { const y0=cam-10, y1=cam+viewH+10;
     for(let k=0;k<TYPES.length;k++){ ctx.beginPath(); let any=false; for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; ctx.moveTo(b.x+(b.r0||b.r),b.y); ctx.arc(b.x,b.y,b.r0||b.r,0,Math.PI*2); any=true; } if(any){ ctx.fillStyle=TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col; ctx.fill(); } }
+    if(cam<140){ ctx.lineWidth=2; for(let k=0;k<TYPES.length;k++){ const own=S.rate[k]>0, can=!own&&S.unlocked>=GATE[k]; ctx.globalAlpha=own?0.9:can?0.55:0.18; ctx.strokeStyle=own||can?(TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col):"#9aa0aa"; ctx.beginPath(); ctx.arc(slotX(k),slotY(k),own?6:5,0,Math.PI*2); ctx.stroke(); } ctx.globalAlpha=1; }
     ctx.lineWidth=2.5; for(const b of balls){ if(!b.vip||b.y<y0||b.y>y1) continue; ctx.strokeStyle="#ffd400"; ctx.beginPath(); ctx.arc(b.x,b.y,b.r+2.5+Math.sin(gt*8)*0.8,0,Math.PI*2); ctx.stroke(); ctx.fillStyle="#ffd400"; ctx.beginPath(); ctx.moveTo(b.x-4,b.y-b.r-3); ctx.lineTo(b.x-4,b.y-b.r-8); ctx.lineTo(b.x-1.5,b.y-b.r-5); ctx.lineTo(b.x,b.y-b.r-9); ctx.lineTo(b.x+1.5,b.y-b.r-5); ctx.lineTo(b.x+4,b.y-b.r-8); ctx.lineTo(b.x+4,b.y-b.r-3); ctx.fill(); } }
   if(fever>0){ ctx.fillStyle="rgba(255,212,0,.1)"; ctx.fillRect(0,cam,W,viewH); }
   ctx.font="800 11px system-ui"; ctx.textAlign="center"; for(const p of pops){ ctx.globalAlpha=Math.max(0,p.t); ctx.fillStyle="#ffd400"; ctx.fillText(p.txt,p.x,p.y); } ctx.globalAlpha=1;

@@ -1,7 +1,7 @@
 {
-  "web": 51,
+  "web": 52,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Cups spin a full turn and empty completely; Double tap perk → VIP Scout"
+  "notes": "Each ball type spawns from its own spot – two rows of 10 at the top"
 }
