@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 50; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 51; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -115,7 +115,7 @@ const PERKS=[
  {id:"gates",ic:"🚪",name:"Rich gates",d:"All gate payouts +10%"},
  {id:"hits",ic:"⚫",name:"Small obstacles",d:"All obstacles 3% smaller"},
  {id:"offline",ic:"🌙",name:"Night shift",d:"Offline earnings +25%"},
- {id:"tap",ic:"👆",name:"Double tap",d:"Tapping drops one more ball"}];
+ {id:"tap",ic:"👑",name:"VIP Scout",d:"VIP balls (×10) spawn 50% more often"}];
 const P=id=>(S.perks&&S.perks[id])||0;
 function perkCost(id){ return Math.pow(id==="ballCost"?0.88:0.8,P(id)); }
 
@@ -303,7 +303,7 @@ function buildStage(L){
     gears:q=>{ const n=3+Math.floor(q()*2), sp=W/n, len=sp/2-6, w=1.2+q()*0.8, th=8+Math.floor(q()*4); return {h:2*len+40,f:y=>{ for(let j=0;j<n;j++) PLUS(sp/2+j*sp,y+len+20,len,j%2?-w:w,j%2?Math.PI/4:0,th); }}; },
     fans:q=>{ const pat=Math.floor(q()*3), nb=3+Math.floor(q()*4), w=0.8+q(), xs=[[180],[95,265],[64,180,296]][pat], len=[85,78,52][pat]-q()*8; return {h:2*len+40,f:y=>xs.forEach((x,j)=>FAN(x,y+len+20,len,nb,j%2?-w:w,j))}; },
     wipers:q=>{ const both=q()<0.5, len=170+q()*40, a=0.3+q()*0.2, amp=0.4+q()*0.25, f=1.2+q()*0.8, left=q()<0.5; return {h:both?300:210,f:y=>{ if(both){ WIPER(4,y+40,len,a,amp,f); WIPER(W-4,y+170,len,Math.PI-a,amp,f*1.1); } else WIPER(left?4:W-4,y+50,len,left?a:Math.PI-a,amp,f); }}; },
-    cups:q=>{ const t=Math.floor(q()*3), spd=3.5+q()*2.5; return {h:[250,260,210][t],f:y=>{ if(t===0){ S_(0,y,128,y+76,14); S_(W,y,232,y+76,14); CUP(180,y+122,{spd:spd+1,w:62,cols:8}); }
+    cups:q=>{ const t=Math.floor(q()*3), spd=3.5+q()*2.5; return {h:[250,260,210][t],f:y=>{ if(t===0){ S_(0,y,128,y+70,14); S_(W,y,232,y+70,14); CUP(180,y+124,{spd:spd+1,w:62,cols:8}); }
         else if(t===1){ S_(0,y+10,76,y+76,14); S_(144,y+76,180,y+40,14); S_(180,y+40,216,y+76,14); S_(W,y+10,W-76,y+76,14); CUP(110,y+118,{spd}); CUP(250,y+118,{spd,dir:-1}); }
         else { for(const x of [60,180,300]) CUP(x,y+60,{spd,fix:x<180?-1:x>180?1:0}); } }}; },
     bucket:q=>{ const w=62+q()*22, rows=5+Math.floor(q()*3), hh=(rows*12+8)/2, cols=Math.floor((2*w-10)/13.6); return {h:100+30+2*hh+110,f:y=>{ S_(0,y,180-w+8,y+100,14); S_(W,y,180+w-8,y+100,14); CUP(180,y+130+hh,{w,h:hh,cols,rows,spd:2.2+q()}); }}; },
@@ -402,7 +402,7 @@ function pay(v){ S.coins+=v; S.total+=v; earnWin+=v; }
 // more balls than the unlocked stages can hold while flowing: the extra ones pay what an average ball earned on its way down
 /* VIP balls: any ball type has a small chance to spawn as a gold-crowned VIP that pays ×10 */
 const VIP_CHANCE=0.006, VIP_PAY=10;
-function spawn(k,x,y){ const vip=Math.random()<VIP_CHANCE; if(balls.length+tankN>=ballCap()){ pay(ballVal(k)*worldMult()*avgNorm*(vip?VIP_PAY:1)); return; } 
+function spawn(k,x,y){ const vip=Math.random()<VIP_CHANCE*(1+0.5*P("tap")); if(balls.length+tankN>=ballCap()){ pay(ballVal(k)*worldMult()*avgNorm*(vip?VIP_PAY:1)); return; } 
   const sp=getStage(1).spawn; balls.push({k,x:x!=null?x:sp[0]+Math.random()*(sp[1]-sp[0]),y:y!=null?y:-8,vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0,vip}); }
 const packN=b=>b.vip?-b.norm-1:b.norm, unN=n=>n<0?-n-1:n; // cups & tanks remember VIP balls via the sign of the stored norm
 function collide(b,cx,cy,cr,e,ovx,ovy){ const dx=b.x-cx, dy=b.y-cy, d2=dx*dx+dy*dy, m=b.r+cr; if(d2>=m*m) return false; const d=Math.sqrt(d2)||0.01;
@@ -433,9 +433,8 @@ function cupEdges(c){ const ca=Math.cos(c.a), sa=Math.sin(c.a), P=[[-c.w,-c.h],[
 function dumpCup(c,push){ for(let i=0;i<c.pile.length;i++){ const [x,y]=cupPile(c,i), k=c.pile[i]; balls.push({k,x,y,vx:-(y-c.y)*c.av+c.dir*push+(Math.random()-.5)*20,vy:(x-c.x)*c.av,r:radius(k),norm:unN(c.pileN[i]),vip:c.pileN[i]<0,gm:0,slow:0,life:0,st:0,stT:0}); } c.pile=[]; c.pileN=[]; }
 function updCup(c,dt,sim){
   if(c.st===0){ c.t+=dt; if(c.pile.length>=cupCap(c)||(c.t>8&&c.pile.length)){ c.st=1; c.dir=c.fix||-c.dir; c.t=0; if(!sim&&S.sound) tone(300,0.06,0.03); } }
-  else if(c.st===1){ c.av=c.dir*c.spd; c.a+=c.av*dt; if(Math.abs(c.a)>=1.6&&c.pile.length) dumpCup(c,50); if(Math.abs(c.a)>=2.3){ c.a=c.dir*2.3; c.av=0; c.st=2; c.t=0; } }
-  else if(c.st===2){ c.t+=dt; if(c.t>0.2) c.st=3; }
-  else { c.av=-c.dir*c.spd*0.8; c.a+=c.av*dt; if(c.a*c.dir<=0){ c.a=0; c.av=0; c.st=0; c.t=0; } } }
+  else { /* full 360° spin: everything pours out, the cup keeps turning until it is upright again */ c.av=c.dir*c.spd*0.85; c.a+=c.av*dt; if(Math.abs(c.a)>=1.6&&c.pile.length) dumpCup(c,50);
+    if(Math.abs(c.a)>=Math.PI*2){ c.a=0; c.av=0; c.st=0; c.t=0; } } }
 function updMov(m,dt){ let p; const t=((gt+m.ph)%m.per+m.per)%m.per;
   if(m.mode==="sine") p=0.5-0.5*Math.cos(2*Math.PI*t/m.per);
   else { const cl=m.per*(1-m.open), rmp=0.25; p=t<cl?0:t<cl+rmp?(t-cl)/rmp:t<m.per-rmp?1:(m.per-t)/rmp; }
@@ -725,7 +724,7 @@ cv.addEventListener("pointermove",e=>{ if(!pd) return; const dy=e.clientY-pd.y; 
 cv.addEventListener("pointerup",e=>{ dragging=false; if(!pd) return; const was=pd; pd=null; if(was.moved) return; camV=0;
   const rc=cv.getBoundingClientRect(), k=W/rc.width, x=(e.clientX-rc.left)*k, y=cam+(e.clientY-rc.top)*k, L=stageAt(y);
   if(L>S.unlocked){ if(L===S.unlocked+1) $("unlockB").onclick(); else floatText("Unlock stage "+(S.unlocked+1)+" first",e.clientX-60,e.clientY-30); return; }
-  let kb=0; for(let i=0;i<TYPES.length;i++) if(S.rate[i]) kb=i; const yy=Math.max(-8,OY[L]+4); for(let i=0;i<=P("tap");i++) spawn(kb,Math.max(12,Math.min(W-12,x+i*10)),yy); if(S.sound) tone(700,0.03,0.02); });
+  let kb=0; for(let i=0;i<TYPES.length;i++) if(S.rate[i]) kb=i; const yy=Math.max(-8,OY[L]+4); spawn(kb,Math.max(12,Math.min(W-12,x)),yy); if(S.sound) tone(700,0.03,0.02); });
 cv.addEventListener("pointercancel",()=>{ pd=null; dragging=false; });
 cv.addEventListener("wheel",e=>{ cam+=e.deltaY*0.6; clampCam(); e.preventDefault(); },{passive:false});
 $("menuB").onclick=openMenu;
