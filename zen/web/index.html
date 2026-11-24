@@ -42,10 +42,10 @@ canvas{display:block;touch-action:none}
 .btn.g{background:#3a3c43;color:#ddd}
 .perk{display:flex;gap:10px;align-items:center;text-align:left;width:100%;margin-top:9px;padding:11px;border-radius:11px;border:2px solid #3a3c43;background:#2f3137;color:#fff;font:inherit}
 .perk .pi{font-size:24px}.perk b{font-size:14px}.perk small{display:block;color:#aab;font-size:12px}
-.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px}
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;max-height:56vh;overflow-y:auto;padding:4px}
 .card{border-radius:10px;padding:8px 4px;background:#2f3137;border:2px solid #444;text-align:center;font-size:11px}
 .card .ci{font-size:26px}.card b{display:block;font-size:11.5px;margin:2px 0}.card small{color:#aab;display:block;font-size:10px;line-height:1.25}
-.card.c1{border-color:#9aa0aa}.card.c2{border-color:#3fa8ff}.card.c3{border-color:#c06bff}.card.none{opacity:.3}
+.card.c1{border-color:#9aa0aa}.card.c2{border-color:#3fa8ff}.card.c3{border-color:#c06bff}.card.c4{border-color:#ffb020;box-shadow:0 0 10px rgba(255,176,32,.35)}.card.c5{border-color:#ff4d5e;box-shadow:0 0 12px rgba(255,77,94,.45)}.card.c6{border-color:#3fffd2;box-shadow:0 0 14px rgba(63,255,210,.5);animation:exo 3s linear infinite}.card.c7{border-color:#fff6c8;background:linear-gradient(135deg,#3a2f10,#2a1f3a,#10303a);box-shadow:0 0 18px rgba(255,246,200,.6);animation:exo 1.6s linear infinite}@keyframes exo{0%{border-color:#3fffd2}33%{border-color:#ff7fd1}66%{border-color:#ffd400}100%{border-color:#3fffd2}}.card.none{opacity:.3}
 .card .st{color:#ffd400;font-size:10px;letter-spacing:-1px}
 .menu{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end}
 .menu .sh{background:#24262b;border-radius:18px 18px 0 0;width:100%;max-height:88vh;overflow-y:auto;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 48; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 49; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -129,13 +129,23 @@ const CARDS=[
  {id:"wp",r:2,ic:"⚪",name:"White Power",d:l=>`White balls ×${1+l}`},
  {id:"td",r:3,ic:"👯",name:"Twin Drop",d:l=>`${4*l}% chance to drop 2 balls`},
  {id:"md",r:3,ic:"👑",name:"Midas",d:l=>`All values ×${(1+0.25*l).toFixed(2)}`},
- {id:"ff",r:3,ic:"🔥",name:"Fever",d:l=>`Taps last ${l} s longer`}];
+ {id:"ff",r:3,ic:"🍀",name:"Lucky Gates",d:l=>`${2*l}% chance a gate pays ×10`},
+ {id:"gg",r:4,ic:"🏆",name:"Golden Gates",d:l=>`Gates ×${(1+0.25*l).toFixed(2)}`},
+ {id:"tw",r:4,ic:"⏳",name:"Time Warp",d:l=>`Spawns +${12*l}%`},
+ {id:"ph",r:5,ic:"🐦‍🔥",name:"Phoenix",d:l=>`All values ×${(1+0.5*l).toFixed(1)}`},
+ {id:"hy",r:5,ic:"🐉",name:"Hydra",d:l=>`${5*l}% chance to drop 3 balls`},
+ {id:"sg",r:6,ic:"🌌",name:"Singularity",d:l=>`All values ×${1+l}`},
+ {id:"inf",r:6,ic:"♾️",name:"Infinity",d:l=>`Spawns & gates ×${(1+0.25*l).toFixed(2)}`},
+ {id:"bb",r:7,ic:"💥",name:"Big Bang",d:l=>`All values ×${1+2*l}`},
+ {id:"om",r:7,ic:"👁️",name:"Omega",d:l=>`Values, spawns & gates ×${(1+0.5*l).toFixed(1)}`}];
+const RAR=["","Common","Rare","Epic","Legendary","Mythic","Exotic","Extraordinary"], RCOL=["","#ddd","#3fa8ff","#c06bff","#ffb020","#ff4d5e","#3fffd2","#fff6c8"];
+const RCHANCE=[0,46.6,30,12,7,3,1,0.4]; // % chance per card draw
 const C=id=>(S.cards&&S.cards[id])||0; // level
 const cardNeed=l=>l; // copies needed to go from level l to l+1
 
 
-const valueMult=()=>(S.pm||1)*Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"));
-const rateMult=()=>Math.pow(1.15,P("rate"))*(1+0.05*C("sr"));
+const valueMult=()=>(S.pm||1)*Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"))*(1+0.5*C("ph"))*(1+C("sg"))*(1+2*C("bb"))*(1+0.5*C("om"));
+const rateMult=()=>Math.pow(1.15,P("rate"))*(1+0.05*C("sr"))*(1+0.12*C("tw"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(S.bpm[k]||1)*(k===0?1+C("wp"):1);
 /* prestige: REBIRTH resets stages + ball upgrades for a permanent profit multiplier based on how far you got;
    BALL PRESTIGE resets one ball's value level for a permanent multiplier on that ball */
@@ -149,7 +159,7 @@ const stOf=L=>{ S.st[L]=S.st[L]||{o:0,g:0}; return S.st[L]; };
 // money is paid every time a ball passes a gate: ball value × section × stage gate level × (1.35 per unlocked stage)
 const STAGE_MULT=1.35;
 const worldMult=()=>Math.pow(STAGE_MULT,S.unlocked-1);
-const gateBoost=L=>(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"));
+const gateBoost=L=>(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 const shrinkOf=L=>(1-0.04*stOf(L).o)*Math.pow(0.97,P("hits"));
 
 /* ================= state ================= */
@@ -445,7 +455,7 @@ function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
 function step(dt,sim){ tankN=tankBalls();
   gt+=dt; if(fever>0) fever-=dt;
   const rm=rateMult()*(fever>0?2:1);
-  for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); } }
+  for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); if(C("hy")&&Math.random()<0.05*C("hy")){ spawn(k); spawn(k); } } }
   const doorStages=[]; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(!s) continue; if(s.mech==="flip"){ const sg=Math.floor((gt+s.ph)/4)%2?-1:1; if(sg!==s.fs){ if(s.fs) for(const sp of s.spins) if(sp.kind!=="wiper") sp.w=-sp.w; s.fs=sg; } }
     if(s.mech==="pulse") for(const sp of s.spins){ if(sp.kind==="wiper") continue; if(sp.w0==null) sp.w0=sp.w; sp.w=sp.w0*(1+0.95*Math.sin(gt*2.2+s.ph)); }
     for(const sp of s.spins){ if(sp.kind==="wiper"){ sp.t+=dt; sp.a=sp.a0+sp.amp*Math.sin(sp.t*sp.f); sp.w=sp.amp*sp.f*Math.cos(sp.t*sp.f); } else sp.a+=sp.w*dt; } for(const q of s.gates) moveGate(q,gt); for(const c of s.cups) updCup(c,dt,sim); for(const m of s.movs) updMov(m,dt); if(s.doors.length){ doorStages.push(s); for(const d of s.doors) d.cnt=0; } }
@@ -473,7 +483,7 @@ function step(dt,sim){ tankN=tankBalls();
       else if(s.mech==="magnet") for(const m of s.mags){ if(Math.sin(gt*2.1+m.ph)<0) continue; const dx=m.x-b.x, dy=m.y-b.y, d=Math.hypot(dx,dy); if(d>95||d<1) continue; const f=700*(1-d/95)*dt; b.vx+=dx/d*f-dy/d*f*0.5; b.vy+=dy/d*f+dx/d*f*0.5; }
       else if(s.mech==="portal"&&!(b.pc>gt)) for(const p of s.ports){ if(Math.abs(b.x-p.x)<14&&Math.abs(b.y-p.y)<14){ b.x=p.bx; b.y=p.by; b.vx*=0.5; b.vy=Math.max(40,b.vy*0.5); b.pc=gt+0.6; break; } } }
     // gates pay money when a ball passes them
-    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1); const v=ballVal(b.k)*m*wm; pay(v); b.norm+=m;
+    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1); const v=ballVal(b.k)*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1); pay(v); b.norm+=m;
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
     // (no more random kicks: balls resting on an obstacle stay there)
@@ -649,7 +659,7 @@ function unlockNext(sim,quiet){ const L=S.unlocked+1; if(L>NST||S.coins<priceOf(
   if(quiet){ floatText("🔓 Stage "+L+" unlocked! Tap ⭐ for your perk",innerWidth/2-130,140); return true; } goTo(L);
   const nb=GATE.indexOf(L);
   popup(`<div style="font-size:40px">🔓</div><h1>Stage ${L} unlocked!</h1><p><b>${stageName(L)}</b></p>${mechOf(L)?`<p style="margin-top:4px">New mechanic: ${MECH[mechOf(L)][0]} <b>${MECH[mechOf(L)][1]}</b> – ${MECH[mechOf(L)][2]}</p>`:""}<p style="margin-top:6px">Your balls now fall through <b>${L} stages</b> – and every gate pays <b>×1.35</b> more.</p>
-    <p style="margin-top:6px">New card: <b style="color:${["","#ddd","#3fa8ff","#c06bff"][card.r]}">${card.ic} ${card.name}</b>${up?` · level ${C(card.id)}!`:""}</p>
+    <p style="margin-top:6px">New card: <b style="color:${RCOL[card.r]}">${card.ic} ${card.name}</b> <small style="color:${RCOL[card.r]}">${RAR[card.r]}</small>${up?` · level ${C(card.id)}!`:""}</p>
     ${nb>0?`<p style="margin-top:6px">🔓 ${TYPES[nb].name} ball can now be unlocked</p>`:""}<button class="btn" id="go">Choose a perk ⭐</button>`,{go:()=>choosePerk()}); return true; }
 $("unlockB").onclick=()=>{ if(!unlockNext()){ goTo(Math.min(NST,S.unlocked+1)); if(S.sound) tone(160,0.05,0.03); } };
 document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.t; document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
@@ -664,7 +674,8 @@ function uiTop(){ if(typeof syncAuto==='function') syncAuto();
   $("cardN").style.display=S.newCards?"block":"none"; $("cardN").textContent=S.newCards; $("perkB").style.boxShadow=S.pendPerk?"0 0 0 2px #ffd400":"none"; }
 function popup(html,acts){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; L.querySelectorAll("button[id]").forEach(b=>b.onclick=()=>{ L.innerHTML=""; (acts&&acts[b.id]||(()=>{}))(); }); return L; }
 function floatText(t,x,y){ const d=document.createElement("div"); d.className="float"; d.textContent=t; d.style.left=x+"px"; d.style.top=y+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),1000); }
-function drawCard(){ const roll=Math.random(), rar=roll<0.1?3:roll<0.4?2:1, pool=CARDS.filter(c=>c.r===rar), c=pool[Math.floor(Math.random()*pool.length)];
+function drawCard(){ let roll=Math.random()*100, rar=7; for(let r=7;r>=1;r--){ if(roll<RCHANCE[r]){ rar=r; break; } roll-=RCHANCE[r]; }
+  const _=0, pool=CARDS.filter(c=>c.r===rar), c=pool[Math.floor(Math.random()*pool.length)];
   S.copies[c.id]=(S.copies[c.id]||0)+1; let up=false; while(S.copies[c.id]>=cardNeed(C(c.id)+1)&&C(c.id)<10){ S.copies[c.id]-=cardNeed(C(c.id)+1); S.cards[c.id]=C(c.id)+1; up=true; } return [c,up]; }
 function choosePerk(){ if(!S.pendPerk) return;
   const pool=[...PERKS].sort(()=>Math.random()-.5).slice(0,3);
@@ -673,7 +684,7 @@ function choosePerk(){ if(!S.pendPerk) return;
 $("perkB").onclick=()=>{ if(S.pendPerk) return choosePerk();
   popup(`<h1>Perks ⭐</h1><p>You choose one for every stage you unlock.</p>${PERKS.map(p=>`<div class="perk"><span class="pi">${p.ic}</span><span><b>${p.name} ×${P(p.id)}</b><small>${p.d}</small></span></div>`).join("")}<button class="btn" id="ok">Close</button>`); };
 $("cardB").onclick=()=>{ S.newCards=0; uiTop(); save(true);
-  popup(`<h1>Cards 🃏</h1><p>You get a card for every stage you unlock. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):["","Common","Rare","Epic"][c.r]}</small></div>`; }).join("")}</div><button class="btn" id="ok">Close</button>`); };
+  popup(`<h1>Cards 🃏</h1><p>You get a card for every stage you unlock. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):RAR[c.r]}</small></div>`; }).join("")}</div><p style="font-size:11px;color:#9aa0aa;margin-top:8px">Drop chances: ${RAR.slice(1).map((n,i)=>`<b style="color:${RCOL[i+1]}">${n} ${RCHANCE[i+1]}%</b>`).join(" · ")}</p><button class="btn" id="ok">Close</button>`); };
 $("musB").onclick=()=>{ S.music=!S.music; syncMusic(); uiTop(); save(true); };
 $("sndB").onclick=()=>{ S.sound=!S.sound; uiTop(); save(true); };
 function rebirth(){ S.pm=rebAfter(); S.rebirths=(S.rebirths||0)+1;
@@ -710,7 +721,7 @@ cv.addEventListener("pointermove",e=>{ if(!pd) return; const dy=e.clientY-pd.y; 
 cv.addEventListener("pointerup",e=>{ dragging=false; if(!pd) return; const was=pd; pd=null; if(was.moved) return; camV=0;
   const rc=cv.getBoundingClientRect(), k=W/rc.width, x=(e.clientX-rc.left)*k, y=cam+(e.clientY-rc.top)*k, L=stageAt(y);
   if(L>S.unlocked){ if(L===S.unlocked+1) $("unlockB").onclick(); else floatText("Unlock stage "+(S.unlocked+1)+" first",e.clientX-60,e.clientY-30); return; }
-  let kb=0; for(let i=0;i<TYPES.length;i++) if(S.rate[i]) kb=i; const yy=Math.max(-8,OY[L]+4); for(let i=0;i<=P("tap");i++) spawn(kb,Math.max(12,Math.min(W-12,x+i*10)),yy); if(C("ff")) fever=Math.max(fever,0.5*C("ff")); if(S.sound) tone(700,0.03,0.02); });
+  let kb=0; for(let i=0;i<TYPES.length;i++) if(S.rate[i]) kb=i; const yy=Math.max(-8,OY[L]+4); for(let i=0;i<=P("tap");i++) spawn(kb,Math.max(12,Math.min(W-12,x+i*10)),yy); if(S.sound) tone(700,0.03,0.02); });
 cv.addEventListener("pointercancel",()=>{ pd=null; dragging=false; });
 cv.addEventListener("wheel",e=>{ cam+=e.deltaY*0.6; clampCam(); e.preventDefault(); },{passive:false});
 $("menuB").onclick=openMenu;

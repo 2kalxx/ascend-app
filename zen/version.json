@@ -1,7 +1,7 @@
 {
-  "web": 48,
+  "web": 49,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "New tight funnels, side guards, 4 new mechanics, warm colours, power saving mode, rebirth starts at +1"
+  "notes": "New card rarities: Legendary, Mythic, Exotic, Extraordinary; Fever → Lucky Gates"
 }
