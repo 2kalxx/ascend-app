@@ -84,7 +84,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 49; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 50; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -400,8 +400,11 @@ const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
 function pay(v){ S.coins+=v; S.total+=v; earnWin+=v; }
 // more balls than the unlocked stages can hold while flowing: the extra ones pay what an average ball earned on its way down
-function spawn(k,x,y){ if(balls.length+tankN>=ballCap()){ pay(ballVal(k)*worldMult()*avgNorm); return; } 
-  const sp=getStage(1).spawn; balls.push({k,x:x!=null?x:sp[0]+Math.random()*(sp[1]-sp[0]),y:y!=null?y:-8,vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0}); }
+/* VIP balls: any ball type has a small chance to spawn as a gold-crowned VIP that pays ×10 */
+const VIP_CHANCE=0.006, VIP_PAY=10;
+function spawn(k,x,y){ const vip=Math.random()<VIP_CHANCE; if(balls.length+tankN>=ballCap()){ pay(ballVal(k)*worldMult()*avgNorm*(vip?VIP_PAY:1)); return; } 
+  const sp=getStage(1).spawn; balls.push({k,x:x!=null?x:sp[0]+Math.random()*(sp[1]-sp[0]),y:y!=null?y:-8,vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0,vip}); }
+const packN=b=>b.vip?-b.norm-1:b.norm, unN=n=>n<0?-n-1:n; // cups & tanks remember VIP balls via the sign of the stored norm
 function collide(b,cx,cy,cr,e,ovx,ovy){ const dx=b.x-cx, dy=b.y-cy, d2=dx*dx+dy*dy, m=b.r+cr; if(d2>=m*m) return false; const d=Math.sqrt(d2)||0.01;
   const nx=dx/d, ny=dy/d; b.x=cx+nx*m; b.y=cy+ny*m; const rvx=b.vx-(ovx||0), rvy=b.vy-(ovy||0), vn=rvx*nx+rvy*ny; if(vn<0){ b.vx-=(1+e)*vn*nx; b.vy-=(1+e)*vn*ny; b.vx+=(Math.random()-.5)*10; return vn<-60; } return false; }
 function segHit(b,s,e,svx,svy){ const dx=s.x2-s.x1, dy=s.y2-s.y1, t=Math.max(0,Math.min(1,((b.x-s.x1)*dx+(b.y-s.y1)*dy)/(dx*dx+dy*dy))); return collide(b,s.x1+dx*t,s.y1+dy*t,(s.w||8)/2,e,svx,svy); }
@@ -427,7 +430,7 @@ const cupCap=c=>c.cols*c.rows;
 function cupPile(c,i){ const row=Math.floor(i/c.cols), col=i%c.cols, lx=-c.w+5+PR+col*13.6+(row%2?2:0), ly=c.h-4-PR-row*12, ca=Math.cos(c.a), sa=Math.sin(c.a); return [c.x+ca*lx-sa*ly, c.y+sa*lx+ca*ly, lx, ly]; }
 function cupEdges(c){ const ca=Math.cos(c.a), sa=Math.sin(c.a), P=[[-c.w,-c.h],[-c.w,c.h],[c.w,c.h],[c.w,-c.h]].map(([x,y])=>[c.x+ca*x-sa*y,c.y+sa*x+ca*y]);
   return [0,1,2].map(i=>({x1:P[i][0],y1:P[i][1],x2:P[i+1][0],y2:P[i+1][1],w:6})); }
-function dumpCup(c,push){ for(let i=0;i<c.pile.length;i++){ const [x,y]=cupPile(c,i), k=c.pile[i]; balls.push({k,x,y,vx:-(y-c.y)*c.av+c.dir*push+(Math.random()-.5)*20,vy:(x-c.x)*c.av,r:radius(k),norm:c.pileN[i],gm:0,slow:0,life:0,st:0,stT:0}); } c.pile=[]; c.pileN=[]; }
+function dumpCup(c,push){ for(let i=0;i<c.pile.length;i++){ const [x,y]=cupPile(c,i), k=c.pile[i]; balls.push({k,x,y,vx:-(y-c.y)*c.av+c.dir*push+(Math.random()-.5)*20,vy:(x-c.x)*c.av,r:radius(k),norm:unN(c.pileN[i]),vip:c.pileN[i]<0,gm:0,slow:0,life:0,st:0,stT:0}); } c.pile=[]; c.pileN=[]; }
 function updCup(c,dt,sim){
   if(c.st===0){ c.t+=dt; if(c.pile.length>=cupCap(c)||(c.t>8&&c.pile.length)){ c.st=1; c.dir=c.fix||-c.dir; c.t=0; if(!sim&&S.sound) tone(300,0.06,0.03); } }
   else if(c.st===1){ c.av=c.dir*c.spd; c.a+=c.av*dt; if(Math.abs(c.a)>=1.6&&c.pile.length) dumpCup(c,50); if(Math.abs(c.a)>=2.3){ c.a=c.dir*2.3; c.av=0; c.st=2; c.t=0; } }
@@ -437,7 +440,7 @@ function updMov(m,dt){ let p; const t=((gt+m.ph)%m.per+m.per)%m.per;
   if(m.mode==="sine") p=0.5-0.5*Math.cos(2*Math.PI*t/m.per);
   else { const cl=m.per*(1-m.open), rmp=0.25; p=t<cl?0:t<cl+rmp?(t-cl)/rmp:t<m.per-rmp?1:(m.per-t)/rmp; }
   const vp=dt>0?(p-m.p)/dt:0; m.p=p; m.vx=m.dx*vp; m.vy=m.dy*vp; const c=m.cur; c.x1=m.x1+m.dx*p; c.y1=m.y1+m.dy*p; c.x2=m.x2+m.dx*p; c.y2=m.y2+m.dy*p; c.w=m.w; }
-function releaseTank(d,sim){ for(let i=0;i<d.pile.length;i++){ const [x,y]=pilePos(d,i), k=d.pile[i]; balls.push({k,x,y,vx:(Math.random()-.5)*20,vy:20,r:radius(k),norm:d.pileN[i],gm:0,slow:0,life:0,st:0,stT:0}); }
+function releaseTank(d,sim){ for(let i=0;i<d.pile.length;i++){ const [x,y]=pilePos(d,i), k=d.pile[i]; balls.push({k,x,y,vx:(Math.random()-.5)*20,vy:20,r:radius(k),norm:unN(d.pileN[i]),vip:d.pileN[i]<0,gm:0,slow:0,life:0,st:0,stT:0}); }
   d.pile=[]; d.pileN=[]; d.open=true; d.openT=0; if(!sim&&S.sound) tone(220,0.08,0.04); }
 function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
   const gy=((b.y-s.oy)/OC)|0, gx=(b.x/OC)|0, cell=gy>=0&&gy<s.ogRows&&gx>=0&&gx<OCOLS?s.og[gy*OCOLS+gx]:null;
@@ -483,7 +486,7 @@ function step(dt,sim){ tankN=tankBalls();
       else if(s.mech==="magnet") for(const m of s.mags){ if(Math.sin(gt*2.1+m.ph)<0) continue; const dx=m.x-b.x, dy=m.y-b.y, d=Math.hypot(dx,dy); if(d>95||d<1) continue; const f=700*(1-d/95)*dt; b.vx+=dx/d*f-dy/d*f*0.5; b.vy+=dy/d*f+dx/d*f*0.5; }
       else if(s.mech==="portal"&&!(b.pc>gt)) for(const p of s.ports){ if(Math.abs(b.x-p.x)<14&&Math.abs(b.y-p.y)<14){ b.x=p.bx; b.y=p.by; b.vx*=0.5; b.vy=Math.max(40,b.vy*0.5); b.pc=gt+0.6; break; } } }
     // gates pay money when a ball passes them
-    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1); const v=ballVal(b.k)*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1); pay(v); b.norm+=m;
+    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1); const v=ballVal(b.k)*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1)*(b.vip?VIP_PAY:1); pay(v); if(b.vip&&!sim&&Math.random()<0.3) pops.push({x:b.x,y:q.y-14,t:1,txt:"👑"+money(v)}); b.norm+=m;
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
     // (no more random kicks: balls resting on an obstacle stay there)
@@ -493,10 +496,10 @@ function step(dt,sim){ tankN=tankBalls();
       // the space under the two ramps is solid: a squeezed ball can't be pushed through a ramp
       if(b.y<d.y&&(b.x<d.x1||b.x>d.x2)){ const dx=b.x<d.x1?b.x:W-b.x, ry=d.rampY0+dx*d.rampK-7-b.r; if(b.y>ry&&b.y<ry+60){ b.y=ry; if(b.vy>0) b.vy=0; } } }
     let gone=false;
-    for(const c of s.cups){ if(c.st) continue; const dx=b.x-c.x, dy=b.y-c.y; if(Math.abs(dx)<c.w-b.r&&dy>-c.h&&dy<c.h&&dy>=c.h-4-Math.ceil((c.pile.length+1)/c.cols)*12-b.r){ c.pile.push(b.k); c.pileN.push(b.norm); gone=true; break; } }
+    for(const c of s.cups){ if(c.st) continue; const dx=b.x-c.x, dy=b.y-c.y; if(Math.abs(dx)<c.w-b.r&&dy>-c.h&&dy<c.h&&dy>=c.h-4-Math.ceil((c.pile.length+1)/c.cols)*12-b.r){ c.pile.push(b.k); c.pileN.push(packN(b)); gone=true; break; } }
     for(const d of s.doors){ if(b.x>d.x1&&b.x<d.x2&&b.y>d.top&&b.y<d.y+40) d.cnt++;
       // tank closed: a ball that reaches the pile becomes part of it (stacked neatly until the pile reaches the top)
-      if(!d.open&&b.x>d.x1+4&&b.x<d.x2-4&&b.y>d.top&&b.y>=tankSurface(d)-b.r){ d.pile.push(b.k); d.pileN.push(b.norm); gone=true; break; } }
+      if(!d.open&&b.x>d.x1+4&&b.x<d.x2-4&&b.y>d.top&&b.y>=tankSurface(d)-b.r){ d.pile.push(b.k); d.pileN.push(packN(b)); gone=true; break; } }
     if(gone){ balls.splice(i,1); continue; }
     if(b.y>EY){ avgNorm=avgNorm*0.98+0.02*b.norm; balls.splice(i,1); }
   }
@@ -617,7 +620,8 @@ function render(){
   }
   if(EY>cam-20&&EY<cam+viewH+20){ ctx.fillStyle="#ffd400"; ctx.fillRect(0,EY-3,W,3); ctx.font="900 10px system-ui"; ctx.textAlign="center"; ctx.fillStyle="#ffd400"; ctx.fillText("▼ END ▼",W/2,EY+12); }
   { const y0=cam-10, y1=cam+viewH+10;
-    for(let k=0;k<TYPES.length;k++){ ctx.beginPath(); let any=false; for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; ctx.moveTo(b.x+(b.r0||b.r),b.y); ctx.arc(b.x,b.y,b.r0||b.r,0,Math.PI*2); any=true; } if(any){ ctx.fillStyle=TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col; ctx.fill(); } } }
+    for(let k=0;k<TYPES.length;k++){ ctx.beginPath(); let any=false; for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; ctx.moveTo(b.x+(b.r0||b.r),b.y); ctx.arc(b.x,b.y,b.r0||b.r,0,Math.PI*2); any=true; } if(any){ ctx.fillStyle=TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col; ctx.fill(); } }
+    ctx.lineWidth=2.5; for(const b of balls){ if(!b.vip||b.y<y0||b.y>y1) continue; ctx.strokeStyle="#ffd400"; ctx.beginPath(); ctx.arc(b.x,b.y,b.r+2.5+Math.sin(gt*8)*0.8,0,Math.PI*2); ctx.stroke(); ctx.fillStyle="#ffd400"; ctx.beginPath(); ctx.moveTo(b.x-4,b.y-b.r-3); ctx.lineTo(b.x-4,b.y-b.r-8); ctx.lineTo(b.x-1.5,b.y-b.r-5); ctx.lineTo(b.x,b.y-b.r-9); ctx.lineTo(b.x+1.5,b.y-b.r-5); ctx.lineTo(b.x+4,b.y-b.r-8); ctx.lineTo(b.x+4,b.y-b.r-3); ctx.fill(); } }
   if(fever>0){ ctx.fillStyle="rgba(255,212,0,.1)"; ctx.fillRect(0,cam,W,viewH); }
   ctx.font="800 11px system-ui"; ctx.textAlign="center"; for(const p of pops){ ctx.globalAlpha=Math.max(0,p.t); ctx.fillStyle="#ffd400"; ctx.fillText(p.txt,p.x,p.y); } ctx.globalAlpha=1;
 }

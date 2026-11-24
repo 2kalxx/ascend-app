@@ -1,7 +1,7 @@
 {
-  "web": 49,
+  "web": 50,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "New card rarities: Legendary, Mythic, Exotic, Extraordinary; Fever → Lucky Gates"
+  "notes": "VIP balls: rare gold-crowned balls that pay ×10"
 }
