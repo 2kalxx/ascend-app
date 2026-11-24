@@ -1,7 +1,7 @@
 {
-  "web": 7,
+  "web": 8,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/OrbitCrush.apk",
-  "notes": "App update: checks & installs updates automatically when opened"
+  "notes": "Harder levels: tougher blocks, faster regrowth"
 }
