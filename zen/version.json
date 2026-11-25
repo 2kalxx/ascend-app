@@ -1,7 +1,7 @@
 {
-  "web": 55,
+  "web": 56,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Stages 1-5 rebuilt: zig-zag ramps, timed hatches that let only a few balls through, and a mechanic each"
+  "notes": "Stages 1-5: funnels instead of one-sided ramps, free space under the spawn slots, no more pile-ups at the top"
 }
