@@ -1,7 +1,7 @@
 {
-  "web": 54,
+  "web": 55,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Ferris Wheel stages, daily hot stage (x5), card dust, stats screen, longer offline time"
+  "notes": "Stages 1-5 rebuilt: zig-zag ramps, timed hatches that let only a few balls through, and a mechanic each"
 }
