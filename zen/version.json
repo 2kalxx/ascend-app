@@ -1,7 +1,7 @@
 {
-  "web": 52,
+  "web": 53,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Each ball type spawns from its own spot – two rows of 10 at the top"
+  "notes": "Trophies: 30 milestones earned automatically, each +4% to all ball values, kept through rebirths"
 }
