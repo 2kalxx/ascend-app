@@ -1,7 +1,7 @@
 {
-  "web": 53,
+  "web": 54,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Trophies: 30 milestones earned automatically, each +4% to all ball values, kept through rebirths"
+  "notes": "Ferris Wheel stages, daily hot stage (x5), card dust, stats screen, longer offline time"
 }

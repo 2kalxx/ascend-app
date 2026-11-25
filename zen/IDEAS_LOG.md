@@ -10,3 +10,4 @@ Built so far (newest last). Daily runs: read this first, never repeat an idea, a
 - 2026-11-24 – VIP balls (0.6%, ×10); Double tap perk → VIP Scout; cups do a full 360° spin (v50–v51)
 - 2026-11-24 – Spawn slots: every ball type spawns from its own spot, two rows of 10 at the top of stage 1, with markers (v52)
 - 2026-11-25 – Trophies 🏆: 30 milestones (stages, rebirths, total earned, ball types, prestiges, card levels, VIP balls) earned automatically, each +4% all ball values, kept through rebirths; new top-bar button (v53)
+- 2026-11-25 – Five at once (v54): 🎡 Ferris Wheel machine (bucket wheel, main machine of stages 15, 25 … 145, each with a different mechanic); 🔥 daily hot stage (one owned stage's gates ×5 until midnight); ✨ card dust (copies of level-10 cards → 5 dust = Epic+ card); 📊 stats screen (last-minute $/s per stage and ball type); 🌙 offline cap 4h +1h at stages 25/50/100/150
