@@ -1,7 +1,7 @@
 {
-  "web": 63,
+  "web": 64,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Zen Drop 2.0 part 3: research lab, Ascension & skill tree, world weather, toll stages, heavy machines"
+  "notes": "Boss fights are announced with a popup (also with AUTO), victory popup always shows, boss button glows"
 }
