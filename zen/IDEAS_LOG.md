@@ -14,3 +14,4 @@ Built so far (newest last). Daily runs: read this first, never repeat an idea, a
 - 2026-11-26 – Stages 1–5 rebuilt (v55, user request): zig-zag ramps, narrow funnels and timed sluice hatches (only a few balls drop at a time), plus one mechanic each – 1 Golden Windmill Zigzag, 2 Conveyor Fan Funnels, 3 Windy Wiper Zigzag, 4 Flip Cup Ladder, 5 Boost Bucket Drop
 - 2026-11-26 – v56 fix after user feedback: stages 1–5 use funnels with zig-zagging necks instead of one-sided ramps; stage 1 starts lower so the spawn slots stay free; sluice hatches only in stages 3–5 (wider); earnings back to v54 level
 - 2026-11-26 – v57: hatches removed from stages 1–5 (user request), plain middle funnel instead
+- 2026-11-26 – v58: stage 1 gold pegs placed under every funnel neck (no more random gold peg in the spawn rows); ball counter shows '⚡ Full' at the limit, tap explains it, and instantly paid balls flash ⚡$ at their spawn slot; ♻️ button only pulses when a rebirth adds ≥50%
