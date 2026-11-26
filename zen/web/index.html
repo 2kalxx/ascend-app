@@ -91,7 +91,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 64; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 65; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -167,7 +167,14 @@ const stOf=L=>{ S.st[L]=S.st[L]||{o:0,g:0}; return S.st[L]; };
 // money is paid every time a ball passes a gate: ball value × section × stage gate level × (1.35 per unlocked stage)
 const STAGE_MULT=1.35;
 const worldMult=()=>Math.pow(STAGE_MULT,S.unlocked-1);
-const gateBoost=L=>(L>135?1.5:1)*(SK("gat1")?1.5:1)*(SK("gat2")?2:1)*(wxIn(L)?wx.g:1)*(isHeavy(L)&&heavyOk(L)?1.5:1)*(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
+/* stage mastery: every gate a ball passes counts for that stage (kept forever, also through rebirth & ascension); 5 tiers, each +10% gates on that stage */
+const MAST=[2e3,2e4,1.5e5,1e6,6e6], MCOL=["#888","#c98a4b","#c9d1d9","#ffd400","#3fffd2","#ff7fd1"];
+const mastN=L=>(S.mast&&S.mast[L])||0, mastLv=L=>{ const n=mastN(L); let i=0; while(i<MAST.length&&n>=MAST[i]) i++; return i; };
+const mastTotal=()=>{ let t=0; for(const k in S.mast) t+=mastLv(+k); return t; };
+function mastHit(L,sim){ const n=(S.mast[L]=(S.mast[L]||0)+1); const i=MAST.indexOf(n); if(i<0) return; if(sim) return;
+  if(typeof floatText==="function") floatText("🎖️ Stage "+L+" mastery "+(i+1)+"/5 · gates +"+(10*(i+1))+"%",innerWidth/2-110,150);
+  if(S.sound&&typeof tone==="function") [659,880].forEach((f,j)=>setTimeout(()=>tone(f,0.05,0.04),j*90)); }
+const gateBoost=L=>(1+0.1*mastLv(L))*(L>135?1.5:1)*(SK("gat1")?1.5:1)*(SK("gat2")?2:1)*(wxIn(L)?wx.g:1)*(isHeavy(L)&&heavyOk(L)?1.5:1)*(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 const shrinkOf=L=>(1-0.04*stOf(L).o)*Math.pow(0.97,P("hits"));
 
 /* ================= Zen Drop 2.0: 10 worlds × 15 stages, a boss at the end of every world, the workshop ================= */
@@ -240,13 +247,13 @@ const heavyOk=L=>topVal()>=heavyReq(L);
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(20).fill(0),bpm:Array(20).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0,ws:{},bossDone:{},bossDmg:{},bossFirst:{},wv:0,res:{},resCur:null,skills:{},stars:0,asc:0,toll:{},tollDone:{}}; }
+function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(20).fill(0),bpm:Array(20).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0,ws:{},bossDone:{},bossDmg:{},bossFirst:{},wv:0,res:{},resCur:null,skills:{},stars:0,asc:0,toll:{},tollDone:{},mast:{}}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
 while(S.rate.length<TYPES.length) S.rate.push(0); while(S.val.length<TYPES.length) S.val.push(1);
 while(S.bstar.length<TYPES.length) S.bstar.push(0); while(S.bpm.length<TYPES.length) S.bpm.push(1);
 if(!(S.pm>0)) S.pm=1; S.best=Math.max(S.best||1,S.unlocked||1);
 if((S.ver||0)<2){ for(const k in S.st) S.st[k].o=0; S.ver=2; } // v2: "o" is now obstacle shrink (0..8)
-for(const k_ of ["ws","bossDone","bossDmg","bossFirst","res","skills","toll","tollDone"]) if(!S[k_]||typeof S[k_]!=="object") S[k_]={}; if(!(S.stars>=0)) S.stars=0; if(!(S.asc>=0)) S.asc=0; if(S.resCur&&!(S.resCur.end>0)) S.resCur=null;
+for(const k_ of ["ws","bossDone","bossDmg","bossFirst","res","skills","toll","tollDone","mast"]) if(!S[k_]||typeof S[k_]!=="object") S[k_]={}; if(!(S.stars>=0)) S.stars=0; if(!(S.asc>=0)) S.asc=0; if(S.resCur&&!(S.resCur.end>0)) S.resCur=null;
 if(!(S.wv>=2)){ for(let L=23;L<(S.unlocked||1);L+=15) S.tollDone[L]=1; if(S.wv>=1) S.wv=2; } // saves from before part 3: tolls you already passed count as paid
 if(!(S.wv>=1)){ S.wv=2; for(let L=15;L<(S.unlocked||1);L+=15) S.bossDone[L]=1; for(let L=15;L<(S.best||1);L+=15) S.bossFirst[L]=1; } // saves from before 2.0: bosses you already passed count as beaten
 if(!S.troph||typeof S.troph!=="object") S.troph={}; if(!(S.dust>=0)) S.dust=0; if(S.hot&&!(S.hot.L>=1)) S.hot=null; S.newTro=S.newTro||0; S.vipN=S.vipN||0;
@@ -261,6 +268,7 @@ trGroup("bp","✨","Polisher",()=>S.bstar.reduce((a,b)=>a+b,0),[1,5,15],g=>g===1
 trGroup("cd","🃏","Card Shark",()=>Object.values(S.cards).reduce((a,b)=>a+(+b||0),0),[5,20,50],g=>g+" card levels in total");
 trGroup("bs","⚔️","Boss Slayer",()=>Object.keys(S.bossFirst).length,[1,5,10],g=>g===1?"Beat a boss":"Beat "+g+" bosses");
 trGroup("as","🌟","Ascended",()=>S.asc||0,[1,3],g=>g===1?"Ascend once":"Ascend "+g+" times");
+trGroup("ms","🎖️","Master",()=>mastTotal(),[5,25,100,300],g=>g+" mastery tiers in total");
 trGroup("vp","👑","VIP Club",()=>S.vipN||0,[1,100,1000],g=>g===1?"Drop a VIP ball":"Drop "+g+" VIP balls");
 const trCount=()=>TROPH.filter(t=>S.troph[t.id]).length;
 trN=trCount();
@@ -676,7 +684,7 @@ function step(dt,sim){ tankN=tankBalls(); statTick(dt);
       else if(s.mech==="magnet") for(const m of s.mags){ if(Math.sin(gt*2.1+m.ph)<0) continue; const dx=m.x-b.x, dy=m.y-b.y, d=Math.hypot(dx,dy); if(d>95||d<1) continue; const f=700*(1-d/95)*dt; b.vx+=dx/d*f-dy/d*f*0.5; b.vy+=dy/d*f+dx/d*f*0.5; }
       else if(s.mech==="portal"&&!(b.pc>gt)) for(const p of s.ports){ if(Math.abs(b.x-p.x)<14&&Math.abs(b.y-p.y)<14){ b.x=p.bx; b.y=p.by; b.vx*=0.5; b.vy=Math.max(40,b.vy*0.5); b.pc=gt+0.6; break; } } }
     // gates pay money when a ball passes them
-    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; b.cmb=sec===1?(b.cmb||0)+1:0; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1), cmb=1+0.1*Math.min(10,Math.max(0,b.cmb-1)); const v=ballVal(b.k)*(b.vm||1)*cmb*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1)*(b.vip?VIP_PAY:1)*(L===hotL?HOT_MULT:1); pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(L===bossL) bossHit(L,b.vip?10:1,sim); if(b.vip&&!sim&&Math.random()<0.3) pops.push({x:b.x,y:q.y-14,t:1,txt:"👑"+money(v)}); b.norm+=m;
+    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; b.cmb=sec===1?(b.cmb||0)+1:0; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1), cmb=1+0.1*Math.min(10,Math.max(0,b.cmb-1)); const v=ballVal(b.k)*(b.vm||1)*cmb*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1)*(b.vip?VIP_PAY:1)*(L===hotL?HOT_MULT:1); pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(L===bossL) bossHit(L,b.vip?10:1,sim); mastHit(L,sim); if(b.vip&&!sim&&Math.random()<0.3) pops.push({x:b.x,y:q.y-14,t:1,txt:"👑"+money(v)}); b.norm+=m;
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     for(const q of s.bins){ if(py<q.y&&b.y>=q.y){ let j=0; while(j<q.m.length-1&&b.x>=q.xs[j+1]) j++; const v=ballVal(b.k)*(b.vm||1)*wm*q.m[j]*0.25*(b.vip?VIP_PAY:1)*(1+0.2*R("gold")); pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(!sim&&Math.random()<0.06) pops.push({x:b.x,y:q.y-12,t:1,txt:"×"+q.m[j]+" "+money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
@@ -880,7 +888,7 @@ function uiList(force){
   else { h+=`<div class="hd"><span>STAGES</span><span>SHRINK</span><span>GATES</span></div>`;
     for(let L=1;L<=S.unlocked;L++){ const st=stOf(L);
       if(L%15===1){ const wd=WORLDS[worldOf(L)]; h+=`<div class="wh" style="border-color:${wd.col}" data-go="${L}"><b style="color:${wd.col}">${wd.ic} WORLD ${worldOf(L)+1} · ${wd.name.toUpperCase()}</b><small>${wd.d}</small></div>`; }
-      h+=`<div class="srow2"><div class="num"${isBoss(L)?' style="background:#5a1f24;color:#ffb3a8"':""}>${L}</div><div class="rt" data-go="${L}"><b>${isBoss(L)?WORLDS[worldOf(L)].boss[0]+(bossDone(L)||L<S.unlocked?"✔ ":" "):""}${isToll(L)?"🎟️ ":""}${isHeavy(L)?(heavyOk(L)?"⚙️ ":"⛓️ "):""}${L===hotL?`<span style="color:#ff8a3a">🔥×${HOT_MULT}</span> `:""}${stageName(L)}</b><small>size ${Math.round(shrinkOf(L)*100)}% · gates ×${gateBoost(L).toFixed(2)}</small></div>${btn("o"+L,st.o,OMAX,l=>costObs(L,l))}${btn("g"+L,st.g,GMAX,l=>costGate(L,l))}</div>`; } }
+      h+=`<div class="srow2"><div class="num"${isBoss(L)?' style="background:#5a1f24;color:#ffb3a8"':""}>${L}</div><div class="rt" data-go="${L}"><b>${isBoss(L)?WORLDS[worldOf(L)].boss[0]+(bossDone(L)||L<S.unlocked?"✔ ":" "):""}${isToll(L)?"🎟️ ":""}${isHeavy(L)?(heavyOk(L)?"⚙️ ":"⛓️ "):""}${L===hotL?`<span style="color:#ff8a3a">🔥×${HOT_MULT}</span> `:""}${stageName(L)}${mastLv(L)?` <span style="color:${MCOL[mastLv(L)]}">🎖️${mastLv(L)}</span>`:""}</b><small>size ${Math.round(shrinkOf(L)*100)}% · gates ×${gateBoost(L).toFixed(2)} · 🎖️${mastLv(L)<5?10*Math.floor(10*mastN(L)/MAST[mastLv(L)])+"%":"max"}</small></div>${btn("o"+L,st.o,OMAX,l=>costObs(L,l))}${btn("g"+L,st.g,GMAX,l=>costGate(L,l))}</div>`; } }
   if(!force&&h===listSig) return; const sc_=$("list").scrollTop; listSig=h; $("list").innerHTML=h; $("list").scrollTop=sc_; }
 $("list").addEventListener("click",e=>{ const rs=e.target.closest("[data-res]"); if(rs) return startRes(+rs.dataset.res); const bp=e.target.closest("[data-bp]"); if(bp) return ballPrestige(+bp.dataset.bp); const b=e.target.closest("[data-b]"); if(b) return buy(b.dataset.b); const g=e.target.closest("[data-go]"); if(g) goTo(+g.dataset.go); });
 function buy(id,quiet,one){

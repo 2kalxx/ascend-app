@@ -1,7 +1,7 @@
 {
-  "web": 64,
+  "web": 65,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Boss fights are announced with a popup (also with AUTO), victory popup always shows, boss button glows"
+  "notes": "Stage mastery 🎖️: every gate pass counts, 5 tiers per stage (+10% gates each), kept through rebirth; 4 new Master trophies"
 }
