@@ -15,3 +15,4 @@ Built so far (newest last). Daily runs: read this first, never repeat an idea, a
 - 2026-11-26 – v56 fix after user feedback: stages 1–5 use funnels with zig-zagging necks instead of one-sided ramps; stage 1 starts lower so the spawn slots stay free; sluice hatches only in stages 3–5 (wider); earnings back to v54 level
 - 2026-11-26 – v57: hatches removed from stages 1–5 (user request), plain middle funnel instead
 - 2026-11-26 – v58: stage 1 gold pegs placed under every funnel neck (no more random gold peg in the spawn rows); ball counter shows '⚡ Full' at the limit, tap explains it, and instantly paid balls flash ⚡$ at their spawn slot; ♻️ button only pulses when a rebirth adds ≥50%
+- 2026-11-26 – v59: at the ball limit the lowest ball is cashed out early (pays its expected remaining value) instead of stopping spawns, so stage 1 never runs empty; earnings unchanged (+3%)
