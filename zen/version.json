@@ -1,7 +1,7 @@
 {
-  "web": 59,
+  "web": 60,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Full board: the lowest ball is cashed out early so new balls keep dropping at the top"
+  "notes": "Full board: balls no longer vanish early \u2013 a slow trickle keeps dropping and balls reach every stage again"
 }

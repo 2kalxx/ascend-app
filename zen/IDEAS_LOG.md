@@ -16,3 +16,4 @@ Built so far (newest last). Daily runs: read this first, never repeat an idea, a
 - 2026-11-26 – v57: hatches removed from stages 1–5 (user request), plain middle funnel instead
 - 2026-11-26 – v58: stage 1 gold pegs placed under every funnel neck (no more random gold peg in the spawn rows); ball counter shows '⚡ Full' at the limit, tap explains it, and instantly paid balls flash ⚡$ at their spawn slot; ♻️ button only pulses when a rebirth adds ≥50%
 - 2026-11-26 – v59: at the ball limit the lowest ball is cashed out early (pays its expected remaining value) instead of stopping spawns, so stage 1 never runs empty; earnings unchanged (+3%)
+- 2026-11-26 – v60 fix: v59 cashed out the lowest ball on every spawn, so balls vanished around stage 5. Now, when full, most spawns pay instantly and only a slow trickle (cap/600 per s) drops; for each the longest-waiting ball of the most crowded stage is cashed out, so the front still reaches every stage

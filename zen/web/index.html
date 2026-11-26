@@ -87,7 +87,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 59; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 60; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -446,9 +446,13 @@ const slotX=k=>18+(k%10)*36, slotY=k=>52+Math.floor(k/10)*33;
 /* VIP balls: any ball type has a small chance to spawn as a gold-crowned VIP that pays ×10 */
 const VIP_CHANCE=0.006, VIP_PAY=10;
 function spawn(k,x,y){ const vip=Math.random()<VIP_CHANCE*(1+0.5*P("tap")); if(vip) S.vipN=(S.vipN||0)+1; if(balls.length+tankN>=ballCap()){
-    /* board full: cash out the ball that is furthest down (it pays what it would still have earned) so the top never runs dry */
-    let lo=-1, ly=-1e9; for(let i=0;i<balls.length;i++){ const y_=balls[i].y; if(y_>ly){ ly=y_; lo=i; } }
-    if(lo>=0&&ly>OY[2]){ const o=balls[lo], v=ballVal(o.k)*worldMult()*Math.max(0,avgNorm-o.norm)*(o.vip?VIP_PAY:1); pay(v); if(pops.length<40&&Math.random()<0.05) pops.push({x:o.x,y:o.y-10,t:1,txt:"⚡"+money(v)}); balls.splice(lo,1); }
+    /* board full: most new balls pay instantly, but a slow trickle (enough to refill the whole board every ~10 min) still drops at the top;
+       for each of those, the ball that has waited longest in the most crowded stage (below stage 1) is cashed out – it pays what it would still have earned.
+       Never the front-runners, so balls still reach every stage. */
+    let lo=-1, ly=1;
+    if(trickle>=1&&balls.length){ const cnt=new Int32Array(NST+2); for(const o of balls) cnt[stageAt(o.y)]++; let LM=0; for(let L=2;L<=S.unlocked;L++) if(cnt[L]>(cnt[LM]||0)) LM=L;
+      if(LM){ let best=-1; ly=OY[2]+1; for(let i=0;i<balls.length;i++){ const o=balls[i]; if(o.life>best&&stageAt(o.y)===LM){ best=o.life; lo=i; } } } }
+    if(lo>=0&&ly>OY[2]){ trickle--; const o=balls[lo], v=ballVal(o.k)*worldMult()*Math.max(0,avgNorm-o.norm)*(o.vip?VIP_PAY:1); pay(v); if(pops.length<40&&Math.random()<0.05) pops.push({x:o.x,y:o.y-10,t:1,txt:"⚡"+money(v)}); balls.splice(lo,1); }
     else { const v=ballVal(k)*worldMult()*avgNorm*(vip?VIP_PAY:1); pay(v); if(pops.length<40&&Math.random()<0.15) pops.push({x:slotX(k),y:slotY(k)+14,t:1,txt:"⚡"+money(v)}); return; } } 
   balls.push({k,x:x!=null?x:slotX(k)+(Math.random()-.5)*3,y:y!=null?y:slotY(k),vx:(Math.random()-.5)*20,vy:30,r:radius(k),norm:0,gm:0,slow:0,life:0,st:0,stT:0,vip}); }
 const packN=b=>b.vip?-b.norm-1:b.norm, unN=n=>n<0?-n-1:n; // cups & tanks remember VIP balls via the sign of the stored norm
@@ -501,7 +505,8 @@ function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
   for(const c of s.cups){ const dx=b.x-c.x, dy=b.y-c.y; const rr=c.w+c.h+20; if(dx*dx+dy*dy>rr*rr) continue; for(const e of cupEdges(c)) segHit(b,e,0.3,-dy*c.av,dx*c.av); }
   for(const sp of s.spins){ const dx=b.x-sp.x, dy=b.y-sp.y, R=sp.len+(sp.br||0)+b.r+8; if(dx*dx+dy*dy>R*R) continue; for(const e of spinEdges(sp)) if(!e.nc) segHit(b,e,Math.min(0.95,0.4*em),-dy*sp.w,dx*sp.w);
     const bl=spinBalls(sp); if(bl) for(const [x,y] of bl) if(collide(b,x,y,sp.br,0.7,-(y-sp.y)*sp.w,(x-sp.x)*sp.w)&&!sim) tick(y-s.oy); } }
-function step(dt,sim){ tankN=tankBalls(); statTick(dt);
+let trickle=0;
+function step(dt,sim){ tankN=tankBalls(); statTick(dt); trickle=Math.min(3,trickle+dt*ballCap()/600);
   gt+=dt; if(fever>0) fever-=dt;
   const rm=rateMult()*(fever>0?2:1);
   for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); if(C("hy")&&Math.random()<0.05*C("hy")){ spawn(k); spawn(k); } } }
@@ -784,7 +789,7 @@ cv.addEventListener("pointerup",e=>{ dragging=false; if(!pd) return; const was=p
 cv.addEventListener("pointercancel",()=>{ pd=null; dragging=false; });
 cv.addEventListener("wheel",e=>{ cam+=e.deltaY*0.6; clampCam(); e.preventDefault(); },{passive:false});
 $("menuB").onclick=openMenu;
-$("ballCount").onclick=()=>popup(`<div style="font-size:36px">⚡</div><h1>Ball limit</h1><p>The board holds up to <b>${ballCap().toLocaleString("de-DE")}</b> balls – as many as your phone moves smoothly (it adjusts itself). When it's full, the ball that is furthest down is <b>cashed out early</b> (⚡) – it pays what it would still have earned – so new balls keep dropping at the top and you lose nothing.</p><p style="margin-top:8px">Tip: 🧱 shrinking obstacles in the STAGES tab makes balls flow faster, so more of them fit on the board.</p><button class="btn" id="ok">OK</button>`);
+$("ballCount").onclick=()=>popup(`<div style="font-size:36px">⚡</div><h1>Ball limit</h1><p>The board holds up to <b>${ballCap().toLocaleString("de-DE")}</b> balls – as many as your phone moves smoothly (it adjusts itself). When it's full, most new balls pay their value <b>instantly</b> (⚡) and a slow trickle keeps dropping at the top, so you lose nothing.</p><p style="margin-top:8px">Tip: 🧱 shrinking obstacles in the STAGES tab makes balls flow faster, so more of them fit on the board.</p><button class="btn" id="ok">OK</button>`);
 function openMenu(){ const L=$("layer");
   L.innerHTML=`<div class="menu"><div class="sh"><h2>Zen Drop</h2><p style="color:#9aa0aa;font-size:12px;margin-top:4px">${NST} stages stacked on top of each other. Balls fall through every stage you own – scroll the board to see them all. Unlock the next stage with money.</p>
     <div class="srow"><span>🎵 Lo-fi music</span><button class="tg ${S.music?"on":""}" id="tm">${S.music?"On":"Off"}</button></div>
@@ -801,7 +806,7 @@ function openMenu(){ const L=$("layer");
     <button class="btn g" id="rst">Start over</button><button class="btn" id="cl">Close</button></div></div>`;
   const q=s=>L.querySelector(s);
   q("#cl").onclick=()=>{ L.innerHTML=""; };
-  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and you add +1 at stage 10 and +0.5 more for every stage beyond (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• ⚡ When the board is full, the lowest ball is cashed out early so new balls keep dropping at the top. The ♻️ button pulses when a rebirth would raise your multiplier by 50% or more.</p><p style="text-align:left;margin-top:10px">• 🔥 Every day one of your stages is the hot stage: its gates pay ×5 until midnight.</p><p style="text-align:left;margin-top:10px">• ✨ Copies of level-10 cards become card dust – 5 dust buys an Epic-or-better card.</p><p style="text-align:left;margin-top:10px">• 🎡 Ferris Wheel stages (15, 25, 35 …): buckets on a slow wheel catch balls at the top and pour them out.</p><p style="text-align:left;margin-top:10px">• 🏆 Trophies are earned automatically for milestones; each one adds +4% to all ball values forever.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
+  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and you add +1 at stage 10 and +0.5 more for every stage beyond (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• ⚡ When the board is full, most new balls pay instantly and a slow trickle keeps dropping at the top. The ♻️ button pulses when a rebirth would raise your multiplier by 50% or more.</p><p style="text-align:left;margin-top:10px">• 🔥 Every day one of your stages is the hot stage: its gates pay ×5 until midnight.</p><p style="text-align:left;margin-top:10px">• ✨ Copies of level-10 cards become card dust – 5 dust buys an Epic-or-better card.</p><p style="text-align:left;margin-top:10px">• 🎡 Ferris Wheel stages (15, 25, 35 …): buckets on a slow wheel catch balls at the top and pour them out.</p><p style="text-align:left;margin-top:10px">• 🏆 Trophies are earned automatically for milestones; each one adds +4% to all ball values forever.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
   q("#stats").onclick=showStats;
   q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
   q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
