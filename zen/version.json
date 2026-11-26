@@ -1,7 +1,7 @@
 {
-  "web": 61,
+  "web": 62,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Zen Drop 2.0 part 1: 10 worlds with bosses, tower mini-map, Workshop upgrades"
+  "notes": "Zen Drop 2.0 part 2: 8 new machines incl. Merge Lab, gate combos"
 }
