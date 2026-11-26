@@ -24,7 +24,7 @@ html,body{background:#2a2c31;color:#f2f2f2;font-family:system-ui,-apple-system,"
 canvas{display:block;touch-action:none}
 #panel{height:37vh;background:#1d1e22;display:flex;flex-direction:column}
 #tabs{display:flex;align-items:center;gap:4px;padding:6px 8px 0}
-#tabs button.t{flex:1;padding:8px 0;border:0;border-radius:9px 9px 0 0;background:#26272c;color:#9aa0aa;font:inherit;font-weight:900;font-size:13px;letter-spacing:.5px}
+#tabs button.t{flex:1;padding:8px 0;border:0;border-radius:9px 9px 0 0;background:#26272c;color:#9aa0aa;font:inherit;font-weight:900;font-size:11px;letter-spacing:0;min-width:0;overflow:hidden}
 #tabs button.t.on{background:#2f3137;color:#ffd400}
 #modes{display:flex;gap:4px;margin-left:4px}#modes button{padding:5px 7px;border-radius:7px;border:0;background:#2f3137;color:#aaa;font:inherit;font-weight:900;font-size:11px}#modes button.on{background:#ffd400;color:#222}
 #list{flex:1;overflow-y:auto;background:#2f3137;padding:4px 8px 10px}
@@ -66,12 +66,16 @@ canvas{display:block;touch-action:none}
 #showB{display:none;position:absolute;left:50%;bottom:10px;transform:translateX(-50%);z-index:3;padding:9px 18px;border-radius:12px;border:0;background:#ffd400;color:#222;font:inherit;font-weight:900;font-size:14px;box-shadow:0 4px 14px rgba(0,0,0,.5)}
 #unlockBar{display:flex;align-items:center;gap:8px;padding:6px 10px 2px}
 #unlockB{flex:1;padding:9px 10px;border-radius:10px;border:0;font:inherit;font-weight:900;font-size:14px;background:#3a3c43;color:#888}
+#unlockB.boss{background:#5a1f24;color:#ffb3a8}
 #rebB{padding:9px 10px;border-radius:10px;border:0;font:inherit;font-weight:900;font-size:13px;background:#3a3c43;color:#c9b6ff;flex:none}#rebB.ok{background:#b86bff;color:#fff;animation:pulse 1.1s ease-in-out infinite}#rebB.ok.calm{animation:none;background:#7d4fb3}
 .bp{display:inline-block;margin-top:2px;padding:2px 7px;border-radius:6px;border:0;font:inherit;font-weight:900;font-size:10px;background:#b86bff;color:#fff}
 #unlockB.ok{background:#ffd400;color:#222;animation:pulse 1.1s ease-in-out infinite}
+#mm{position:absolute;right:2px;top:40px;height:calc(100% - 140px);width:12px;border-radius:6px;z-index:3;background:rgba(20,21,24,.55);touch-action:none}
 #jump{position:absolute;right:8px;bottom:10px;display:flex;flex-direction:column;gap:6px;z-index:3}
 #jump button{width:36px;height:36px;border-radius:10px;border:0;background:rgba(20,21,24,.85);color:#ffd400;font-size:16px;font-weight:900}
 .srow2{display:flex;align-items:center;gap:6px;padding:6px 4px;border-bottom:1px solid #26272c}
+.wh{padding:7px 6px 5px;border-left:3px solid;margin:6px 0 2px;background:#202126;border-radius:6px}.wh b{font-size:12px;letter-spacing:.4px}.wh small{display:block;color:#9aa0aa;font-size:10.5px}
+.row.ws .buy{width:172px}.dot.wsi{background:none;font-size:20px;display:grid;place-items:center}
 .srow2 .num{width:26px;height:26px;border-radius:7px;background:#141518;color:#ffd400;display:grid;place-items:center;font-weight:900;font-size:12px;flex:none}
 </style>
 </head>
@@ -80,14 +84,14 @@ canvas{display:block;touch-action:none}
   <div id="top"><button class="icon" id="menuB">☰</button><div class="money"><b id="coinT">$0</b><small id="rateT">$0/s</small></div>
     <button class="icon" id="cardB">🃏<span class="badge" id="cardN" style="display:none"></span></button><button class="icon" id="perkB">⭐</button><button class="icon" id="troB">🏆<span class="badge" id="troN" style="display:none"></span></button><button class="icon" id="musB">🎵</button><button class="icon" id="sndB">🔔</button></div>
   <div id="unlockBar"><button id="unlockB"></button><button id="rebB" style="display:none">♻️</button></div>
-  <div id="wrap"><canvas id="cv"></canvas><div id="ballCount"></div><button id="showB">▲ Upgrades</button><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
-  <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button><button id="autoB">AUTO</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
+  <div id="wrap"><canvas id="cv"></canvas><div id="ballCount"></div><button id="showB">▲ Upgrades</button><canvas id="mm"></canvas><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
+  <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><button class="t" data-t="shop">🔧 SHOP</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button><button id="autoB">AUTO</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
 </div>
 <div id="layer"></div>
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 60; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 61; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -163,17 +167,47 @@ const stOf=L=>{ S.st[L]=S.st[L]||{o:0,g:0}; return S.st[L]; };
 // money is paid every time a ball passes a gate: ball value × section × stage gate level × (1.35 per unlocked stage)
 const STAGE_MULT=1.35;
 const worldMult=()=>Math.pow(STAGE_MULT,S.unlocked-1);
-const gateBoost=L=>(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
+const gateBoost=L=>(L>135?1.5:1)*(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 const shrinkOf=L=>(1-0.04*stOf(L).o)*Math.pow(0.97,P("hits"));
+
+/* ================= Zen Drop 2.0: 10 worlds × 15 stages, a boss at the end of every world, the workshop ================= */
+const WORLDS=[
+ {ic:"🌿",name:"Garden",fx:"",col:"#8fcf5a",d:"Calm start – no world effect",boss:["🐲","Hedge Dragon"]},
+ {ic:"🏜️",name:"Desert",fx:"sand",col:"#e8b765",d:"Sand – balls are slowed down a little",boss:["🗿","Sand Golem"]},
+ {ic:"🧊",name:"Ice",fx:"ice",col:"#ffe0d0",d:"Ice – balls slide along everything and hardly bounce",boss:["☃️","Frost Titan"]},
+ {ic:"🌋",name:"Volcano",fx:"lava",col:"#ff5a2a",d:"Lava pegs – every hit pays cash",boss:["👹","Magma King"]},
+ {ic:"🌊",name:"Ocean",fx:"ocean",col:"#ff9a7a",d:"Water – balls sink a bit slower",boss:["🐙","Kraken"]},
+ {ic:"⚙️",name:"Factory",fx:"factory",col:"#d8904c",d:"Every ramp is a slow conveyor belt",boss:["🤖","Iron Colossus"]},
+ {ic:"🍬",name:"Candy",fx:"candy",col:"#ff8ad8",d:"Everything is bouncier",boss:["🍭","Sugar Queen"]},
+ {ic:"🌌",name:"Space",fx:"space",col:"#c690ff",d:"Low gravity – balls drift down",boss:["👁️","Void Eye"]},
+ {ic:"⛈️",name:"Storm",fx:"storm",col:"#ffb84a",d:"Light wind gusts",boss:["🦅","Thunder Roc"]},
+ {ic:"👑",name:"Palace",fx:"palace",col:"#ffd400",d:"Golden gates – every gate pays ×1.5",boss:["🤴","Golden Emperor"]}];
+const worldOf=L=>Math.min(WORLDS.length-1,Math.floor((Math.max(1,L)-1)/15)), isBoss=L=>L%15===0;
+const bossHp=L=>Math.round(200*(1+0.6*worldOf(L)));
+const bossDone=L=>!!(S.bossDone&&S.bossDone[L]);
+const bossBlock=()=>isBoss(S.unlocked)&&S.unlocked<NST&&!bossDone(S.unlocked); // the next world stays locked until its boss is beaten
+let bossFx=0, musWorld=0; const MTR=[0,2,-3,5,-2,3,-5,7,-4,4]; // music: every world plays in its own key
+const WSHOP=[
+ {id:"spin",ic:"🌀",name:"Spinner motors",max:10,d:l=>`Windmills, fans, bars & wheels turn +${5*l}% faster`},
+ {id:"slick",ic:"⛸️",name:"Slick ramps",max:10,d:l=>`Ramps push balls downhill · power ${l}`},
+ {id:"bucket",ic:"🎡",name:"Ferris buckets",max:5,d:l=>`Ferris Wheel buckets +${6*l}% wider`},
+ {id:"cups",ic:"🥤",name:"Quick cups",max:10,d:l=>`Cups tip ${7*l}% sooner and spin faster`},
+ {id:"hatch",ic:"🚪",name:"Hatch timing",max:10,d:l=>`Hatches & pistons stay open ${8*l}% longer`},
+ {id:"gate",ic:"🎯",name:"Wide sweet spot",max:10,d:l=>`Middle gate section +${5*l}% wider`}];
+const WS=id=>(S.ws&&S.ws[id])||0;
+const costWs=(i,l)=>basis(S.unlocked)*0.6*Math.pow(2.2,l)*(i===2?0.8:1)*perkCost("stageCost");
+let SPM=1, SLK=0; // workshop: spinner speed multiplier, slick-ramp push
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(20).fill(0),bpm:Array(20).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0}; }
+function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(20).fill(0),bpm:Array(20).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0,ws:{},bossDone:{},bossDmg:{},bossFirst:{},wv:0}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
 while(S.rate.length<TYPES.length) S.rate.push(0); while(S.val.length<TYPES.length) S.val.push(1);
 while(S.bstar.length<TYPES.length) S.bstar.push(0); while(S.bpm.length<TYPES.length) S.bpm.push(1);
 if(!(S.pm>0)) S.pm=1; S.best=Math.max(S.best||1,S.unlocked||1);
 if((S.ver||0)<2){ for(const k in S.st) S.st[k].o=0; S.ver=2; } // v2: "o" is now obstacle shrink (0..8)
+for(const k_ of ["ws","bossDone","bossDmg","bossFirst"]) if(!S[k_]||typeof S[k_]!=="object") S[k_]={};
+if(!(S.wv>=1)){ S.wv=1; for(let L=15;L<(S.unlocked||1);L+=15) S.bossDone[L]=1; for(let L=15;L<(S.best||1);L+=15) S.bossFirst[L]=1; } // saves from before 2.0: bosses you already passed count as beaten
 if(!S.troph||typeof S.troph!=="object") S.troph={}; if(!(S.dust>=0)) S.dust=0; if(S.hot&&!(S.hot.L>=1)) S.hot=null; S.newTro=S.newTro||0; S.vipN=S.vipN||0;
 /* trophies: earned automatically, kept forever (also through rebirth), each one adds +4% to all ball values */
 const TROPH=[];
@@ -184,6 +218,7 @@ trGroup("tt","💵","Tycoon",()=>S.total||0,[1e6,1e12,1e18,1e24,1e36,1e48],g=>"E
 trGroup("bt","🎨","Collector",()=>S.rate.filter(r=>r>0).length,[5,10,20],g=>"Own "+g+" ball types at once");
 trGroup("bp","✨","Polisher",()=>S.bstar.reduce((a,b)=>a+b,0),[1,5,15],g=>g===1?"Prestige a ball":g+" ball prestiges");
 trGroup("cd","🃏","Card Shark",()=>Object.values(S.cards).reduce((a,b)=>a+(+b||0),0),[5,20,50],g=>g+" card levels in total");
+trGroup("bs","⚔️","Boss Slayer",()=>Object.keys(S.bossFirst).length,[1,5,10],g=>g===1?"Beat a boss":"Beat "+g+" bosses");
 trGroup("vp","👑","VIP Club",()=>S.vipN||0,[1,100,1000],g=>g===1?"Drop a VIP ball":"Drop "+g+" VIP balls");
 const trCount=()=>TROPH.filter(t=>S.troph[t.id]).length;
 trN=trCount();
@@ -220,9 +255,10 @@ const MECH={wind:["🌬️","Windy","Gusts push the balls left and right"],float
 // visual identity: 15 palettes × 8 background patterns × 3 drawing styles, plus 6 connector types between machines
 const PAL=[["Lava","#3a1410","#120605","#ff6a3d"],["Honey","#55421a","#201806","#ffd86b"],["Rose","#4a1f2a","#1c0910","#ff6f8f"],["Ember","#4a2a1a","#1a0d06","#ffa040"],["Plum","#3d1e3a","#150914","#e59bd6"],
   ["Desert","#4f3d22","#1e160a","#ffcf70"],["Crimson","#451219","#170407","#ff4d5e"],["Terracotta","#5a3326","#22110b","#f2a07b"],["Amber","#4d3a14","#1c1405","#ffc23d"],["Magenta","#4a1a3a","#1a0614","#ff5fc8"],
-  ["Sunset","#52301f","#1f0f07","#ff8c5a"],["Cocoa","#3b2a22","#140d09","#d9a57c"],["Candy","#4a2342","#1f0b1b","#ff8ad8"],["Brick","#4a2620","#1a0c09","#ff9b7a"],["Copper","#3f2a1c","#170e07","#e08a4a"]];
+  ["Sunset","#52301f","#1f0f07","#ff8c5a"],["Cocoa","#3b2a22","#140d09","#d9a57c"],["Candy","#4a2342","#1f0b1b","#ff8ad8"],["Brick","#4a2620","#1a0c09","#ff9b7a"],["Copper","#3f2a1c","#170e07","#e08a4a"],["Frost","#463a3e","#1a1416","#ffe0d0"],["Nebula","#2e1f3a","#110a16","#ff9ee0"]];
+const WPAL=[[1,11],[5,7],[15,13],[0,6],[10,2],[14,13],[12,9],[4,16],[3,11],[8,1]]; // two palettes per world
 const PATS=["stripes","grid","dots","waves","chevrons","rings","bricks","crosses"], CONNS=["zig","posts","split","steps","bumpers","none"];
-const styleOf=L=>{ const i=L-11; return {pal:PAL[i%PAL.length],pat:PATS[i%PATS.length],draw:i%3,conn:CONNS[(i*5)%CONNS.length]}; };
+const styleOf=L=>{ const i=L-11; return {pal:PAL[WPAL[worldOf(L)][i%2]],pat:PATS[i%PATS.length],draw:i%3,conn:CONNS[(i*5)%CONNS.length]}; };
 const sigOf=L=>L>10&&L%10===5?"ferris":MODLIST[(L-11)%MODLIST.length], roundOf=L=>Math.floor((L-11)/MODLIST.length);
 // stages 1-5: zig-zag ramps, bottlenecks and one gentle mechanic each
 const EARLY_MECH=[null,"gold","belt","wind","flip","boost"], EARLY_NAME=[null,"Windmill Zigzag","Fan Funnels","Wiper Zigzag","Cup Ladder","Bucket Drop"];
@@ -244,7 +280,7 @@ function spinEdges(s){ const L=s.len, a=s.a;
   if(s.kind==="fan"){ const o=[]; for(let i=0;i<s.n;i++){ const q=a+i*2*Math.PI/s.n; o.push({x1:s.x,y1:s.y,x2:s.x+Math.cos(q)*L,y2:s.y+Math.sin(q)*L,w:s.th}); } return o; }
   if(s.kind==="drum"){ const o=[], N=18, R=s.len; for(let i=0;i<N;i++){ if(i<3||(s.gaps===2&&i>=9&&i<12)) continue; const q0=s.a+i*2*Math.PI/N, q1=q0+2*Math.PI/N; o.push({x1:s.x+Math.cos(q0)*R,y1:s.y+Math.sin(q0)*R,x2:s.x+Math.cos(q1)*R,y2:s.y+Math.sin(q1)*R,w:s.th}); } return o; }
   if(s.kind==="wiper") return [{x1:s.x,y1:s.y,x2:s.x+Math.cos(a)*L,y2:s.y+Math.sin(a)*L,w:s.th}];
-  if(s.kind==="ferris"){ /* buckets fixed on a slow wheel: they open outwards, catch balls at the top and pour them out on the way down */ const o=[], bw=s.bw, d=s.bd;
+  if(s.kind==="ferris"){ /* buckets fixed on a slow wheel: they open outwards, catch balls at the top and pour them out on the way down */ const o=[], bw=s.bw*(1+0.06*WS("bucket")), d=s.bd;
     for(let i=0;i<s.n;i++){ const q=a+i*2*Math.PI/s.n, cx=Math.cos(q), cy=Math.sin(q), tx=-cy, ty=cx, r0=L-d/2, r1=L+d/2;
       const ax=s.x+cx*r0-tx*bw, ay=s.y+cy*r0-ty*bw, bx=s.x+cx*r0+tx*bw, by=s.y+cy*r0+ty*bw;
       o.push({x1:ax,y1:ay,x2:bx,y2:by,w:7},{x1:ax,y1:ay,x2:ax+cx*d,y2:ay+cy*d,w:6},{x1:bx,y1:by,x2:bx+cx*d,y2:by+cy*d,w:6},{x1:s.x+cx*12,y1:s.y+cy*12,x2:s.x+cx*(r0-4),y2:s.y+cy*(r0-4),w:3,nc:1}); } return o; }
@@ -255,7 +291,7 @@ function spinBalls(s){ if(s.kind!=="xballs") return null; const L=s.len, a=s.a; 
 // gates: the middle section slides to one side, waits 0.5 s, slides back …
 function moveGate(q,t){ const d=q.xb-q.xa, run=d/q.sp, per=2*run+1; let u=(t+q.ph)%per, x;
   if(u<run) x=q.xa+d*(u/run); else if(u<run+0.5) x=q.xb; else if(u<2*run+0.5) x=q.xb-d*((u-run-0.5)/run); else x=q.xa;
-  q.x1=x; q.x2=x+q.w; }
+  q.x1=x; q.x2=Math.min(W-4,x+q.w*(1+0.05*WS("gate"))); }
 
 const STG=[null];
 function getStage(L){ if(!STG[L]) STG[L]=buildStage(L); return STG[L]; }
@@ -409,10 +445,16 @@ function buildStage(L){
     if(b.mech==="magnet"){ for(let n=0;n<4;n++){ const p=spot(45,oy,oy+h); if(p) b.mags.push({x:p[0],y:p[1],ph:q()*6}); } }
     if(b.mech==="portal"){ for(let n=0;n<16&&b.ports.length<4;n++){ const a=spot(24,oy,oy+h-300); if(!a) continue; const [z0,z1]=zoneOf(a[1]); const c=spot(24,a[1]+(n<8?200:110),z1-30); if(c) b.ports.push({x:a[0],y:a[1],bx:c[0],by:c[1]}); } }
     if(b.mech==="flip"||b.mech==="pulse"){ for(let n=0;n<8;n++){ const p=spot(40,oy,oy+h); if(p) b.spins.push({x:p[0],y:p[1],len:24,a:q()*6,w:(q()<.5?-1:1)*(2+q()*1.5),kind:"bar",hub:1}); } }
-    if(b.mech==="belt"){ for(let n=0;n<7;n++){ const p=spot(72,oy,oy+h); if(p){ const t=(p[0]<180?1:-1)*(8+q()*10); /* the low end (where the belt carries balls) always points away from the walls */ b.segs.push({x1:p[0]-48,y1:p[1]-t,x2:p[0]+48,y2:p[1]+t,w:12,lit:0}); } }
+    if(b.mech==="belt"){ for(let n=0,t_=0;n<7&&t_<60;t_++){ const p=spot(72,oy,oy+h); if(p&&p[0]>=108&&p[0]<=252){ n++; /* both belt ends stay ≥60 px from the walls: no slit a ball could wedge in */ const t=(p[0]<180?1:-1)*(8+q()*10); /* the low end (where the belt carries balls) always points away from the walls */ b.segs.push({x1:p[0]-48,y1:p[1]-t,x2:p[0]+48,y2:p[1]+t,w:12,lit:0}); } }
       let i=0; for(const g of b.segs){ if(g.poly) continue; const dx=g.x2-g.x1, dy=g.y2-g.y1, l=Math.hypot(dx,dy)||1; let d=dy>4?1:dy<-4?-1:(i++%2?1:-1); g.belt=[dx/l*d,dy/l*d]; } }
     if(b.mech==="boost"){ b.pads=[]; for(let n=0;n<7;n++){ const p=spot(44,oy,oy+h); if(p) b.pads.push({x:p[0],y:p[1]}); } }
-    if(b.mech==="float") b.gmul=0.55; if(b.mech==="heavy") b.gmul=1.6; if(b.mech==="bouncy") b.emul=2.2; }
+    if(b.mech==="float") b.gmul=0.55; if(b.mech==="heavy") b.gmul=1.6; if(b.mech==="bouncy") b.emul=2.2;
+    // world effects
+    const fx=WORLDS[worldOf(L)].fx; b.wfx=fx;
+    if(fx==="ocean") b.gmul=(b.gmul||1)*0.8; if(fx==="space") b.gmul=(b.gmul||1)*0.65; if(b.gmul) b.gmul=Math.max(0.45,b.gmul);
+    if(fx==="candy") b.emul=Math.min(2.6,(b.emul||1)*1.4); if(fx==="ice") b.emul=(b.emul||1)*0.55;
+    if(fx==="lava"){ for(let n=0;n<6;n++){ const p=spot(30,oy,oy+h); if(p) b.circ.push({x:p[0],y:p[1],r:11,lit:0,lava:1}); } }
+    if(fx==="factory"&&b.mech!=="belt"){ for(const g of b.segs){ if(g.poly) continue; const dx=g.x2-g.x1, dy=g.y2-g.y1, l=Math.hypot(dx,dy)||1; if(Math.abs(dy)<4) continue; const d=dy>0?1:-1; g.belt=[dx/l*d,dy/l*d]; g.beltK=0.4; } } }
   // gates
   for(const y of gy){ const pat=GPAT[Math.floor(r()*GPAT.length)], w=Math.max(70,120-v*4); b.gates.push({y:oy+y,pat,w,xa:16,xb:W-16-w,sp:40+r()*30,ph:r()*20,x1:16,x2:16+w,lit:0}); }
   for(const t of TIPS) if(t[0]===L) b.tips.push({y:oy+h*t[1],txt:t[2]});
@@ -431,6 +473,12 @@ const ballCap=()=>Math.min(capOf(S.unlocked),S.perfCap||4000);
 const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
 const offCap=()=>4+[25,50,100,150].filter(x=>(S.best||1)>=x).length; // offline hours: 4, +1 at stages 25, 50, 100 and 150
+function bossHit(L,d,sim){ S.bossDmg[L]=(S.bossDmg[L]||0)+d; bossFx=0.25; if(S.bossDmg[L]>=bossHp(L)&&!bossDone(L)) bossWin(L,sim); }
+function bossWin(L,sim){ S.bossDone[L]=1; const w=WORLDS[worldOf(L)], gain=Math.max(S.avg||0,rateNow||0,1)*60; pay(gain); let card=null, up=false;
+  if(!S.bossFirst[L]){ S.bossFirst[L]=1; [card,up]=drawCard(4); }
+  if(sim) return; buzz(80); if(S.sound) [392,523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.09,0.05),i*90)); save(true); uiList(true); uiTop();
+  const nw=WORLDS[worldOf(L+1)], msg=`<div style="font-size:46px">${w.boss[0]}</div><h1>${w.boss[1]} defeated!</h1><p>Reward: <b style="color:#ffd400">${money(gain)}</b></p>${card?`<p style="margin-top:6px">Boss card: <b style="color:${RCOL[card.r]}">${card.ic} ${card.name}</b> <small style="color:${RCOL[card.r]}">${RAR[card.r]}</small>${up?` · level ${C(card.id)}!`:""}</p>`:""}${L<NST?`<p style="margin-top:6px">World ${worldOf(L)+2} ${nw.ic} <b>${nw.name}</b> is open – unlock stage ${L+1}.</p>`:""}<button class="btn" id="ok">Onwards</button>`;
+  if(S.auto||document.querySelector(".pop")) floatText("⚔️ "+w.boss[1]+" defeated! +"+money(gain),innerWidth/2-110,150); else popup(msg); }
 function pay(v){ S.coins+=v; S.total+=v; earnWin+=v; }
 /* hot stage of the day: one stage you own pays ×5 at its gates until the date changes */
 const HOT_MULT=5; let hotL=0;
@@ -483,12 +531,12 @@ function cupEdges(c){ const ca=Math.cos(c.a), sa=Math.sin(c.a), P=[[-c.w,-c.h],[
   return [0,1,2].map(i=>({x1:P[i][0],y1:P[i][1],x2:P[i+1][0],y2:P[i+1][1],w:6})); }
 function dumpCup(c,push){ for(let i=0;i<c.pile.length;i++){ const [x,y]=cupPile(c,i), k=c.pile[i]; balls.push({k,x,y,vx:-(y-c.y)*c.av+c.dir*push+(Math.random()-.5)*20,vy:(x-c.x)*c.av,r:radius(k),norm:unN(c.pileN[i]),vip:c.pileN[i]<0,gm:0,slow:0,life:0,st:0,stT:0}); } c.pile=[]; c.pileN=[]; }
 function updCup(c,dt,sim){
-  if(c.st===0){ c.t+=dt; if(c.pile.length>=cupCap(c)||(c.t>8&&c.pile.length)){ c.st=1; c.dir=c.fix||-c.dir; c.t=0; if(!sim&&S.sound) tone(300,0.06,0.03); } }
-  else { /* full 360° spin: everything pours out, the cup keeps turning until it is upright again */ c.av=c.dir*c.spd*0.85; c.a+=c.av*dt; if(Math.abs(c.a)>=1.6&&c.pile.length) dumpCup(c,50);
+  if(c.st===0){ c.t+=dt; if(c.pile.length>=Math.max(1,Math.round(cupCap(c)*(1-0.07*WS("cups"))))||(c.t>8-0.5*WS("cups")&&c.pile.length)){ c.st=1; c.dir=c.fix||-c.dir; c.t=0; if(!sim&&S.sound) tone(300,0.06,0.03); } }
+  else { /* full 360° spin: everything pours out, the cup keeps turning until it is upright again */ c.av=c.dir*c.spd*0.85*(1+0.08*WS("cups")); c.a+=c.av*dt; if(Math.abs(c.a)>=1.6&&c.pile.length) dumpCup(c,50);
     if(Math.abs(c.a)>=Math.PI*2){ c.a=0; c.av=0; c.st=0; c.t=0; } } }
 function updMov(m,dt){ let p; const t=((gt+m.ph)%m.per+m.per)%m.per;
   if(m.mode==="sine") p=0.5-0.5*Math.cos(2*Math.PI*t/m.per);
-  else { const cl=m.per*(1-m.open), rmp=0.25; p=t<cl?0:t<cl+rmp?(t-cl)/rmp:t<m.per-rmp?1:(m.per-t)/rmp; }
+  else { const cl=m.per*(1-Math.min(0.85,m.open*(1+0.08*WS("hatch")))), rmp=0.25; p=t<cl?0:t<cl+rmp?(t-cl)/rmp:t<m.per-rmp?1:(m.per-t)/rmp; }
   const vp=dt>0?(p-m.p)/dt:0; m.p=p; m.vx=m.dx*vp; m.vy=m.dy*vp; const c=m.cur; c.x1=m.x1+m.dx*p; c.y1=m.y1+m.dy*p; c.x2=m.x2+m.dx*p; c.y2=m.y2+m.dy*p; c.w=m.w; }
 function releaseTank(d,sim){ for(let i=0;i<d.pile.length;i++){ const [x,y]=pilePos(d,i), k=d.pile[i]; balls.push({k,x,y,vx:(Math.random()-.5)*20,vy:20,r:radius(k),norm:unN(d.pileN[i]),vip:d.pileN[i]<0,gm:0,slow:0,life:0,st:0,stT:0}); }
   d.pile=[]; d.pileN=[]; d.open=true; d.openT=0; if(!sim&&S.sound) tone(220,0.08,0.04); }
@@ -496,23 +544,25 @@ function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
   const gy=((b.y-s.oy)/OC)|0, gx=(b.x/OC)|0, cell=gy>=0&&gy<s.ogRows&&gx>=0&&gx<OCOLS?s.og[gy*OCOLS+gx]:null;
   const em=s.emul||1;
   if(cell){ for(const c of cell.c) if(collide(b,c.x,c.y,c.r,Math.min(0.95,(c.bump?0.8:0.5)*em))){ c.lit=1; if(!sim) tick(c.y-s.oy);
+        if(c.lava){ const v=ballVal(b.k)*worldMult()*0.3; pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(!sim&&Math.random()<0.15) pops.push({x:c.x,y:c.y-14,t:1,txt:"🔥"+money(v)}); }
         if(c.gold){ const v=ballVal(b.k)*worldMult()*0.5; pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(!sim&&Math.random()<0.2) pops.push({x:c.x,y:c.y-14,t:1,txt:money(v)}); }
         if(c.split&&Math.random()<0.3&&balls.length+tankN<ballCap()) balls.push(Object.assign({},b,{vx:-b.vx,x:b.x+(b.vx>0?-3:3)})); }
-    for(const sg of cell.g){ segHit(b,sg,Math.min(0.95,0.25*em)); if(sg.belt&&ptSeg(b.x,b.y,sg)<sg.w/2+b.r+1.5){ b.vx+=sg.belt[0]*260/120; b.vy+=sg.belt[1]*260/120; } }
+    for(const sg of cell.g){ segHit(b,sg,Math.min(0.95,0.25*em)); if(sg.belt&&ptSeg(b.x,b.y,sg)<sg.w/2+b.r+1.5){ const k_=(sg.beltK||1)*260/120; b.vx+=sg.belt[0]*k_; b.vy+=sg.belt[1]*k_; }
+      else if(SLK&&!sg.poly&&ptSeg(b.x,b.y,sg)<sg.w/2+b.r+1.5){ /* workshop: slick ramps push balls downhill */ if(sg.dn===undefined){ let dx=sg.x2-sg.x1, dy=sg.y2-sg.y1; if(dy<0){ dx=-dx; dy=-dy; } const l=Math.hypot(dx,dy)||1; sg.dn=dy/l<0.08?0:[dx/l,dy/l]; } if(sg.dn){ b.vx+=sg.dn[0]*SLK/120; b.vy+=sg.dn[1]*SLK/120; } } }
     for(const pg of cell.p) if(inPoly(b.x,b.y,pg.pts)) popOut(b,pg); }
   for(const d of s.doors) if(!d.open&&Math.abs(b.y-d.y)<b.r+10&&b.x>d.x1-10&&b.x<d.x2+10) segHit(b,{x1:d.x1,y1:d.y,x2:d.x2,y2:d.y,w:14},0.2);
   for(const m of s.movs){ const c=m.cur; if(b.y<Math.min(c.y1,c.y2)-30||b.y>Math.max(c.y1,c.y2)+30) continue; segHit(b,c,0.2,m.vx,m.vy); }
   for(const c of s.cups){ const dx=b.x-c.x, dy=b.y-c.y; const rr=c.w+c.h+20; if(dx*dx+dy*dy>rr*rr) continue; for(const e of cupEdges(c)) segHit(b,e,0.3,-dy*c.av,dx*c.av); }
-  for(const sp of s.spins){ const dx=b.x-sp.x, dy=b.y-sp.y, R=sp.len+(sp.br||0)+b.r+8; if(dx*dx+dy*dy>R*R) continue; for(const e of spinEdges(sp)) if(!e.nc) segHit(b,e,Math.min(0.95,0.4*em),-dy*sp.w,dx*sp.w);
-    const bl=spinBalls(sp); if(bl) for(const [x,y] of bl) if(collide(b,x,y,sp.br,0.7,-(y-sp.y)*sp.w,(x-sp.x)*sp.w)&&!sim) tick(y-s.oy); } }
+  for(const sp of s.spins){ const dx=b.x-sp.x, dy=b.y-sp.y, R=sp.len+(sp.br||0)+b.r+8; if(dx*dx+dy*dy>R*R) continue; if(sp.kind==="bar"&&sp.hub) collide(b,sp.x,sp.y,5,0.3); /* a small hub: no ball can balance on the pivot of a spinning bar */ for(const e of spinEdges(sp)) if(!e.nc) segHit(b,e,Math.min(0.95,0.4*em),-dy*sp.w*SPM,dx*sp.w*SPM);
+    const bl=spinBalls(sp); if(bl) for(const [x,y] of bl) if(collide(b,x,y,sp.br,0.7,-(y-sp.y)*sp.w*SPM,(x-sp.x)*sp.w*SPM)&&!sim) tick(y-s.oy); } }
 let trickle=0;
-function step(dt,sim){ tankN=tankBalls(); statTick(dt); trickle=Math.min(3,trickle+dt*ballCap()/600);
+function step(dt,sim){ tankN=tankBalls(); statTick(dt); SPM=1+0.05*WS("spin"); SLK=40*WS("slick"); if(bossFx>0) bossFx-=dt; const bossL=isBoss(S.unlocked)&&!bossDone(S.unlocked)?S.unlocked:0; trickle=Math.min(3,trickle+dt*ballCap()/600);
   gt+=dt; if(fever>0) fever-=dt;
   const rm=rateMult()*(fever>0?2:1);
   for(let k=0;k<TYPES.length;k++){ const r=S.rate[k]; if(!r) continue; acc[k]+=dt*rm/spawnTime(r); while(acc[k]>=1){ acc[k]-=1; spawn(k); if(C("td")&&Math.random()<0.04*C("td")) spawn(k); if(C("hy")&&Math.random()<0.05*C("hy")){ spawn(k); spawn(k); } } }
   const doorStages=[]; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(!s) continue; if(s.mech==="flip"){ const sg=Math.floor((gt+s.ph)/4)%2?-1:1; if(sg!==s.fs){ if(s.fs) for(const sp of s.spins) if(sp.kind!=="wiper") sp.w=-sp.w; s.fs=sg; } }
     if(s.mech==="pulse") for(const sp of s.spins){ if(sp.kind==="wiper") continue; if(sp.w0==null) sp.w0=sp.w; sp.w=sp.w0*(1+0.95*Math.sin(gt*2.2+s.ph)); }
-    for(const sp of s.spins){ if(sp.kind==="wiper"){ sp.t+=dt; sp.a=sp.a0+sp.amp*Math.sin(sp.t*sp.f); sp.w=sp.amp*sp.f*Math.cos(sp.t*sp.f); } else sp.a+=sp.w*dt; } for(const q of s.gates) moveGate(q,gt); for(const c of s.cups) updCup(c,dt,sim); for(const m of s.movs) updMov(m,dt); if(s.doors.length){ doorStages.push(s); for(const d of s.doors) d.cnt=0; } }
+    for(const sp of s.spins){ if(sp.kind==="wiper"){ sp.t+=dt; sp.a=sp.a0+sp.amp*Math.sin(sp.t*sp.f); sp.w=sp.amp*sp.f*Math.cos(sp.t*sp.f); } else sp.a+=sp.w*SPM*dt; } for(const q of s.gates) moveGate(q,gt); for(const c of s.cups) updCup(c,dt,sim); for(const m of s.movs) updMov(m,dt); if(s.doors.length){ doorStages.push(s); for(const d of s.doors) d.cnt=0; } }
   const g=G0*(1-0.05*C("gw")), EY=exitY(), wm=worldMult(), lucky=1+0.1*C("hh");
   // ball ↔ ball (linked-list grid, only touched cells are cleared)
   const nb=balls.length; let nu=0; if(nb>gNext.length){ const n2=Math.ceil(nb*1.5); gNext=new Int32Array(n2); gUsed=new Int32Array(n2); }
@@ -531,13 +581,14 @@ function step(dt,sim){ tankN=tankBalls(); statTick(dt); trickle=Math.min(3,trick
     const sp=Math.hypot(b.vx,b.vy); if(sp>VMAX){ b.vx*=VMAX/sp; b.vy*=VMAX/sp; }
     const L=stageAt(b.y), s=getStage(L); stageHits(b,L,sim); const lt=b.y-s.oy; if(lt<b.r+30) stageHits(b,L-1,sim); else if(lt>s.h-b.r-30) stageHits(b,L+1,sim);
     if(s.mech){ if(s.gmul) b.vy-=g*(1-s.gmul)*dt;
-      if(s.mech==="sticky"){ const f=Math.pow(0.35,dt); b.vx*=f; b.vy*=Math.pow(0.6,dt); }
+      if(s.mech==="sticky"){ const f=Math.pow(0.35,dt); b.vx*=f; b.vy*=Math.pow(0.6,dt); } else if(s.wfx==="sand"){ const f=Math.pow(0.8,dt); b.vx*=f; b.vy*=f; }
+      if(s.wfx==="storm"&&s.mech!=="wind") b.vx+=Math.sin(gt*0.7+s.ph)*55*dt;
       if(s.pads) for(const p of s.pads){ if(Math.abs(b.x-p.x)<30&&Math.abs(b.y-p.y)<9&&b.vy<240){ b.vy=260; b.vx*=0.5; } }
       if(s.mech==="wind") b.vx+=Math.sin(gt*0.9+s.ph)*130*dt;
       else if(s.mech==="magnet") for(const m of s.mags){ if(Math.sin(gt*2.1+m.ph)<0) continue; const dx=m.x-b.x, dy=m.y-b.y, d=Math.hypot(dx,dy); if(d>95||d<1) continue; const f=700*(1-d/95)*dt; b.vx+=dx/d*f-dy/d*f*0.5; b.vy+=dy/d*f+dx/d*f*0.5; }
       else if(s.mech==="portal"&&!(b.pc>gt)) for(const p of s.ports){ if(Math.abs(b.x-p.x)<14&&Math.abs(b.y-p.y)<14){ b.x=p.bx; b.y=p.by; b.vx*=0.5; b.vy=Math.max(40,b.vy*0.5); b.pc=gt+0.6; break; } } }
     // gates pay money when a ball passes them
-    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1); const v=ballVal(b.k)*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1)*(b.vip?VIP_PAY:1)*(L===hotL?HOT_MULT:1); pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(b.vip&&!sim&&Math.random()<0.3) pops.push({x:b.x,y:q.y-14,t:1,txt:"👑"+money(v)}); b.norm+=m;
+    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1); const v=ballVal(b.k)*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1)*(b.vip?VIP_PAY:1)*(L===hotL?HOT_MULT:1); pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(L===bossL) bossHit(L,b.vip?10:1,sim); if(b.vip&&!sim&&Math.random()<0.3) pops.push({x:b.x,y:q.y-14,t:1,txt:"👑"+money(v)}); b.norm+=m;
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
     // (no more random kicks: balls resting on an obstacle stay there)
@@ -574,10 +625,10 @@ const MUSIC=(()=>{ let on=false, mg=null, lp=null, timer=null, nextT=0, step=0, 
                [[57,60,64,67],[53,57,60,64],[48,52,55,59],[55,59,62,65]],   // Am7 Fmaj7 Cmaj7 G7
                [[50,53,57,60],[55,59,62,65],[48,52,55,59],[57,60,64,67]]];  // Dm7 G7 Cmaj7 Am7
   const PENTA=[72,74,76,79,81,84];
-  const hz=m=>440*Math.pow(2,(m-69)/12);
+  const hz=m=>440*Math.pow(2,(m+(MTR[musWorld]||0)-69)/12);
   function noise(){ if(noiseBuf) return noiseBuf; const b=AC.createBuffer(1,AC.sampleRate,AC.sampleRate), d=b.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return noiseBuf=b; }
   function env(node,t,a,peak,dec){ node.gain.setValueAtTime(0.0001,t); node.gain.linearRampToValueAtTime(peak,t+a); node.gain.exponentialRampToValueAtTime(0.0001,t+a+dec); }
-  function keys(m,t,len,vol){ for(const det of [-4,4]){ const o=AC.createOscillator(), g=AC.createGain(); o.type="triangle"; o.frequency.value=hz(m); o.detune.value=det; env(g,t,0.02,vol,len); o.connect(g).connect(lp); o.start(t); o.stop(t+len+0.1); } }
+  function keys(m,t,len,vol){ for(const det of [-4,4]){ const o=AC.createOscillator(), g=AC.createGain(); o.type=musWorld%3===1?"sine":"triangle"; o.frequency.value=hz(m); o.detune.value=det; env(g,t,0.02,vol,len); o.connect(g).connect(lp); o.start(t); o.stop(t+len+0.1); } }
   function bass(m,t,len){ const o=AC.createOscillator(), g=AC.createGain(); o.type="sine"; o.frequency.value=hz(m-24); env(g,t,0.01,0.22,len); o.connect(g).connect(mg); o.start(t); o.stop(t+len+0.1); }
   function kick(t){ const o=AC.createOscillator(), g=AC.createGain(); o.frequency.setValueAtTime(110,t); o.frequency.exponentialRampToValueAtTime(42,t+0.12); env(g,t,0.003,0.5,0.25); o.connect(g).connect(mg); o.start(t); o.stop(t+0.35); }
   function hiss(t,freq,q,vol,len){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); n.buffer=noise(); f.type="bandpass"; f.frequency.value=freq; f.Q.value=q; env(g,t,0.003,vol,len); n.connect(f).connect(g).connect(mg); n.start(t,Math.random()*0.5); n.stop(t+len+0.05); }
@@ -623,6 +674,19 @@ function drawPattern(st,y0,y1){ if(y1<=y0) return; const ac=st.pal[3]; ctx.save(
     case "bricks": for(let y=a;y<z;y+=24){ ctx.moveTo(0,y); ctx.lineTo(W,y); for(let x=(y/24%2)*30;x<=W;x+=60){ ctx.moveTo(x,y); ctx.lineTo(x,y+24); } } break;
     case "crosses": ctx.lineWidth=3; for(let y=a;y<z;y+=44) for(let x=(y/44%2)*22+11;x<=W;x+=44){ ctx.moveTo(x-6,y); ctx.lineTo(x+6,y); ctx.moveTo(x,y-6); ctx.lineTo(x,y+6); } break; }
   ctx.stroke(); ctx.restore(); }
+// light, cheap ambience per world (screen-space particles)
+function drawWorldFx(fx){ if(!fx) return; ctx.save(); const n=16;
+  for(let i=0;i<n;i++){ const sx=(i*97.3)%W, ph=(i*0.618)%1, y0=cam, H=viewH;
+    if(fx==="sand"){ const x=(sx+gt*40)%W, y=y0+((ph*H+gt*12)%H); ctx.fillStyle="rgba(240,200,130,.35)"; ctx.fillRect(x,y,2,2); }
+    else if(fx==="ice"){ const x=(sx+Math.sin(gt+i)*14+W)%W, y=y0+((ph*H+gt*28)%H); ctx.fillStyle="rgba(255,240,235,.5)"; ctx.beginPath(); ctx.arc(x,y,1.8,0,7); ctx.fill(); }
+    else if(fx==="lava"){ const x=(sx+Math.sin(gt*0.8+i)*10+W)%W, y=y0+H-((ph*H+gt*35)%H); ctx.fillStyle="rgba(255,120,40,.5)"; ctx.fillRect(x,y,2,2); }
+    else if(fx==="ocean"){ const x=(sx+Math.sin(gt*1.3+i)*8+W)%W, y=y0+H-((ph*H+gt*22)%H); ctx.strokeStyle="rgba(255,220,200,.35)"; ctx.lineWidth=1; ctx.beginPath(); ctx.arc(x,y,3,0,7); ctx.stroke(); }
+    else if(fx==="factory"){ const x=sx, y=y0+H-((ph*H+gt*15)%H); ctx.fillStyle="rgba(200,170,140,.12)"; ctx.beginPath(); ctx.arc(x,y,7,0,7); ctx.fill(); }
+    else if(fx==="candy"){ const x=(sx+gt*10)%W, y=y0+((ph*H+gt*30)%H); ctx.fillStyle=["#ff8ad8","#ffd86b","#9dffb0","#7ec8ff"][i%4]; ctx.globalAlpha=0.5; ctx.fillRect(x,y,4,1.6); ctx.globalAlpha=1; }
+    else if(fx==="space"){ const x=sx, y=y0+((ph*H+i*37)%H); ctx.fillStyle="rgba(255,240,255,"+(0.25+0.25*Math.sin(gt*2+i))+")"; ctx.fillRect(x,y,1.6,1.6); }
+    else if(fx==="storm"){ const x=(sx+gt*90)%W, y=y0+((ph*H+gt*220)%H); ctx.strokeStyle="rgba(230,220,255,.22)"; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(x,y); ctx.lineTo(x-4,y+12); ctx.stroke(); }
+    else if(fx==="palace"){ const x=sx, y=y0+((ph*H+gt*18)%H); ctx.fillStyle="rgba(255,215,0,"+(0.25+0.3*Math.sin(gt*3+i))+")"; ctx.fillRect(x,y,2,2); } }
+  ctx.restore(); }
 function render(){
   ctx.setTransform(sc,0,0,sc,0,-cam*sc); ctx.fillStyle="#2e2624"; ctx.fillRect(0,cam,W,viewH);
   const L0=stageAt(cam), L1=stageAt(cam+viewH), EY=exitY();
@@ -631,7 +695,7 @@ function render(){
     ctx.fillStyle=st?st.pal[1]:L%2?"#4d4240":"#4a3f3c"; ctx.fillRect(0,oy,W,s.h); if(st&&!S.eco) drawPattern(st,Math.max(oy,cam),Math.min(oy+s.h,cam+viewH));
     if(st&&st.draw&&!S.eco){ /* outlined / glowing obstacle style */ ctx.strokeStyle=AC; ctx.globalAlpha=(locked?0.3:1)*(st.draw===1?0.9:0.35); ctx.lineJoin="round"; ctx.lineCap="round";
       const ow=st.draw===1?3:9;
-      for(const c of s.circ){ if(c.y+c.r<cam||c.y-c.r>cam+viewH||c.gold||c.split) continue; ctx.lineWidth=ow; ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.stroke(); }
+      for(const c of s.circ){ if(c.y+c.r<cam||c.y-c.r>cam+viewH||c.gold||c.split||c.lava) continue; ctx.lineWidth=ow; ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.stroke(); }
       for(const pg of s.polys){ ctx.lineWidth=ow; ctx.beginPath(); ctx.moveTo(pg.pts[0][0],pg.pts[0][1]); for(let i=1;i<pg.pts.length;i++) ctx.lineTo(pg.pts[i][0],pg.pts[i][1]); ctx.closePath(); ctx.stroke(); }
       for(const g of s.segs){ if(g.poly) continue; ctx.lineWidth=g.w+ow; ctx.beginPath(); ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); ctx.stroke(); }
       for(const p of s.spins) for(const e of spinEdges(p)){ ctx.lineWidth=e.w+ow; ctx.beginPath(); ctx.moveTo(e.x1,e.y1); ctx.lineTo(e.x2,e.y2); ctx.stroke(); }
@@ -644,11 +708,11 @@ function render(){
       if(p.hub){ ctx.beginPath(); ctx.arc(p.x,p.y,8,0,Math.PI*2); ctx.fillStyle=OB; ctx.fill(); ctx.strokeStyle=AC; ctx.lineWidth=2.5; ctx.stroke(); ctx.strokeStyle=OB; ctx.fillStyle=OB; }
       const bl=spinBalls(p); if(bl) for(const [x,y] of bl){ ctx.beginPath(); ctx.arc(x,y,p.br,0,Math.PI*2); ctx.fill(); ctx.strokeStyle="#39e639"; ctx.lineWidth=2.5; ctx.stroke(); ctx.strokeStyle=OB; } }
     if(s.mech){ ctx.lineCap="round";
-      for(const c of s.circ) if(c.gold||c.split){ if(c.y+c.r<cam||c.y-c.r>cam+viewH) continue; ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fillStyle=c.gold?(c.lit>0?"#fff3a0":"#ffd400"):(c.lit>0?"#ffd0ee":"#ff7fd1"); ctx.fill(); }
+      for(const c of s.circ) if(c.gold||c.split||c.lava){ if(c.y+c.r<cam||c.y-c.r>cam+viewH) continue; ctx.beginPath(); ctx.arc(c.x,c.y,c.r,0,Math.PI*2); ctx.fillStyle=c.lava?(c.lit>0?"#ffd0a0":"#ff5a2a"):c.gold?(c.lit>0?"#fff3a0":"#ffd400"):(c.lit>0?"#ffd0ee":"#ff7fd1"); ctx.fill(); if(c.lava){ ctx.strokeStyle="rgba(255,180,60,"+(0.4+0.3*Math.sin(gt*4+c.x))+")"; ctx.lineWidth=3; ctx.stroke(); } }
       if(s.pads) for(const p of s.pads){ ctx.fillStyle="#2bd97a"; roundBox(p.x-30,p.y-5,60,10,5); ctx.fill(); ctx.strokeStyle="#0b3d22"; ctx.lineWidth=2; ctx.beginPath(); for(const dx of [-14,0,14]){ ctx.moveTo(p.x+dx-5,p.y-3+((gt*3)%1)*2); ctx.lineTo(p.x+dx,p.y+2+((gt*3)%1)*2); ctx.lineTo(p.x+dx+5,p.y-3+((gt*3)%1)*2); } ctx.stroke(); }
       for(const m of s.mags){ const on=Math.sin(gt*2.1+m.ph)>=0; ctx.strokeStyle=on?"#c06bff":"rgba(192,107,255,.35)"; ctx.lineWidth=3; for(const rr of [10,30,55]){ ctx.beginPath(); ctx.arc(m.x,m.y,rr+(on?Math.sin(gt*8)*3:0),0,Math.PI*2); ctx.stroke(); } }
       for(const p of s.ports){ ctx.lineWidth=4; ctx.strokeStyle="#ff9f1c"; ctx.beginPath(); ctx.arc(p.x,p.y,13+Math.sin(gt*5)*1.5,0,Math.PI*2); ctx.stroke(); ctx.strokeStyle="#3fa8ff"; ctx.beginPath(); ctx.arc(p.bx,p.by,13+Math.cos(gt*5)*1.5,0,Math.PI*2); ctx.stroke(); }
-      if(s.mech==="belt"){ ctx.setLineDash([6,10]); ctx.lineDashOffset=-gt*40; ctx.strokeStyle="#ffd400"; ctx.lineWidth=2; for(const g of s.segs){ if(!g.belt) continue; const d=g.belt; const fw=(g.x2-g.x1)*d[0]+(g.y2-g.y1)*d[1]>0; ctx.beginPath(); if(fw){ ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); } else { ctx.moveTo(g.x2,g.y2); ctx.lineTo(g.x1,g.y1); } ctx.stroke(); } ctx.setLineDash([]); }
+      if(s.mech==="belt"||s.wfx==="factory"){ ctx.setLineDash([6,10]); ctx.lineDashOffset=-gt*40; ctx.strokeStyle="#ffd400"; ctx.lineWidth=2; for(const g of s.segs){ if(!g.belt) continue; const d=g.belt; const fw=(g.x2-g.x1)*d[0]+(g.y2-g.y1)*d[1]>0; ctx.beginPath(); if(fw){ ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); } else { ctx.moveTo(g.x2,g.y2); ctx.lineTo(g.x1,g.y1); } ctx.stroke(); } ctx.setLineDash([]); }
       if(s.mech==="wind"){ const wv=Math.sin(gt*0.9+s.ph); ctx.strokeStyle=`rgba(255,255,255,${0.08+0.1*Math.abs(wv)})`; ctx.lineWidth=2; for(let i=0;i<14;i++){ const yy=cam+((i*137.5)%viewH), xx=((i*91+gt*160*wv)%W+W)%W; ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx+30*Math.sign(wv||1),yy); ctx.stroke(); } } }
     ctx.lineCap="round"; for(const m of s.movs){ const c=m.cur; ctx.strokeStyle=OB; ctx.lineWidth=c.w; ctx.beginPath(); ctx.moveTo(c.x1,c.y1); ctx.lineTo(c.x2,c.y2); ctx.stroke(); ctx.strokeStyle=m.mode==="sine"?"#3fd6e8":"#ff9f1c"; ctx.lineWidth=3; ctx.stroke(); }
     for(const c of s.cups){ for(let i=0;i<c.pile.length;i++){ const [x,y]=cupPile(c,i), t=TYPES[c.pile[i]]; ctx.fillStyle=t.rainbow?`hsl(${(gt*120)%360},90%,65%)`:t.col; ctx.beginPath(); ctx.arc(x,y,PR,0,Math.PI*2); ctx.fill(); }
@@ -669,9 +733,17 @@ function render(){
     ctx.globalAlpha=1; ctx.textAlign="left"; ctx.font="900 12px system-ui"; ctx.fillStyle=locked?"#888":"#ffd400"; ctx.fillText(L+" · "+(s.mech?MECH[s.mech][0]+" ":"")+s.name.toUpperCase(),8,oy+(s.mech?44:18));
     if(L===hotL&&!locked){ const tw=ctx.measureText(L+" · "+(s.mech?MECH[s.mech][0]+" ":"")+s.name.toUpperCase()).width; ctx.fillStyle="#ff7a1a"; roundBox(14+tw,oy+(s.mech?31:5),74,17,8); ctx.fill(); ctx.fillStyle="#fff"; ctx.font="900 11px system-ui"; ctx.fillText("🔥 HOT ×"+HOT_MULT,20+tw,oy+(s.mech?44:18));
       ctx.save(); ctx.strokeStyle="#ff7a1a"; ctx.globalAlpha=0.5+0.3*Math.sin(gt*3); ctx.lineWidth=4; ctx.strokeRect(2,Math.max(oy,cam-4)+2,W-4,Math.min(oy+s.h,cam+viewH+4)-Math.max(oy,cam-4)-4); ctx.restore(); } if(s.mech){ ctx.font="700 10px system-ui"; ctx.fillStyle=locked?"#777":"#cfd3dc"; ctx.fillText(MECH[s.mech][2],8,oy+58); }
+    if(L%15===1){ const wd=WORLDS[worldOf(L)]; ctx.fillStyle="rgba(20,16,14,.72)"; ctx.fillRect(0,oy,W,24); ctx.fillStyle=wd.col; ctx.fillRect(0,oy+22,W,2); ctx.font="900 12px system-ui"; ctx.textAlign="center"; ctx.fillText(wd.ic+" WORLD "+(worldOf(L)+1)+" · "+wd.name.toUpperCase()+(wd.fx?" · "+wd.d.split(" – ")[0]:""),W/2,oy+16); ctx.textAlign="left"; }
+    if(isBoss(L)){ const bw=WORLDS[worldOf(L)].boss, done=bossDone(L)||(L<S.unlocked&&!isBoss(S.unlocked))||L<S.unlocked, live=L===S.unlocked&&!bossDone(L), sh=live&&bossFx>0?Math.sin(gt*80)*3:0;
+      ctx.font="44px system-ui"; ctx.textAlign="center"; ctx.globalAlpha=locked?0.35:done?0.5:1; ctx.fillText(bw[0],W-40+sh,oy+(s.mech?118:92)); ctx.globalAlpha=1;
+      const hp=done?0:Math.max(0,1-(S.bossDmg[L]||0)/bossHp(L)), by=oy+(s.mech?66:28);
+      ctx.fillStyle="rgba(20,16,14,.8)"; roundBox(8,by,W-96,16,8); ctx.fill(); ctx.fillStyle=done?"#6a6a6a":"#e8413a"; roundBox(9,by+1,(W-98)*hp,14,7); ctx.fill();
+      ctx.font="900 10px system-ui"; ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.fillText("BOSS "+bw[1].toUpperCase()+(done?" · DEFEATED ✔":" · "+Math.ceil(hp*100)+"%"),14,by+12);
+      if(live){ ctx.save(); ctx.strokeStyle="#e8413a"; ctx.globalAlpha=0.35+0.25*Math.sin(gt*4); ctx.lineWidth=5; ctx.strokeRect(3,Math.max(oy,cam-4)+3,W-6,Math.min(oy+s.h,cam+viewH+4)-Math.max(oy,cam-4)-6); ctx.restore(); } }
     if(locked){ ctx.textAlign="center"; ctx.fillStyle="rgba(20,21,24,.88)"; const yy=oy+60; roundBox(50,yy,W-100,84,14); ctx.fill();
-      ctx.font="900 18px system-ui"; ctx.fillStyle=L===S.unlocked+1&&S.coins>=priceOf(L)?"#ffd400":"#ddd"; ctx.fillText("🔒 Stage "+L,W/2,yy+32); ctx.font="800 13px system-ui"; ctx.fillStyle="#bbb"; ctx.fillText(L===S.unlocked+1?"Unlock for "+money(priceOf(L)):money(priceOf(L)),W/2,yy+54); ctx.font="700 10px system-ui"; ctx.fillText("all gates pay ×1.35 more",W/2,yy+72); }
+      ctx.font="900 18px system-ui"; ctx.fillStyle=L===S.unlocked+1&&S.coins>=priceOf(L)?"#ffd400":"#ddd"; ctx.fillText("🔒 Stage "+L,W/2,yy+32); ctx.font="800 13px system-ui"; ctx.fillStyle="#bbb"; ctx.fillText(L===S.unlocked+1?"Unlock for "+money(priceOf(L)):money(priceOf(L)),W/2,yy+54); ctx.font="700 10px system-ui"; ctx.fillText(L===S.unlocked+1&&bossBlock()?"⚔️ beat the boss above first":"all gates pay ×1.35 more",W/2,yy+72); }
   }
+  { const wi=worldOf(stageAt(cam+viewH/2)); musWorld=wi; if(!S.eco) drawWorldFx(WORLDS[wi].fx); }
   if(EY>cam-20&&EY<cam+viewH+20){ ctx.fillStyle="#ffd400"; ctx.fillRect(0,EY-3,W,3); ctx.font="900 10px system-ui"; ctx.textAlign="center"; ctx.fillStyle="#ffd400"; ctx.fillText("▼ END ▼",W/2,EY+12); }
   { const y0=cam-10, y1=cam+viewH+10;
     for(let k=0;k<TYPES.length;k++){ ctx.beginPath(); let any=false; for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; ctx.moveTo(b.x+(b.r0||b.r),b.y); ctx.arc(b.x,b.y,b.r0||b.r,0,Math.PI*2); any=true; } if(any){ ctx.fillStyle=TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col; ctx.fill(); } }
@@ -695,9 +767,13 @@ function uiList(force){
       if(S.rate[k]>0){ h+=`<div class="row"><div class="dot" style="background:${t.col}"></div><div class="rt"><b>${money(ballVal(k))}</b><small>${(spawnTime(S.rate[k])/rateMult()).toFixed(2)} sec${S.bstar[k]?` · ✨${S.bstar[k]} ×${fmt(S.bpm[k])}`:""}</small>${S.val[k]>=bpNeed(k)?`<button class="bp" data-bp="${k}">✨ PRESTIGE ×${bpGain(k).toFixed(1)}</button>`:""}</div>${btn("v"+k,S.val[k],1e9,l=>costVal(k,l))}${btn("r"+k,S.rate[k],RMAX,l=>costRate(k,l))}</div>`; continue; }
       if(S.unlocked<GATE[k]){ h+=`<div class="row"><div class="dot" style="background:#26272c"></div><div class="rt"><b style="color:#777">${t.name} ball</b><small>🔒 Unlock stage ${GATE[k]}</small></div></div>`; break; }
       const c=costUnlock(k); h+=`<div class="row"><div class="dot" style="background:${t.col};opacity:.5"></div><div class="rt"><b>${t.name} ball</b><small>New ball · 6× value</small></div><button class="buy ${S.coins>=c?"ok":""}" data-b="u${k}" style="width:172px"><span>${money(c)}</span><em>UNLOCK</em></button></div>`; break; } }
+  else if(S.tab==="shop"){ h+=`<div class="hd"><span>WORKSHOP · machine upgrades</span><span></span><span></span></div>`;
+    WSHOP.forEach((u,i)=>{ const l=WS(u.id); h+=`<div class="row ws"><div class="dot wsi">${u.ic}</div><div class="rt"><b>${u.name}${l?` <small style="display:inline;color:#ffd400">Lv ${l}</small>`:""}</b><small>${l?u.d(l):"Next: "+u.d(1)}</small></div>${btn("w"+i,l,u.max,ll=>costWs(i,ll))}</div>`; });
+    h+=`<p style="color:#9aa0aa;font-size:11px;padding:8px 6px">Workshop upgrades make balls flow faster and pay better. They reset on rebirth, like stage upgrades. AUTO buys them too.</p>`; }
   else { h+=`<div class="hd"><span>STAGES</span><span>SHRINK</span><span>GATES</span></div>`;
     for(let L=1;L<=S.unlocked;L++){ const st=stOf(L);
-      h+=`<div class="srow2"><div class="num">${L}</div><div class="rt" data-go="${L}"><b>${L===hotL?`<span style="color:#ff8a3a">🔥×${HOT_MULT}</span> `:""}${stageName(L)}</b><small>size ${Math.round(shrinkOf(L)*100)}% · gates ×${gateBoost(L).toFixed(2)}</small></div>${btn("o"+L,st.o,OMAX,l=>costObs(L,l))}${btn("g"+L,st.g,GMAX,l=>costGate(L,l))}</div>`; } }
+      if(L%15===1){ const wd=WORLDS[worldOf(L)]; h+=`<div class="wh" style="border-color:${wd.col}" data-go="${L}"><b style="color:${wd.col}">${wd.ic} WORLD ${worldOf(L)+1} · ${wd.name.toUpperCase()}</b><small>${wd.d}</small></div>`; }
+      h+=`<div class="srow2"><div class="num"${isBoss(L)?' style="background:#5a1f24;color:#ffb3a8"':""}>${L}</div><div class="rt" data-go="${L}"><b>${isBoss(L)?WORLDS[worldOf(L)].boss[0]+(bossDone(L)||L<S.unlocked?"✔ ":" "):""}${L===hotL?`<span style="color:#ff8a3a">🔥×${HOT_MULT}</span> `:""}${stageName(L)}</b><small>size ${Math.round(shrinkOf(L)*100)}% · gates ×${gateBoost(L).toFixed(2)}</small></div>${btn("o"+L,st.o,OMAX,l=>costObs(L,l))}${btn("g"+L,st.g,GMAX,l=>costGate(L,l))}</div>`; } }
   if(!force&&h===listSig) return; const sc_=$("list").scrollTop; listSig=h; $("list").innerHTML=h; $("list").scrollTop=sc_; }
 $("list").addEventListener("click",e=>{ const bp=e.target.closest("[data-bp]"); if(bp) return ballPrestige(+bp.dataset.bp); const b=e.target.closest("[data-b]"); if(b) return buy(b.dataset.b); const g=e.target.closest("[data-go]"); if(g) goTo(+g.dataset.go); });
 function buy(id,quiet,one){
@@ -707,20 +783,22 @@ function buy(id,quiet,one){
   if(t==="r") run(()=>S.rate[k],v=>S.rate[k]=v,RMAX,l=>costRate(k,l));
   if(t==="v") run(()=>S.val[k],v=>S.val[k]=v,1e9,l=>costVal(k,l));
   if(t==="o"&&k<=S.unlocked){ const st=stOf(k); run(()=>st.o,v=>st.o=v,OMAX,l=>costObs(k,l)); if(n) rebuildStage(k); }
+  if(t==="w"&&WSHOP[k]){ const u=WSHOP[k]; run(()=>WS(u.id),v=>S.ws[u.id]=v,u.max,l=>costWs(k,l)); }
   if(t==="g"&&k<=S.unlocked){ const st=stOf(k); run(()=>st.g,v=>st.g=v,GMAX,l=>costGate(k,l)); }
   if(!quiet){ if(n){ if(S.sound){ tone(660,0.04,0.035); setTimeout(()=>tone(990,0.05,0.035),60); } buzz(12); save(true); } else if(S.sound) tone(160,0.05,0.03); uiList(true); uiTop(); }
   return n; }
-function unlockNext(sim,quiet){ const L=S.unlocked+1; if(L>NST||S.coins<priceOf(L)) return false; S.coins-=priceOf(L); S.unlocked=L;
+function unlockNext(sim,quiet){ const L=S.unlocked+1; if(L>NST||S.coins<priceOf(L)||bossBlock()) return false; S.coins-=priceOf(L); S.unlocked=L;
   if(L<=S.best){ /* already reached before a rebirth: no new perk/card */ if(!sim){ buzz(40); if(S.sound) [523,784].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*90)); save(true); uiList(true); uiTop(); floatText("🔓 Stage "+L+" unlocked again"+(mechOf(L)?" · "+MECH[mechOf(L)][0]+" "+MECH[mechOf(L)][1]:""),innerWidth/2-90,140); } return true; }
   S.best=L; S.pendPerk++; S.newCards++; const [card,up]=drawCard();
   if(sim){ const p=PERKS[Math.floor(Math.random()*4)]; S.perks[p.id]=P(p.id)+1; S.pendPerk--; return true; }
   buzz(60); if(S.sound) [523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.08,0.05),i*100)); save(true); uiList(true); uiTop();
-  if(quiet){ floatText("🔓 Stage "+L+" unlocked! Tap ⭐ for your perk",innerWidth/2-130,140); return true; } goTo(L);
+  const nwd=L%15===1?WORLDS[worldOf(L)]:null;
+  if(quiet){ floatText(nwd?"🌍 World "+(worldOf(L)+1)+" "+nwd.ic+" "+nwd.name+"!":"🔓 Stage "+L+" unlocked! Tap ⭐ for your perk",innerWidth/2-130,140); return true; } goTo(L);
   const nb=GATE.indexOf(L);
-  popup(`<div style="font-size:40px">🔓</div><h1>Stage ${L} unlocked!</h1><p><b>${stageName(L)}</b></p>${mechOf(L)?`<p style="margin-top:4px">New mechanic: ${MECH[mechOf(L)][0]} <b>${MECH[mechOf(L)][1]}</b> – ${MECH[mechOf(L)][2]}</p>`:""}<p style="margin-top:6px">Your balls now fall through <b>${L} stages</b> – and every gate pays <b>×1.35</b> more.</p>
+  popup(`<div style="font-size:40px">🔓</div><h1>Stage ${L} unlocked!</h1><p><b>${stageName(L)}</b></p>${mechOf(L)?`<p style="margin-top:4px">New mechanic: ${MECH[mechOf(L)][0]} <b>${MECH[mechOf(L)][1]}</b> – ${MECH[mechOf(L)][2]}</p>`:""}${nwd?`<p style="margin-top:6px;color:${nwd.col}">🌍 New world: ${nwd.ic} <b>${nwd.name}</b> – ${nwd.d}</p>`:""}${isBoss(L)?`<p style="margin-top:6px;color:#ff8a7a">⚔️ Boss stage! Beat ${WORLDS[worldOf(L)].boss[0]} <b>${WORLDS[worldOf(L)].boss[1]}</b> – every ball through its gates hits it.</p>`:""}<p style="margin-top:6px">Your balls now fall through <b>${L} stages</b> – and every gate pays <b>×1.35</b> more.</p>
     <p style="margin-top:6px">New card: <b style="color:${RCOL[card.r]}">${card.ic} ${card.name}</b> <small style="color:${RCOL[card.r]}">${RAR[card.r]}</small>${up?` · level ${C(card.id)}!`:""}</p>
     ${nb>0?`<p style="margin-top:6px">🔓 ${TYPES[nb].name} ball can now be unlocked</p>`:""}<button class="btn" id="go">Choose a perk ⭐</button>`,{go:()=>choosePerk()}); return true; }
-$("unlockB").onclick=()=>{ if(!unlockNext()){ goTo(Math.min(NST,S.unlocked+1)); if(S.sound) tone(160,0.05,0.03); } };
+$("unlockB").onclick=()=>{ if(!unlockNext()){ goTo(bossBlock()?S.unlocked:Math.min(NST,S.unlocked+1)); if(S.sound) tone(160,0.05,0.03); } };
 document.querySelectorAll("#tabs .t").forEach(b=>b.onclick=()=>{ S.tab=b.dataset.t; document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 document.querySelectorAll("#modes [data-m]").forEach(b=>b.onclick=()=>{ S.mode=b.dataset.m; document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x===b)); uiList(true); });
 function tankBalls(){ let n=0; for(let L=1;L<=S.unlocked;L++){ const s=STG[L]; if(s){ for(const d of s.doors) n+=d.pile.length; for(const c of s.cups) n+=c.pile.length; } } return n; }
@@ -728,7 +806,8 @@ function uiTop(){ if(typeof syncAuto==='function') syncAuto();
   $("coinT").textContent=money(S.coins); $("rateT").textContent=money(rateNow)+"/s · "+S.unlocked+"/"+NST+" stages"+(S.pm>1?" · ♻️×"+mx(S.pm):"");
   const rb=$("rebB"); rb.style.display=(S.unlocked>=REB_MIN||S.rebirths)?"block":"none"; rb.textContent=S.unlocked>=REB_MIN?"♻️ ×"+mx(rebGain()):"♻️"; rb.className=S.unlocked>=REB_MIN?(rebAfter()>=1.5*(S.pm||1)?"ok":"ok calm"):""; /* pulses only when a rebirth adds +50% or more */ { const n=balls.length+tankBalls(), cp=ballCap(), bc=$("ballCount"), full=n>=cp; bc.classList.toggle("full",full); bc.textContent=full?"⚡ Full · "+cp.toLocaleString("de-DE")+" balls":"● "+n.toLocaleString("de-DE")+" / "+cp.toLocaleString("de-DE")+" balls"; }
   const L=S.unlocked+1, u=$("unlockB");
-  if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+((S.unlocked>=REB_MIN||S.rebirths)?"":" · gates ×1.35"); u.className=S.coins>=priceOf(L)?"ok":""; }
+  if(L>NST){ u.textContent="🏆 All "+NST+" stages unlocked"; u.className=""; }
+  else if(bossBlock()){ const bw=WORLDS[worldOf(S.unlocked)].boss, left=Math.max(0,1-(S.bossDmg[S.unlocked]||0)/bossHp(S.unlocked)); u.textContent="⚔️ Beat "+bw[0]+" "+bw[1]+" · "+Math.ceil(left*100)+"% HP"; u.className="boss"; } else { u.textContent="🔓 Unlock stage "+L+" · "+money(priceOf(L))+((S.unlocked>=REB_MIN||S.rebirths)?"":" · gates ×1.35"); u.className=S.coins>=priceOf(L)?"ok":""; }
   $("musB").classList.toggle("off",!S.music); $("sndB").classList.toggle("off",!S.sound);
   $("troN").style.display=S.newTro?"block":"none"; $("troN").textContent=S.newTro; $("cardN").style.display=S.newCards?"block":"none"; $("cardN").textContent=S.newCards; $("perkB").style.boxShadow=S.pendPerk?"0 0 0 2px #ffd400":"none"; }
 function popup(html,acts){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; L.querySelectorAll("button[id]").forEach(b=>b.onclick=()=>{ L.innerHTML=""; (acts&&acts[b.id]||(()=>{}))(); }); return L; }
@@ -752,7 +831,7 @@ $("troB").onclick=()=>{ S.newTro=0; uiTop(); save(true);
 $("musB").onclick=()=>{ S.music=!S.music; syncMusic(); uiTop(); save(true); };
 $("sndB").onclick=()=>{ S.sound=!S.sound; uiTop(); save(true); };
 function rebirth(){ S.pm=rebAfter(); S.rebirths=(S.rebirths||0)+1;
-  S.coins=0; S.unlocked=1; S.rate=[1].concat(Array(TYPES.length-1).fill(0)); S.val=Array(TYPES.length).fill(1); S.st={}; S.avg=0;
+  S.coins=0; S.unlocked=1; S.rate=[1].concat(Array(TYPES.length-1).fill(0)); S.val=Array(TYPES.length).fill(1); S.st={}; S.avg=0; S.ws={}; S.bossDone={}; S.bossDmg={};
   balls=[]; acc.fill(0); rateNow=0; earnWin=0; checkHot(); STG.length=1; getStage(1); goTo(1); save(true); uiList(true); uiTop(); buzz(80);
   if(S.sound) [392,523,659,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.09,0.05),i*90));
   popup(`<div style="font-size:40px">♻️</div><h1>Rebirth ${S.rebirths}!</h1><p>All profit is now <b>×${mx(S.pm)}</b> – forever.</p><button class="btn" id="ok">Let's go</button>`); }
@@ -771,12 +850,24 @@ $("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.aut
 let autoT=0;
 // AUTO: buys the cheapest thing (upgrade or next stage) as soon as it is affordable – no cooldown
 function autoBuy(dt){ if(!S.auto) return; autoT+=dt; if(autoT<0.5) return; autoT=0;
-  if(S.unlocked<NST&&S.coins>=priceOf(S.unlocked+1)){ if(unlockNext(false,true)){ uiList(true); uiTop(); } return; } // next stage first whenever it is affordable
-  const o=simOpts(); if(S.unlocked<NST) o.push(["next",priceOf(S.unlocked+1)]); o.sort((a,b)=>a[1]-b[1]); const c=o[0]; if(!c||S.coins<c[1]) return;
+  if(S.unlocked<NST&&!bossBlock()&&S.coins>=priceOf(S.unlocked+1)){ if(unlockNext(false,true)){ uiList(true); uiTop(); } return; } // next stage first whenever it is affordable
+  const o=simOpts(); if(S.unlocked<NST&&!bossBlock()) o.push(["next",priceOf(S.unlocked+1)]); o.sort((a,b)=>a[1]-b[1]); const c=o[0]; if(!c||S.coins<c[1]) return;
   const ok=c[0]==="next"?unlockNext(false,true):buy(c[0],true,S.mode==="max"?"max":"1"); /* MAX mode: AUTO buys as many levels as it can right away */ if(ok){ uiList(true); uiTop(); } }
 function syncPanel(){ $("panel").classList.toggle("hid",!!S.panelHidden); $("showB").style.display=S.panelHidden?"block":"none"; resize(); }
 $("hideB").onclick=()=>{ S.panelHidden=true; syncPanel(); save(true); };
 $("showB").onclick=()=>{ S.panelHidden=false; syncPanel(); save(true); uiList(true); };
+/* mini-map: the whole tower on the right edge – worlds, ball density (red = pile), hot stage, live boss, your view. Drag it to fly anywhere. */
+const mm=$("mm"), mmx=mm.getContext("2d");
+function drawMini(){ const r=mm.getBoundingClientRect(), dpr=Math.min(2,devicePixelRatio||1), w=Math.max(1,Math.round(r.width*dpr)), h=Math.max(1,Math.round(r.height*dpr)); if(mm.width!==w||mm.height!==h){ mm.width=w; mm.height=h; }
+  const M=Math.min(NST,S.unlocked+1), T=OY[M+1], k=h/T, cnt=new Int32Array(NST+2); for(const b of balls){ const L=stageAt(b.y); if(L<=M) cnt[L]++; }
+  mmx.clearRect(0,0,w,h);
+  for(let L=1;L<=M;L++){ const y=OY[L]*k, hh=Math.max(1,HT[L]*k), wd=WORLDS[worldOf(L)]; mmx.globalAlpha=L>S.unlocked?0.18:0.4; mmx.fillStyle=wd.col; mmx.fillRect(0,y,w,hh);
+    const cp=STAGE_CAP[L-1]*10, f=Math.min(1,cnt[L]/Math.max(30,cp*0.5)); if(f>0.02){ mmx.globalAlpha=0.15+0.8*f; mmx.fillStyle=cnt[L]>cp*0.7?"#ff3b30":"#ffffff"; mmx.fillRect(w*0.25,y,w*0.5,hh); }
+    mmx.globalAlpha=1; if(L===hotL){ mmx.fillStyle="#ff7a1a"; mmx.fillRect(0,y,w*0.25,hh); } if(isBoss(L)&&L===S.unlocked&&!bossDone(L)){ mmx.fillStyle="#e8413a"; mmx.beginPath(); mmx.arc(w/2,y+hh/2,w*0.42,0,7); mmx.fill(); } if(L%15===1&&L>1){ mmx.fillStyle="#000"; mmx.fillRect(0,y,w,Math.max(1,dpr)); } }
+  mmx.strokeStyle="#fff"; mmx.lineWidth=Math.max(1,dpr*1.2); mmx.strokeRect(0.5,cam*k,w-1,Math.max(3,viewH*k)); }
+function mmGo(e){ const r=mm.getBoundingClientRect(), M=Math.min(NST,S.unlocked+1), f=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height)); cam=f*OY[M+1]-viewH/2; camV=0; clampCam(); }
+let mmDown=false; mm.addEventListener("pointerdown",e=>{ mmDown=true; try{ mm.setPointerCapture(e.pointerId); }catch(_){} mmGo(e); e.stopPropagation(); });
+mm.addEventListener("pointermove",e=>{ if(mmDown) mmGo(e); }); mm.addEventListener("pointerup",()=>{ mmDown=false; }); mm.addEventListener("pointercancel",()=>{ mmDown=false; });
 $("jTop").onclick=()=>goTo(1); $("jEnd").onclick=()=>goTo(Math.min(NST,S.unlocked));
 // drag to scroll, tap to drop a ball / unlock
 let pd=null, lastY=0, lastTime=0;
@@ -806,7 +897,7 @@ function openMenu(){ const L=$("layer");
     <button class="btn g" id="rst">Start over</button><button class="btn" id="cl">Close</button></div></div>`;
   const q=s=>L.querySelector(s);
   q("#cl").onclick=()=>{ L.innerHTML=""; };
-  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and you add +1 at stage 10 and +0.5 more for every stage beyond (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• ⚡ When the board is full, most new balls pay instantly and a slow trickle keeps dropping at the top. The ♻️ button pulses when a rebirth would raise your multiplier by 50% or more.</p><p style="text-align:left;margin-top:10px">• 🔥 Every day one of your stages is the hot stage: its gates pay ×5 until midnight.</p><p style="text-align:left;margin-top:10px">• ✨ Copies of level-10 cards become card dust – 5 dust buys an Epic-or-better card.</p><p style="text-align:left;margin-top:10px">• 🎡 Ferris Wheel stages (15, 25, 35 …): buckets on a slow wheel catch balls at the top and pour them out.</p><p style="text-align:left;margin-top:10px">• 🏆 Trophies are earned automatically for milestones; each one adds +4% to all ball values forever.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
+  q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and you add +1 at stage 10 and +0.5 more for every stage beyond (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• ⚡ When the board is full, most new balls pay instantly and a slow trickle keeps dropping at the top. The ♻️ button pulses when a rebirth would raise your multiplier by 50% or more.</p><p style="text-align:left;margin-top:10px">• 🌍 10 worlds × 15 stages, each with its own effect, look and music key. The last stage of every world has a ⚔️ boss: every ball through its gates hits it – beat it to open the next world (+1 minute of income, first time also a Legendary-or-better card).</p><p style="text-align:left;margin-top:10px">• 🔧 WORKSHOP tab: machine upgrades (faster spinners, slick ramps, wider buckets, quicker cups, longer hatches, wider sweet spot).</p><p style="text-align:left;margin-top:10px">• The bar on the right edge is a map of your tower – drag it to fly anywhere. Red = pile-up, orange = hot stage.</p><p style="text-align:left;margin-top:10px">• 🔥 Every day one of your stages is the hot stage: its gates pay ×5 until midnight.</p><p style="text-align:left;margin-top:10px">• ✨ Copies of level-10 cards become card dust – 5 dust buys an Epic-or-better card.</p><p style="text-align:left;margin-top:10px">• 🎡 Ferris Wheel stages (15, 25, 35 …): buckets on a slow wheel catch balls at the top and pour them out.</p><p style="text-align:left;margin-top:10px">• 🏆 Trophies are earned automatically for milestones; each one adds +4% to all ball values forever.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
   q("#stats").onclick=showStats;
   q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
   q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
@@ -851,11 +942,12 @@ function tunePerf(dt,work){ if(dt>0.004&&dt<0.04) refI=Math.min(refI*1.002,dt); 
   else if(workA<target*0.7&&n>cap*0.9) S.perfCap=Math.min(100000,Math.round(cap*1.06)); }
 let ecoSkip=false, trT=0;
 function frame(t){ if(S.eco){ ecoSkip=!ecoSkip; if(ecoSkip){ requestAnimationFrame(frame); return; } } /* power saving: ~30 fps, fewer physics steps, 1× resolution, no background patterns */
-  const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const w0=performance.now(); const n=S.eco?2:(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); if(!document.hidden) tunePerf(dt,performance.now()-w0); uiT+=dt; if(uiT>0.25){ uiT=0; trT=(trT||0)+1; if(trT>=4){ trT=0; checkTrophies(); checkHot(); } uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
+  const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const w0=performance.now(); const n=S.eco?2:(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); if(!document.hidden) tunePerf(dt,performance.now()-w0); uiT+=dt; if(uiT>0.25){ uiT=0; if(!document.hidden) drawMini(); trT=(trT||0)+1; if(trT>=4){ trT=0; checkTrophies(); checkHot(); } uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 /* test hooks */
 const simOpts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(S.unlocked>=GATE[k]) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); }
-  for(let L=1;L<=S.unlocked;L++){ const st=stOf(L); if(st.o<OMAX) o.push(["o"+L,costObs(L,st.o)]); if(st.g<GMAX) o.push(["g"+L,costGate(L,st.g)]); } return o; };
+  for(let L=1;L<=S.unlocked;L++){ const st=stOf(L); if(st.o<OMAX) o.push(["o"+L,costObs(L,st.o)]); if(st.g<GMAX) o.push(["g"+L,costGate(L,st.g)]); }
+  WSHOP.forEach((u,i)=>{ const l=WS(u.id); if(l<u.max) o.push(["w"+i,costWs(i,l)]); }); return o; };
 function simBuy(){ for(let q=0;q<40;q++){ const o=simOpts().sort((a,b)=>a[1]-b[1])[0]; if(o&&S.coins>=o[1]) buy(o[0],true); else break; } }
 window.__z={step,getStage,OY,stageAt,setCam:y=>{ cam=y; camV=0; clampCam(); },unlockNext,goTo,MUSIC,get S(){return S;},get STG(){return STG;},get hotL(){return hotL;},checkHot,showStats,drawCard,get balls(){return balls;},get PRICES(){return PRICES;},setPrices:a=>{ PRICES=a; },
   // calibration: let a greedy player run tgt(L) seconds on L stages, the money earned becomes the price of stage L+1
