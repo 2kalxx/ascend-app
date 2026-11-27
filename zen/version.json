@@ -1,7 +1,7 @@
 {
-  "web": 84,
+  "web": 85,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "⚙️ Machine mastery (+8% gates per level, gold trim), 🧭 pet expeditions (1/4/12 h, also while closed) and 🌗 day & night (day gates ×1.2, night VIP ×1.5)"
+  "notes": "Polish: combo text for gate streaks, animated boss intros, 4 new music tracks (20 total) and the 🌳 ball family tree"
 }
