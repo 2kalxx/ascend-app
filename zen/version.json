@@ -1,7 +1,7 @@
 {
-  "web": 68,
+  "web": 69,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Ball prestige is now a rare upgrade: max 5 per ball (Lv 100/250/500/1000/2000, ×3 each); balls that already have 5+ can't prestige again"
+  "notes": "Stages 6–150: static shapes replaced by spinners, belts, funnels and zig-zags; ball upgrades get pricier per ball type and much harder past level 100; prestige resets value AND time, makes upgrades ×5 pricier, needs Lv 100/150/200/250/300"
 }

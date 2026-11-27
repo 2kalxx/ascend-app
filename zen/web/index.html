@@ -92,7 +92,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 68; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 69; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -105,8 +105,11 @@ const TYPES=[{name:"White",col:"#f4f4f4"},{name:"Cyan",col:"#3fd6e8"},{name:"Lim
 const GATE=[1,3,8,15,25,40,60,85,90,95,100,106,112,118,124,130,136,142,148,150]; // stages you need to own to unlock each ball
 const RMAX=25;
 const spawnTime=r=>3.2/(1+0.22*(r-1));
-const costRate=(k,r)=>8*Math.pow(7,k)*Math.pow(1.5,r-1)*perkCost("ballCost");
-const costVal=(k,v)=>10*Math.pow(7,k)*Math.pow(1.3,v-1)*perkCost("ballCost");
+/* v69: every ball type gets pricier upgrades than the one before (base ×8 per type, steeper growth per level), and value levels get harder and harder (quadratic term) */
+/* every prestige star makes that ball's upgrades ×5 pricier and grow faster */
+const bst=k=>Math.min(5,(S.bstar&&S.bstar[k])||0), valGrow=k=>1.3+0.02*k+0.03*bst(k), rateGrow=k=>1.5+0.02*k+0.03*bst(k), hardV=v=>v>100?Math.pow(1.001,(v-100)*(v-100)):1;
+const costRate=(k,r)=>8*Math.pow(7.6,k)*Math.pow(5,bst(k))*Math.pow(rateGrow(k),r-1)*perkCost("ballCost");
+const costVal=(k,v)=>10*Math.pow(7.6,k)*Math.pow(5,bst(k))*Math.pow(valGrow(k),v-1)*hardV(v)*perkCost("ballCost");
 const costUnlock=k=>60*Math.pow(9,k);
 let PRICES=[0,149,1.92e+05,5.47e+08,2.62e+10,4.59e+11,6.23e+12,7.25e+13,2.1e+15,3.07e+16,3.3e+17,3.03e+18,2.47e+19,2.01e+20,1.53e+21,2.71e+22,2.94e+23,2.56e+24,1.96e+25,1.39e+26,9.67e+26,6.7e+27,4.56e+28,3.05e+29,1.98e+30,2.74e+31,2.47e+32,1.86e+33,1.28e+34,8.29e+34,5.33e+35,3.35e+36,2.04e+37,1.25e+38,7.74e+38,4.64e+39,2.82e+40,1.73e+41,1.04e+42,6.21e+42,7.77e+43,6.36e+44,4.49e+45,2.85e+46,1.74e+47,1.02e+48,5.97e+48,3.56e+49,2.11e+50,1.21e+51,7e+51,4.08e+52,2.3e+53,1.34e+54,7.73e+54,4.49e+55,2.59e+56,1.49e+57,8.57e+57,4.94e+58,5.58e+59,4.24e+60,2.84e+61,1.76e+62,1.03e+63,5.78e+63,3.33e+64,1.88e+65,1.05e+66,5.91e+66,3.32e+67,1.88e+68,1.04e+69,5.86e+69,3.26e+70,1.84e+71,1.02e+72,5.72e+72,3.2e+73,1.78e+74,9.86e+74,5.44e+75,2.99e+76,1.67e+77,9.18e+77,9.99e+78,7.38e+79,4.8e+80,2.88e+81,1.64e+82,1.85e+83,1.36e+84,8.62e+84,5.22e+85,3e+86,3.32e+87,2.4e+88,1.54e+89,9.24e+89,5.18e+90,5.79e+91,4.23e+92,2.71e+93,1.61e+94,9.06e+94,5.09e+95,5.61e+96,4.09e+97,2.62e+98,1.53e+99,8.6e+99,4.79e+100,5.33e+101,3.82e+102,2.43e+103,1.44e+104,8.13e+104,4.49e+105,5e+106,3.58e+107,2.28e+108,1.36e+109,7.68e+109,4.25e+110,4.69e+111,3.39e+112,2.12e+113,1.25e+114,7.03e+114,3.87e+115,4.33e+116,3.09e+117,1.93e+118,1.14e+119,6.38e+119,3.53e+120,3.96e+121,2.81e+122,1.76e+123,1.03e+124,5.8e+124,3.2e+125,3.59e+126,2.54e+127,1.6e+128,9.31e+128,5.24e+129,2.89e+130,3.26e+131,2.32e+132]; // price to unlock stage L (index L-1)
 const priceOf=L=>PRICES[L-1]*Math.pow(0.96,R("price"));
@@ -171,7 +174,7 @@ const rebGain=()=>(1+0.5*Math.max(0,S.unlocked-REB_MIN))*(SK("reb1")?1.5:1)*(SK(
 const mx=n=>n<1000?String(+n.toFixed(1)):fmt(n); // multiplier display: 17.8, not 17
 const rebAfter=()=>(S.pm||1)+rebGain();
 /* v67 fix: the old rule (need 50+25n, gain 1+level/25) could be repeated forever with MAX. Now the need grows steeply (50, 200, 450, 800 …) and every prestige gives a flat ×3 */
-const BP_REQ=[100,250,500,1000,2000], BP_MAX=BP_REQ.length; /* v68: at most 5 prestiges per ball – a rare, unique upgrade */
+const BP_REQ=[100,150,200,250,300], BP_MAX=BP_REQ.length; /* v68: at most 5 prestiges per ball – a rare, unique upgrade */
 const bpNeed=k=>(S.bstar[k]||0)<BP_MAX?BP_REQ[S.bstar[k]||0]:Infinity;          // value level needed for the next ball prestige
 const bpGain=k=>3;
 const stOf=L=>{ S.st[L]=S.st[L]||{o:0,g:0}; return S.st[L]; };
@@ -305,7 +308,7 @@ const variantOf=L=>Math.floor((L-1)/THEMES.length);
 /* stages 11-150: 14 machine types × 10 variants, every stage has its own main machine, settings, extras, shapes, colour and name */
 const MODLIST=["drum","hourglass","sluice","swings","comb","sliders","piston","clock","sieve","gears","offset","fans","stirrer","wipers","slalom","cups","crosses","bucket","paddles"];
 const FUNNELS=["sluice","piston","cups","bucket","stirrer","hourglass","comb","sieve","offset","slalom"];
-const MODNAME={hourglass:"Hourglass",comb:"Comb Slots",sieve:"Diamond Sieve",offset:"Offset Funnels",slalom:"Slalom Baffles",drum:"Tumble Drums",sluice:"Sluice Gates",piston:"Piston Pinch",swings:"Pendulums",sliders:"Sliders",clock:"Clock Tower",stirrer:"Stir Necks",gears:"Gearworks",fans:"Fan Hall",wipers:"Wiper Walk",cups:"Spill Cups",bucket:"Bucket Drop",paddles:"Paddle Mill",crosses:"Cross Bumpers",ferris:"Ferris Wheel",plinko:"Plinko Board",merge:"Merge Lab",seesaw:"Seesaws",sorter:"Colour Sorter",vortex:"Vortex",spiral:"Spiral Ramp",flipper:"Flipper Alley",pater:"Paternoster",tulip:"Pachinko Tulips",wheel:"Water Wheel",tramp:"Trampolines"};
+const MODNAME={hourglass:"Hourglass",comb:"Comb Slots",sieve:"Spinner Sieve",offset:"Offset Funnels",slalom:"Slalom Baffles",drum:"Tumble Drums",sluice:"Sluice Gates",piston:"Piston Pinch",swings:"Pendulums",sliders:"Sliders",clock:"Clock Tower",stirrer:"Stir Necks",gears:"Gearworks",fans:"Fan Hall",wipers:"Wiper Walk",cups:"Spill Cups",bucket:"Bucket Drop",paddles:"Paddle Mill",crosses:"Cross Bumpers",ferris:"Ferris Wheel",plinko:"Plinko Board",merge:"Merge Lab",seesaw:"Seesaws",sorter:"Colour Sorter",vortex:"Vortex",spiral:"Spiral Ramp",flipper:"Flipper Alley",pater:"Paternoster",tulip:"Pachinko Tulips",wheel:"Water Wheel",tramp:"Trampolines"};
 // 10 mechanics; machine = i%14, mechanic = (i/14 + i%14)%10 → all 140 (machine, mechanic) pairs are different and both change from one stage to the next
 const MECHS=["wind","float","bouncy","flip","pulse","belt","portal","magnet","gold","split","heavy","sticky","boost","jackpot"];
 const MECH={wind:["🌬️","Windy","Gusts push the balls left and right"],float:["🪶","Floaty","Low gravity – balls drift down slowly"],bouncy:["🏀","Bouncy","Every obstacle is super bouncy"],
@@ -319,7 +322,7 @@ const PAL=[["Lava","#3a1410","#120605","#ff6a3d"],["Honey","#55421a","#201806","
   ["Desert","#4f3d22","#1e160a","#ffcf70"],["Crimson","#451219","#170407","#ff4d5e"],["Terracotta","#5a3326","#22110b","#f2a07b"],["Amber","#4d3a14","#1c1405","#ffc23d"],["Magenta","#4a1a3a","#1a0614","#ff5fc8"],
   ["Sunset","#52301f","#1f0f07","#ff8c5a"],["Cocoa","#3b2a22","#140d09","#d9a57c"],["Candy","#4a2342","#1f0b1b","#ff8ad8"],["Brick","#4a2620","#1a0c09","#ff9b7a"],["Copper","#3f2a1c","#170e07","#e08a4a"],["Frost","#463a3e","#1a1416","#ffe0d0"],["Nebula","#2e1f3a","#110a16","#ff9ee0"]];
 const WPAL=[[1,11],[5,7],[15,13],[0,6],[10,2],[14,13],[12,9],[4,16],[3,11],[8,1]]; // two palettes per world
-const PATS=["stripes","grid","dots","waves","chevrons","rings","bricks","crosses"], CONNS=["zig","posts","split","steps","bumpers","none"];
+const PATS=["stripes","grid","dots","waves","chevrons","rings","bricks","crosses"], CONNS=["zig","funnel","split","belts","steps","spinfun"];
 const styleOf=L=>{ const i=L-11; return {pal:PAL[WPAL[worldOf(L)][i%2]],pat:PATS[i%PATS.length],draw:i%3,conn:CONNS[(i*5)%CONNS.length]}; };
 const NEWM=["plinko","merge","seesaw","sorter","vortex","spiral","flipper","pater"];
 const NEW3=["tulip","wheel","tramp"];
@@ -380,16 +383,7 @@ function buildStage(L){
   const zones=[]; let z0=L===1?150:70; /* stage 1: keep the spawn slots free */ for(const y of gy){ zones.push([z0,y-60]); z0=y+60; }
   const dens=1+0.06*Math.min(v,6);
   /* stages 1-10: few static shapes, mostly aligned windmills and tipping cups the balls have to pass through */
-  const flavor=y=>{ const c=y+45; switch(th.id){
-      case "dots": for(const x of [70,180,290]) C_(x,c,20); break;
-      case "green": for(const x of [70,180,290]) C_(x,c,16,{bump:1}); break;
-      case "tri": case "trifield": case "spikes": for(const x of [100,260]) tri(x,c,24); break;
-      case "shelves": S_(50,c-12,150,c+12,12); S_(W-50,c-12,W-150,c+12,12); break;
-      case "cups": case "slants": case "thin": S_(0,c-22,110,c+18,14); S_(W,c-22,W-110,c+18,14); break;
-      case "diamonds": for(const x of [100,260]) diamond(x,c,28,28); break;
-      case "lanes": S_(120,c-28,120,c+28,12); S_(240,c-28,240,c+28,12); break;
-      case "stars": star(180,c,34,24,8,0); break;
-      default: diamond(180,c,40,20); } };
+  const flavor=y=>{ /* v69: leftover space becomes a funnel with a spinning bar under its neck */ S_(0,y,130,y+55,14); S_(W,y,230,y+55,14); BAR(180,y+92,26,(L%2?1:-1)*2); };
   /* ---- stages 1-10: every stage has its own machine ---- */
   const PLUS=(x,y,len,w,a,th)=>b.spins.push({x:MX(x),y:oy+y,len:len*k,a:a||0,w,kind:"plus",th:th||10,hub:1});
   const BAR=(x,y,len,w,a)=>b.spins.push({x:MX(x),y:oy+y,len:len*k,a:a||0,w,kind:"bar",hub:1});
@@ -407,25 +401,26 @@ function buildStage(L){
    4:[300,(y,i)=>{ const L_=i%2===0; S_(L_?0:W,y,L_?150:W-150,y+50,14); CUP(L_?190:170,y+92,{fix:L_?1:-1}); BAR(L_?300:60,y+215,40,L_?1.6:-1.6); }], // cup ladder with spinning bars on the spill side
    5:[500,(y,i)=>{ FUN(y,i%2?110:250,100); S_(0,y+100,88,y+190,14); S_(W,y+100,W-88,y+200,14); CUP(180,y+266,{w:85,h:50,cols:11,rows:7,spd:2.6}); PLUS(60,y+430,54,1.4); PLUS(180,y+430,54,-1.4,Math.PI/4); PLUS(300,y+430,54,1.4); }], // zig-zag into the giant bucket + mills
    6:[260,(y,i)=>{ XB(i%2?250:110,y+90,70,i%2?-1.2:1.2); XB(i%2?110:250,y+180,70,i%2?1.2:-1.2,Math.PI/4); C_(i%2?60:300,y+45,15,{bump:1}); C_(i%2?300:60,y+235,15,{bump:1}); }], // bumper crosses
-   7:[240,(y,i)=>{ [45,135,225,315].forEach((x,j)=>PLUS(x,y+60,42,(j%2?-1:1)*1.6,j%2?Math.PI/4:0,9)); diamond(90,y+175,30,30); diamond(270,y+175,30,30); BAR(180,y+175,48,i%2?2:-2); }], // gear wall
+   7:[240,(y,i)=>{ [45,135,225,315].forEach((x,j)=>PLUS(x,y+60,42,(j%2?-1:1)*1.6,j%2?Math.PI/4:0,9)); PLUS(80,y+175,24,i%2?-1.8:1.8,0,9); PLUS(280,y+175,24,i%2?1.8:-1.8,0,9); BAR(180,y+175,48,i%2?2:-2); }], // gear wall
    8:[640,(y,i)=>{ S_(120,y,120,y+455,14); S_(240,y,240,y+455,14); for(let j=0;j<4;j++) for(const [x,q] of [[60,0],[180,1],[300,2]]) BAR(x,y+70+j*110,50,((j+q)%2?-1:1)*1.8,j*0.7);
        for(const x of [60,180,300]) CUP(x,y+508,{fix:x<180?-1:x>180?1:0}); }], // paddle lanes into three cups
-   9:[300,(y,i)=>{ FAN(180,y+110,82,6,i%2?0.8:-0.8); FAN(55,y+240,46,5,1.5); FAN(305,y+240,46,5,-1.5); star(180,y+255,28,20,8,0); }], // star fans
+   9:[300,(y,i)=>{ FAN(180,y+110,82,6,i%2?0.8:-0.8); FAN(55,y+240,46,5,1.5); FAN(305,y+240,46,5,-1.5); FAN(180,y+255,28,5,i%2?-2:2); }], // star fans
    10:[390,(y,i)=>{ FAN(95,y+95,78,3,1.2); FAN(265,y+95,78,3,-1.2,Math.PI/3); S_(0,y+190,48,y+225,12); S_(W,y+190,W-48,y+225,12); for(const x of [60,180,300]) CUP(x,y+290,{fix:x<180?-1:x>180?1:0}); }] // twin turbines + spill row
   };
   /* movers: segments that slide (timed hatches, pistons, sliding bars) */
   const MOV=(x1,y1,x2,y2,dx,dy,o)=>b.movs.push(Object.assign({x1,y1:oy+y1,x2,y2:oy+y2,dx,dy,w:12,per:3,open:0.4,ph:r()*10,mode:"gate",p:0,vx:0,vy:0,cur:{x1,y1:oy+y1,x2,y2:oy+y2,w:12}},o||{}));
+  const BELT=(k_)=>{ const g=b.segs[b.segs.length-1], dx=g.x2-g.x1, dy=g.y2-g.y1, l=Math.hypot(dx,dy)||1, d=dy<0?-1:1; g.belt=[dx/l*d,dy/l*d]; g.beltK=k_||0.5; b.ownBelt=1; }; // the last ramp becomes a conveyor towards its low end
   const GUARD=y=>{ S_(0,y,46,y+42,12); S_(W,y,W-46,y+42,12); }; // keeps balls off the walls so every ball meets the spinners
   const MODS={
     hourglass:q=>{ const n1=48+q()*8, n2=50+q()*10, c=150+q()*60; return {h:290,f:y=>{ S_(0,y,c-n1/2,y+95,14); S_(W,y,c+n1/2,y+95,14); S_(0,y+140,180-n2/2,y+245,14); S_(W,y+140,180+n2/2,y+245,14); }}; },
     comb:q=>{ const gap=46+q()*8, n=Math.floor((W-60)/(gap+10))+1, off=(W-(n-1)*(gap+10))/2; return {h:120,f:y=>{ for(let j=0;j<n;j++){ const x=off+j*(gap+10); POLY([[x,y],[x+5,y+20],[x-5,y+20]]); S_(x,y+20,x,y+90,10); } }}; },
-    sieve:q=>{ const hx=20+q()*6, sp=2*hx+28+q()*6, rows=3+Math.floor(q()*2); return {h:rows*58+40,f:y=>{ for(let rr=0;rr<rows;rr++){ const yy=y+30+rr*58, o=rr%2?sp/2:sp/4; diamond(0,yy,hx,22); diamond(W,yy,hx,22); for(let x=o;x<W;x+=sp){ if(x<2*hx+26||x>W-2*hx-26) continue; diamond(x,yy,hx,22); } } }}; },
-    offset:q=>{ const nk=46+q()*10, st=3; return {h:st*105+20,f:y=>{ for(let j=0;j<st;j++){ const yy=y+j*105, c=j%2?110:250; S_(0,yy,c-nk/2,yy+75,14); S_(W,yy,c+nk/2,yy+75,14); } }}; },
+    sieve:q=>{ const rows=3+Math.floor(q()*2), w=1.3+q()*0.7; return {h:rows*64+40,f:y=>{ for(let rr=0;rr<rows;rr++){ const yy=y+34+rr*64, xs=rr%2?[125,235]:[70,180,290]; xs.forEach((x,j)=>PLUS(x,yy,rr%2?30:24,((rr+j)%2?-w:w),j*0.5,8)); } }}; },
+    offset:q=>{ const nk=58+q()*10, st=3; return {h:st*105+20,f:y=>{ for(let j=0;j<st;j++){ const yy=y+j*105, c=j%2?110:250; S_(0,yy,c-nk/2,yy+75,14); S_(W,yy,c+nk/2,yy+75,14); } }}; },
     slalom:q=>{ const gap=70+q()*10, n=2+Math.floor(q()*2); return {h:n*125+30,f:y=>{ (b.nw=b.nw||[]).push([oy+y-20,oy+y+n*125+30]); for(let j=0;j<n;j++){ const yy=y+j*125; if(j%2) S_(W,yy,gap,yy+105,12); else S_(0,yy,W-gap,yy+105,12); } }}; },
     drum:q=>{ const two=q()<0.5, R=two?62+q()*8:80+q()*14, gaps=q()<0.5?1:2, w=(q()<.5?-1:1)*(0.6+q()*0.6); return {h:2*R+70,f:y=>(two?[95,265]:[180]).forEach((x,j)=>b.spins.push({x,y:oy+y+R+35,len:R,a:q()*6,w:j?-w:w,kind:"drum",gaps,th:10}))}; },
     sluice:q=>{ const cl=2+q()*2, op=1.2+q()*0.5, nw=110+q()*30, c=125+q()*110, dirR=c<180; return {h:250,f:y=>{ const a=c-nw/2, z=c+nw/2; S_(0,y+(c>180?40:0),a,y+90,14); S_(W,y+(c<180?40:0),z,y+90,14); S_(a,y+90,a,y+140,12); S_(z,y+90,z,y+140,12);
         MOV(a,y+150,z,y+150,dirR?nw+10:-(nw+10),0,{per:cl+op,open:op/(cl+op),w:12}); }}; },
-    piston:q=>{ const c=120+q()*120, g=74+q()*14, cl=1.2+q()*1.2, op=1.1+q()*0.5; return {h:230,f:y=>{ S_(0,y,c-g/2,y+100,14); S_(W,y,c+g/2,y+100,14);
+    piston:q=>{ const c=120+q()*120, g=86+q()*14, cl=1.2+q()*1.2, op=1.1+q()*0.5; return {h:230,f:y=>{ S_(0,y,c-g/2,y+100,14); S_(W,y,c+g/2,y+100,14);
         const left=c>180; MOV(c-g/2-8,y+112,c+g/2+8,y+112,left?-(g+30):(g+30),0,{per:cl+op,open:op/(cl+op),w:18}); }}; },
     swings:q=>{ const two=q()<0.6, len=two?95+q()*10:120+q()*25, amp=two?0.6+q()*0.15:0.7+q()*0.25, f=1+q()*0.6; return {h:len+70,f:y=>{ (two?[110,250]:[180]).forEach((x,j)=>{ C_(x,y+12,9); b.spins.push({x,y:oy+y+12,len,a:Math.PI/2,a0:Math.PI/2,amp,f:f*(j?1.13:1),t:j*1.7,w:0,kind:"wiper",th:12,hub:1}); }); }}; },
     sliders:q=>{ const len=120+q()*40, A=180-len/2-14, per=2.4+q()*1.6, tilt=6+q()*8; return {h:200,f:y=>{ MOV(180-A-len/2,y+50,180-A+len/2,y+50+tilt,2*A,0,{mode:"sine",per,ph:0,w:12}); MOV(180-A-len/2,y+140+tilt,180-A+len/2,y+140,2*A,0,{mode:"sine",per,ph:per/2,w:12}); }}; },
@@ -455,7 +450,7 @@ function buildStage(L){
         b.vorts.push({x:cx,y:oy+cy,R,dir}); }}; },
     spiral:q=>{ const n=5; return {h:n*62+90,f:y=>{ S_(0,y,70,y+40,14); S_(W,y,290,y+40,14); S_(70,y+40,70,y+60+n*62,12); S_(290,y+40,290,y+60+n*62,12);
         (b.nw=b.nw||[]).push([oy+y,oy+y+n*62+90]);
-        for(let j=0;j<n;j++){ const yy=y+56+j*62; if(j%2) S_(290,yy,128,yy+38,12); else S_(70,yy,232,yy+38,12); }
+        for(let j=0;j<n;j++){ const yy=y+56+j*62; if(j%2) S_(290,yy,128,yy+38,12); else S_(70,yy,232,yy+38,12); BELT(b.mech==="sticky"?2.2:1); } /* v69: spiral ramps are conveyors – no jams in thick air */
         b.spirals.push({y1:oy+y+40,y2:oy+y+60+n*62}); }}; },
     flipper:q=>{ const per=1.6+q()*0.6; return {h:230,f:y=>{ S_(0,y+30,40,y+80,12); S_(W,y+30,W-40,y+80,12);
         b.spins.push({x:40,y:oy+y+80,len:92,a:0.45,rest:0.45,rng:0.8,per,t:0,side:1,w:0,kind:"flipper",th:12,hub:1,ctl:1});
@@ -478,13 +473,21 @@ function buildStage(L){
   if(L>NEWL){ const sig=sigOf(L), q=rng(L*104729+7), shape=SHAPES[Math.floor(q()*SHAPES.length)], main=MODS[sig](q), pool=MODLIST.filter(m=>m!==sig&&!FUNNELS.includes(m));
     const extras=[0,1,2].map(()=>pool[Math.floor(q()*pool.length)]);
     for(const [y0,y1] of zones){ let y=y0+10, n=0;
-      const CON={zig:[90,(y,j)=>{ if(j%2) S_(W,y+10,75,y+70,14); else S_(0,y+10,W-75,y+70,14); }],posts:[90,(y,j)=>{ for(let t=0;t<5;t++){ const x=36+t*72+(j%2?36:0); if(x<W-20) S_(x,y+15,x,y+70,10); } }],
-        split:[90,y=>{ S_(105,y+70,180,y+15,14); S_(180,y+15,255,y+70,14); }],steps:[125,(y,j)=>{ for(let t=0;t<3;t++){ const x0=40+t*100; if(j%2) S_(W-x0,y+10+t*38,W-x0-80,y+28+t*38,12); else S_(x0,y+10+t*38,x0+80,y+28+t*38,12); } }],
-        bumpers:[85,y=>{ for(const [x,yy] of [[45,20],[135,20],[225,20],[315,20],[90,60],[180,60],[270,60]]) C_(x,y+yy,11,{bump:1}); }],none:[0,()=>{}]};
+      const CON={zig:[90,(y,j)=>{ if(j%2) S_(W,y+10,120,y+70,14); else S_(0,y+10,W-120,y+70,14); }],
+        funnel:[110,(y,j)=>{ const c=j%2?125:235; S_(0,y+5,c-42,y+75,14); S_(W,y+5,c+42,y+75,14); }],
+        split:[90,y=>{ S_(105,y+70,180,y+15,14); S_(180,y+15,255,y+70,14); }],
+        belts:[90,(y,j)=>{ if(j%2) S_(W,y+10,120,y+70,12); else S_(0,y+10,W-120,y+70,12); BELT(); }],
+        steps:[125,(y,j)=>{ for(let t=0;t<3;t++){ const x0=40+t*100; if(j%2) S_(W-x0,y+10+t*38,W-x0-80,y+28+t*38,12); else S_(x0,y+10+t*38,x0+80,y+28+t*38,12); } }],
+        spinfun:[150,(y,j)=>{ const c=j%2?130:230; S_(0,y+5,c-45,y+70,14); S_(W,y+5,c+45,y+70,14); BAR(c,y+112,32,(j%2?1:-1)*2.4); }]};
       const con=CON[b.sty.conn];
       while(true){ const isMain=n%2===0, m=isMain?main:MODS[extras[(n>>1)%3]](q); if(y+m.h>y1) { if(!isMain&&y+main.h<=y1){ main.f(y); y+=main.h; } break; } m.f(y); y+=m.h; n++;
         if(con[0]&&y+con[0]+60<=y1){ con[1](y,n); y+=con[0]; }
-        if(y+70<=y1&&n%2===1){ const xs=q()<0.5?[90,270]:[60,180,300]; xs.forEach(x=>shape(x,y+35)); y+=70; } } } }
+        if(y+70<=y1&&n%2===1) q(); /* keeps the random sequence (machine sizes) as before */
+        if(y+76<=y1&&n%2===1&&b.sty.conn!=="steps"&&b.sty.conn!=="spinfun"){ /* v69: moving fillers instead of static shapes, placed beside the stream so they never plug a gap */
+          const c_=b.sty.conn, gx=c_==="zig"||c_==="belts"?(n%2?60:W-60):c_==="funnel"?(n%2?125:235):180, f=(L+n)%3;
+          if(f===0){ if(c_==="split") BAR(180,y+38,30,(n%2?1:-1)*2); else PLUS(gx<180?gx+95:gx-95,y+38,30,(n%2?1:-1)*1.7,0,9); }
+          else if(f===1){ for(const x of [60,180,300]) if(Math.abs(x-gx)>85||c_==="split"&&x===180) BAR(x,y+38,26,x===180?-2:2); }
+          else { S_(0,y+8,150,y+48,12); BELT(); S_(W,y+28,210,y+68,12); BELT(); } y+=76; } } } }
   if(L<=NEWL){ const [uh,fn]=DESIGN[L]; let ui=0; for(const [y0,y1] of zones){ let y=y0; while(y+uh<=y1){ fn(y,ui++); y+=uh; } if(L<=5&&y1-y>=140) FUN(y+20,180,100); else if(y1-y>120) flavor(y); } }
   else if(false) for(const [y0,y1] of zones){ if(y1-y0<60) continue;
     switch(th.id){
@@ -520,7 +523,7 @@ function buildStage(L){
   // fill straight drop channels: no ball may fall far along a wall or down an open column (wall wedges at the edges, small pegs inside)
   { const R=7, hitAt=(x,y)=>b.circ.some(c=>Math.abs(c.y-y)<c.r+R&&Math.hypot(c.x-x,c.y-y)<c.r+R)||b.segs.some(g=>y>=Math.min(g.y1,g.y2)-20&&y<=Math.max(g.y1,g.y2)+20&&ptSeg(x,y,g)<g.w/2+R)||b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<spR(p)+R)||b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<c.w+c.h+R)||b.movs.some(m=>y>m.y1-40&&y<m.y2+40&&x>Math.min(m.x1,m.x1+m.dx)-20&&x<Math.max(m.x2,m.x2+m.dx)+20);
     const clear=(x,y,rad)=>!b.circ.some(c=>{ const g=Math.hypot(c.x-x,c.y-y)-c.r-rad; return g<26; })&&!b.segs.some(g=>y>=Math.min(g.y1,g.y2)-60&&y<=Math.max(g.y1,g.y2)+60&&ptSeg(x,y,g)<g.w/2+rad+26)&&!b.spins.some(p=>Math.hypot(p.x-x,p.y-y)<spR(p)+rad+26)&&!b.cups.some(c=>Math.hypot(c.x-x,c.y-y)<c.w+c.h+rad+20)&&!b.movs.some(m=>y>Math.min(m.y1,m.y2)-70&&y<Math.max(m.y1,m.y2)+70&&x>Math.min(m.x1,m.x1+m.dx)-40&&x<Math.max(m.x2,m.x2+m.dx)+40)&&!b.doors.length;
-    const wedge=(side,y,dep)=>{ if(b.nw&&b.nw.some(([a,z])=>y>a&&y<z)) return false; const X=side?W:0, d=side?-1:1, P2=[[X,y-30-dep*0.3],[X+d*dep,y],[X,y+30+dep*0.3]]; const smp=[]; for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; for(let t=0;t<1;t+=0.2) smp.push([q[0]+(c[0]-q[0])*t,q[1]+(c[1]-q[1])*t]); } const nar=d=>d>-3&&d<26; /* overlapping a solid is fine, a narrow slit is not; never overlap another polygon */ if(smp.some(([x,yy])=>b.segs.some(g=>g.poly?ptSeg(x,yy,g)<g.w/2+26:nar(ptSeg(x,yy,g)-g.w/2))||b.circ.some(c=>nar(Math.hypot(c.x-x,c.y-yy)-c.r))||b.spins.some(p=>Math.hypot(p.x-x,p.y-yy)<spR(p)+26))) return false; const id=b.polys.length+1; b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:q[0],y1:q[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } return true; };
+    const wedge=(side,y,dep)=>{ if(b.nw&&b.nw.some(([a,z])=>y>a&&y<z)) return false; const X=side?W:0, d=side?-1:1, P2=[[X,y-30-dep*0.3],[X+d*dep,y],[X,y+30+dep*0.3]]; const smp=[]; for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; for(let t=0;t<1;t+=0.2) smp.push([q[0]+(c[0]-q[0])*t,q[1]+(c[1]-q[1])*t]); } const nar=d=>d>-3&&d<44; /* v69: wider (was 26) so wedges never pinch a ramp gap into a bottleneck; overlapping a solid is fine, a narrow slit is not; never overlap another polygon */ if(smp.some(([x,yy])=>b.segs.some(g=>g.poly?ptSeg(x,yy,g)<g.w/2+26:nar(ptSeg(x,yy,g)-g.w/2))||b.circ.some(c=>nar(Math.hypot(c.x-x,c.y-yy)-c.r))||b.spins.some(p=>Math.hypot(p.x-x,p.y-yy)<spR(p)+26))) return false; const id=b.polys.length+1; b.polys.push({pts:P2,id}); for(let i=0;i<3;i++){ const q=P2[i], c=P2[(i+1)%3]; b.segs.push({x1:q[0],y1:q[1],x2:c[0],y2:c[1],w:5,lit:0,poly:id}); } return true; };
     const inGate=y=>gy.some(g=>Math.abs(oy+g-y)<64);
     for(let pass=0;pass<6;pass++){ let added=0;
       for(let x=8;x<=352;x+=6){ if(th.id==="lanes"&&x>100&&x<260) continue; const edge=x<54||x>306, lim=edge?230:380; let last=oy;
@@ -869,7 +872,7 @@ function render(){
       if(s.pads) for(const p of s.pads){ ctx.fillStyle="#2bd97a"; roundBox(p.x-30,p.y-5,60,10,5); ctx.fill(); ctx.strokeStyle="#0b3d22"; ctx.lineWidth=2; ctx.beginPath(); for(const dx of [-14,0,14]){ ctx.moveTo(p.x+dx-5,p.y-3+((gt*3)%1)*2); ctx.lineTo(p.x+dx,p.y+2+((gt*3)%1)*2); ctx.lineTo(p.x+dx+5,p.y-3+((gt*3)%1)*2); } ctx.stroke(); }
       for(const m of s.mags){ const on=Math.sin(gt*2.1+m.ph)>=0; ctx.strokeStyle=on?"#c06bff":"rgba(192,107,255,.35)"; ctx.lineWidth=3; for(const rr of [10,30,55]){ ctx.beginPath(); ctx.arc(m.x,m.y,rr+(on?Math.sin(gt*8)*3:0),0,Math.PI*2); ctx.stroke(); } }
       for(const p of s.ports){ ctx.lineWidth=4; ctx.strokeStyle="#ff9f1c"; ctx.beginPath(); ctx.arc(p.x,p.y,13+Math.sin(gt*5)*1.5,0,Math.PI*2); ctx.stroke(); ctx.strokeStyle="#3fa8ff"; ctx.beginPath(); ctx.arc(p.bx,p.by,13+Math.cos(gt*5)*1.5,0,Math.PI*2); ctx.stroke(); }
-      if(s.mech==="belt"||s.wfx==="factory"){ ctx.setLineDash([6,10]); ctx.lineDashOffset=-gt*40; ctx.strokeStyle="#ffd400"; ctx.lineWidth=2; for(const g of s.segs){ if(!g.belt) continue; const d=g.belt; const fw=(g.x2-g.x1)*d[0]+(g.y2-g.y1)*d[1]>0; ctx.beginPath(); if(fw){ ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); } else { ctx.moveTo(g.x2,g.y2); ctx.lineTo(g.x1,g.y1); } ctx.stroke(); } ctx.setLineDash([]); }
+      if(s.mech==="belt"||s.wfx==="factory"||s.ownBelt){ ctx.setLineDash([6,10]); ctx.lineDashOffset=-gt*40; ctx.strokeStyle="#ffd400"; ctx.lineWidth=2; for(const g of s.segs){ if(!g.belt) continue; const d=g.belt; const fw=(g.x2-g.x1)*d[0]+(g.y2-g.y1)*d[1]>0; ctx.beginPath(); if(fw){ ctx.moveTo(g.x1,g.y1); ctx.lineTo(g.x2,g.y2); } else { ctx.moveTo(g.x2,g.y2); ctx.lineTo(g.x1,g.y1); } ctx.stroke(); } ctx.setLineDash([]); }
       if(s.mech==="wind"){ const wv=Math.sin(gt*0.9+s.ph); ctx.strokeStyle=`rgba(255,255,255,${0.08+0.1*Math.abs(wv)})`; ctx.lineWidth=2; for(let i=0;i<14;i++){ const yy=cam+((i*137.5)%viewH), xx=((i*91+gt*160*wv)%W+W)%W; ctx.beginPath(); ctx.moveTo(xx,yy); ctx.lineTo(xx+30*Math.sign(wv||1),yy); ctx.stroke(); } } }
     ctx.lineCap="round"; for(const m of s.movs){ const c=m.cur; ctx.strokeStyle=OB; ctx.lineWidth=c.w; ctx.beginPath(); ctx.moveTo(c.x1,c.y1); ctx.lineTo(c.x2,c.y2); ctx.stroke(); ctx.strokeStyle=m.mode==="lift"?AC:m.mode==="sine"?"#3fd6e8":"#ff9f1c"; ctx.lineWidth=3; ctx.stroke(); }
     // 2.0 machine decorations
@@ -1038,9 +1041,9 @@ $("rebB").onclick=()=>{ if(S.unlocked<REB_MIN) return popup(`<h1>♻️ Rebirth<
     <p style="margin-top:8px;font-size:12px;color:#9aa0aa">Resets: money, stages, stage upgrades, ball levels.<br>Keeps: perks, cards, ✨ ball prestiges.${(S.pm||1)>=ASC_MIN?"<br>🌟 You can also Ascend (☰ menu) for ⭐"+ascGain()+" stars.":""} Further = bigger bonus. Stages you already reached give no new perk/card.</p>
     <button class="btn" id="yes">♻️ Rebirth → ×${mx(rebAfter())}</button><button class="btn g" id="no">Not yet</button>`,{yes:rebirth}); };
 function ballPrestige(k){ if(S.val[k]<bpNeed(k)) return; const g=bpGain(k), t=TYPES[k];
-  popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> goes back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p>
+  popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> and time level <b>${S.rate[k]}</b> go back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p><p style="margin-top:6px;font-size:12px;color:#ffb3a8">Its upgrades get ×5 pricier and climb faster after this prestige.</p>
     <p style="margin-top:8px;font-size:15px">×${fmt(S.bpm[k])} → <b style="color:#c9b6ff">×${fmt(S.bpm[k]*g)}</b></p><p style="margin-top:6px;font-size:12px;color:#9aa0aa">${(S.bstar[k]||0)+1<BP_MAX?`Prestige ${(S.bstar[k]||0)+1} of ${BP_MAX} · the next one needs level ${BP_REQ[(S.bstar[k]||0)+1]}`:`This is the last prestige for this ball (${BP_MAX}/${BP_MAX})`}. Survives rebirths.</p>
-    <button class="btn" id="yes">✨ Prestige</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ S.bpm[k]*=g; S.bstar[k]=(S.bstar[k]||0)+1; S.val[k]=1; save(true); uiList(true); uiTop(); buzz(50); if(S.sound) [659,880,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*80)); floatText("✨ "+t.name+" ×"+fmt(S.bpm[k]),innerWidth/2-60,innerHeight-260); }}); }
+    <button class="btn" id="yes">✨ Prestige</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ S.bpm[k]*=g; S.bstar[k]=(S.bstar[k]||0)+1; S.val[k]=1; S.rate[k]=1; save(true); uiList(true); uiTop(); buzz(50); if(S.sound) [659,880,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*80)); floatText("✨ "+t.name+" ×"+fmt(S.bpm[k]),innerWidth/2-60,innerHeight-260); }}); }
 function syncAuto(){ $("autoB").classList.toggle("on",!!S.auto); $("autoB").textContent=S.auto?"AUTO ✓":"AUTO"; }
 $("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.auto?"🤖 Auto on: buys the cheapest thing as soon as you can afford it":"Auto-buy off",innerWidth/2-110,innerHeight-260); };
 let autoT=0;
