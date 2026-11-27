@@ -95,13 +95,14 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 81; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 82; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
 const $=id=>document.getElementById(id);
 const money=n=>"$"+fmt(n);
-const NST=300; /* v75: the second tower – stages 151-300 */
+const NST=1000; /* v75: second tower 151-300 · v82: the Endless Tower 301-1000 (zones of 25 stages, a Titan at the end of each) */
+const TOWER2=300;
 
 /* ================= balls & economy ================= */
 const TYPES=[{name:"White",col:"#f4f4f4"},{name:"Cyan",col:"#3fd6e8"},{name:"Lime",col:"#a6e33b"},{name:"Orange",col:"#ff9f1c"},{name:"Purple",col:"#b86bff"},{name:"Red",col:"#ff4d5e"},{name:"Pink",col:"#ff7fd1"},{name:"Gold",col:"#ffd400"},{name:"Teal",col:"#1fbf9f"},{name:"Sky",col:"#7ec8ff"},{name:"Coral",col:"#ff8a65"},{name:"Mint",col:"#9dffb0"},{name:"Lavender",col:"#d6b3ff"},{name:"Magenta",col:"#ff3df0"},{name:"Bronze",col:"#c98a4b"},{name:"Silver",col:"#c9d1d9"},{name:"Crimson",col:"#d1124f"},{name:"Royal",col:"#5c6bff"},{name:"Olive",col:"#a3b83b"},{name:"Rainbow",col:"#ffffff",rainbow:1},
@@ -180,8 +181,8 @@ const cardNeed=l=>l; // copies needed to go from level l to l+1
 
 
 let trN=0; // trophies earned (each +4% all values)
-const valueMult=()=>SETB.v*(AE("ae1")?3:1)*(AE("ae9")?5:1)*(SK("root")?1.5:1)*(SK("val1")?2:1)*(SK("val2")?3:1)*(1+(0.04+0.01*R("troph"))*trN)*(S.pm||1)*Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"))*(1+0.5*C("ph"))*(1+C("sg"))*(1+2*C("bb"))*(1+0.5*C("om"));
-const rateMult=()=>SETB.r*(AE("ae2")?1.5:1)*(SK("spd1")?1.2:1)*(SK("spd2")?1.4:1)*Math.pow(1.15,P("rate"))*(1+0.05*C("sr"))*(1+0.12*C("tw"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
+const valueMult=()=>REL.v*SETB.v*(AE("ae1")?3:1)*(AE("ae9")?5:1)*(SK("root")?1.5:1)*(SK("val1")?2:1)*(SK("val2")?3:1)*(1+(0.04+0.01*R("troph"))*trN)*(S.pm||1)*Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"))*(1+0.5*C("ph"))*(1+C("sg"))*(1+2*C("bb"))*(1+0.5*C("om"));
+const rateMult=()=>REL.r*SETB.r*(AE("ae2")?1.5:1)*(SK("spd1")?1.2:1)*(SK("spd2")?1.4:1)*Math.pow(1.15,P("rate"))*(1+0.05*C("sr"))*(1+0.12*C("tw"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 /* value milestones: every 25 value levels a ball pays ×1.5 (up to 8 times = ×25.6); they restart after a ball prestige */
 const MS_STEP=25, MS_MAX=8, msN=k=>Math.min(MS_MAX,Math.floor((S.val[k]||1)/MS_STEP)), msMult=k=>Math.pow(1.5,msN(k));
 /* v76 ball evolution: a ball with ✨2+ can evolve into one form (costs 🧪 essence from bosses, daily chests and the Abyss) */
@@ -211,7 +212,7 @@ const mastTotal=()=>{ let t=0; for(const k in S.mast) t+=mastLv(+k); return t; }
 function mastHit(L,sim){ if(++S.fpass>=4000){ S.fpass=0; S.food=(S.food||0)+1; } const n=(S.mast[L]=(S.mast[L]||0)+1); const i=MAST.indexOf(n); if(i<0) return; seaXP(100); if(sim) return;
   if(typeof floatText==="function") floatText("🎖️ Stage "+L+" mastery "+(i+1)+"/5 · gates +"+(10*(i+1))+"%",innerWidth/2-110,150);
   if(S.sound&&typeof tone==="function") [659,880].forEach((f,j)=>setTimeout(()=>tone(f,0.05,0.04),j*90)); }
-const gateBoost=L=>(L>NOLD?(WORLDS[worldOf(L)].fx==="neon"?1.25:WORLDS[worldOf(L)].fx==="void"?2:1):1)*SETB.g*(AE("ae3")?3:1)*(1+0.05*((S.aby&&S.aby.n)||0))*(1+0.1*mastLv(L))*(L>135?1.5:1)*(SK("gat1")?1.5:1)*(SK("gat2")?2:1)*(wxIn(L)?wx.g:1)*(isHeavy(L)&&heavyOk(L)?1.5:1)*(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
+const gateBoost=L=>REL.g*(REL.w[WORLDS[worldOf(L)].fx]||1)*(1+0.01*Math.max(0,(S.best||1)-TOWER2))*(L>NOLD?(WORLDS[worldOf(L)].fx==="neon"?1.25:WORLDS[worldOf(L)].fx==="void"?2:1):1)*SETB.g*(AE("ae3")?3:1)*(1+0.05*((S.aby&&S.aby.n)||0))*(1+0.1*mastLv(L))*(L>135?1.5:1)*(SK("gat1")?1.5:1)*(SK("gat2")?2:1)*(wxIn(L)?wx.g:1)*(isHeavy(L)&&heavyOk(L)?1.5:1)*(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 const shrinkOf=L=>(1-0.04*stOf(L).o)*Math.pow(0.97,P("hits"));
 
 /* ================= Zen Drop 2.0: 10 worlds × 15 stages, a boss at the end of every world, the workshop ================= */
@@ -237,8 +238,10 @@ const WORLDS=[
  {ic:"🏚️",name:"Haunted",fx:"haunt",col:"#b8a0ff",d:"Spinners change direction on their own",boss:["👻","Phantom Lord","💀"]},
  {ic:"🌃",name:"Neon City",fx:"neon",col:"#ff4fd8",d:"Neon gates – every gate pays ×1.25",boss:["👾","Neon Overlord","🕹️"]},
  {ic:"🕳️",name:"The Void",fx:"void",col:"#ffd400",d:"Weak gravity, gates pay ×2",boss:["🕳️","The Void","🌑"]}];
-const worldOf=L=>Math.min(WORLDS.length-1,Math.floor((Math.max(1,L)-1)/15)), isBoss=L=>L%15===0;
-const bossHp=L=>Math.round(200*(1+0.6*worldOf(L)));
+const TITANS=[["🗿","Stone Titan","🌋","☄️"],["🐉","Elder Wyrm","🔥","🌞"],["🦑","Abyss Leviathan","🌊","🌀"],["🤖","Omega Machine","⚙️","💥"],["👁️","All-Seeing Eye","🔮","🌌"],["🦂","Desert Colossus","🏜️","⚡"],["🐺","Moon Wolf","🌕","🌑"],["🦚","Prism Phoenix","🌈","✨"]];
+for(let z=0;z<28;z++){ const b=WORLDS[(z%19)+1]; WORLDS.push({ic:"♾️",name:"Endless "+(z+1)+" · "+b.name,fx:b.fx,col:b.col,d:b.d,boss:TITANS[z%TITANS.length],endless:1}); }
+const worldOf=L=>L<=TOWER2?Math.min(19,Math.floor((Math.max(1,L)-1)/15)):Math.min(WORLDS.length-1,20+Math.floor((L-TOWER2-1)/25)), isBoss=L=>L<=TOWER2?L%15===0:(L-TOWER2)%25===0, worldStart=L=>L<=TOWER2?L%15===1:(L-TOWER2-1)%25===0;
+const bossHp=L=>Math.round(200*(1+0.6*worldOf(L))*(L>TOWER2?1.5:1));
 const bossDone=L=>!!(S.bossDone&&S.bossDone[L]);
 const bossBlock=()=>(isBoss(S.unlocked)&&S.unlocked<NST&&!bossDone(S.unlocked))||tollBlock(); // the next world stays locked until its boss is beaten
 let bossFx=0, musWorld=0; const MTR=[0,2,-3,5,-2,3,-5,7,-4,4]; // music: every world plays in its own key
@@ -292,19 +295,19 @@ const ascGain=()=>Math.floor(Math.sqrt(S.pm||1))*(AE("ae4")?2:1);
 const WX=[["🌸","Bloom",{g:2}],["🌪️","Sandstorm",{g:1.5,wind:200}],["❄️","Blizzard",{g:2,drag:0.6}],["☄️","Meteor shower",{g:1.5,lava:5}],["🌊","High tide",{g:1.5,grav:0.75}],
   ["⚡","Overdrive",{g:1.5,spin:1.6}],["🍭","Sugar rush",{g:2}],["🌠","Zero-G",{g:2,grav:0.6}],["⛈️","Thunder",{g:1.5,bolt:1}],["👑","Royal parade",{g:3}],
   ["🌧️","Monsoon",{g:2,drag:0.8}],["⏱️","Time warp",{g:2,spin:2}],["✨","Prism storm",{g:2.5}],["🫧","Deep current",{g:1.5,wind:160}],["🌑","Eclipse",{g:2,grav:0.6}],
-  ["🌋","Eruption",{g:1.5,lava:6}],["🌤️","Jet stream",{g:2,wind:220}],["🕯️","Witching hour",{g:3}],["💡","Power surge",{g:2,bolt:1}],["🌀","Singularity",{g:3,grav:0.7}]];
+  ["🌋","Eruption",{g:1.5,lava:6}],["🌤️","Jet stream",{g:2,wind:220}],["🕯️","Witching hour",{g:3}],["💡","Power surge",{g:2,bolt:1}],["🌀","Singularity",{g:3,grav:0.7}]]; for(let z=0;z<28;z++) WX.push(WX[(z%19)+1]);
 let wx=null, wxNext=150, boltT=0; const bolts=[];
 const wxIn=L=>wx&&wx.w===worldOf(L);
 /* toll gates (stage 23, 38, 53 …): the next stage only opens after N balls of one colour reach the end */
-const isToll=L=>L>=23&&L%15===8, tollNeed=L=>30+10*worldOf(L);
+const isToll=L=>L>=23&&L<=TOWER2&&L%15===8, tollNeed=L=>30+10*worldOf(L);
 const tollBlock=()=>isToll(S.unlocked)&&S.unlocked<NST&&!(S.tollDone&&S.tollDone[S.unlocked]);
 /* heavy machines (stage 26, 41, 56 …): they crawl until one of your balls has a high enough value level, then run and pay ×1.5 */
-const isHeavy=L=>L>=26&&L%15===11, heavyReq=L=>15+5*worldOf(L), topVal=()=>{ let m=1; for(let k=0;k<TYPES.length;k++) if(S.rate[k]) m=Math.max(m,S.val[k]); return m; };
+const isHeavy=L=>L>=26&&L<=TOWER2&&L%15===11, heavyReq=L=>15+5*worldOf(L), topVal=()=>{ let m=1; for(let k=0;k<TYPES.length;k++) if(S.rate[k]) m=Math.max(m,S.val[k]); return m; };
 const heavyOk=L=>topVal()>=heavyReq(L);
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(TYPES.length-1).fill(0)),val:Array(TYPES.length).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(TYPES.length).fill(0),bpm:Array(TYPES.length).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0,ws:{},bossDone:{},bossDmg:{},bossFirst:{},wv:0,res:{},resCur:null,skills:{},stars:0,asc:0,toll:{},tollDone:{},mast:{},aby:{n:0,b:0,best:0},hist:{t:Date.now(),v:[]},evo:{},ess:0,pets:{},food:0,fpass:0,sea:null,cos:{t:[],s:[]},trail:"",skin:"",ev:null,evHist:[],trans:0,aether:0,aesk:{},cust:null,autoP:"bal",playT:0,dropN:0,medals:0}; }
+function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(TYPES.length-1).fill(0)),val:Array(TYPES.length).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(TYPES.length).fill(0),bpm:Array(TYPES.length).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0,ws:{},bossDone:{},bossDmg:{},bossFirst:{},wv:0,res:{},resCur:null,skills:{},stars:0,asc:0,toll:{},tollDone:{},mast:{},aby:{n:0,b:0,best:0},hist:{t:Date.now(),v:[]},evo:{},ess:0,pets:{},food:0,fpass:0,sea:null,cos:{t:[],s:[]},trail:"",skin:"",ev:null,evHist:[],trans:0,aether:0,aesk:{},relics:[],relEq:[],rdust:0,cust:null,autoP:"bal",playT:0,dropN:0,medals:0}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
 while(S.rate.length<TYPES.length) S.rate.push(0); while(S.val.length<TYPES.length) S.val.push(1);
 while(S.bstar.length<TYPES.length) S.bstar.push(0); while(S.bpm.length<TYPES.length) S.bpm.push(1);
@@ -313,11 +316,11 @@ if((S.ver||0)<2){ for(const k in S.st) S.st[k].o=0; S.ver=2; } // v2: "o" is now
 for(const k_ of ["ws","bossDone","bossDmg","bossFirst","res","skills","toll","tollDone","mast"]) if(!S[k_]||typeof S[k_]!=="object") S[k_]={}; if(!(S.stars>=0)) S.stars=0; if(!(S.asc>=0)) S.asc=0; if(S.resCur&&!(S.resCur.end>0)) S.resCur=null;
 if(!(S.wv>=2)){ for(let L=23;L<(S.unlocked||1);L+=15) S.tollDone[L]=1; if(S.wv>=1) S.wv=2; } // saves from before part 3: tolls you already passed count as paid
 if(!(S.wv>=1)){ S.wv=2; for(let L=15;L<(S.unlocked||1);L+=15) S.bossDone[L]=1; for(let L=15;L<(S.best||1);L+=15) S.bossFirst[L]=1; } // saves from before 2.0: bosses you already passed count as beaten
-if(!S.troph||typeof S.troph!=="object") S.troph={}; if(!(S.dust>=0)) S.dust=0; if(S.hot&&!(S.hot.L>=1)) S.hot=null; S.newTro=S.newTro||0; S.vipN=S.vipN||0; if(S.dq&&!(S.dq.q instanceof Array)) S.dq=null; if(!S.evo||typeof S.evo!=="object") S.evo={}; if(!S.sea||typeof S.sea!=="object") S.sea=null; if(!S.cos||typeof S.cos!=="object"||!(S.cos.t instanceof Array)) S.cos={t:[],s:[]}; if(!S.ev||typeof S.ev!=="object") S.ev=null; if(!(S.evHist instanceof Array)) S.evHist=[]; if(!(S.trans>=0)) S.trans=0; if(!(S.aether>=0)) S.aether=0; if(!S.aesk||typeof S.aesk!=="object") S.aesk={}; if(S.cust&&!(S.cust.rows instanceof Array)) S.cust=null; if(!["bal","stage","ball"].includes(S.autoP)) S.autoP="bal"; S.playT=S.playT||0; if(![0,1500,3000,5000].includes(S.capMode)) S.capMode=0; S.dropN=S.dropN||0; S.medals=S.medals||0; if(!(S.ess>=0)) S.ess=0; if(!S.pets||typeof S.pets!=="object") S.pets={}; if(!(S.food>=0)) S.food=0; S.fpass=S.fpass||0; if(!S.aby||typeof S.aby!=="object"||!(S.aby.n>=0)) S.aby={n:0,b:0,best:0}; if(!S.hist||!(S.hist.v instanceof Array)||!(S.hist.t>0)) S.hist={t:Date.now(),v:[]}; if(S.offSh&&!(S.offSh.st instanceof Array)) S.offSh=null; S.newQ=S.newQ||0; if(!(S.dqStreak>=0)) S.dqStreak=0; if(!(S.dqDays>=0)) S.dqDays=0;
+if(!S.troph||typeof S.troph!=="object") S.troph={}; if(!(S.dust>=0)) S.dust=0; if(S.hot&&!(S.hot.L>=1)) S.hot=null; S.newTro=S.newTro||0; S.vipN=S.vipN||0; if(S.dq&&!(S.dq.q instanceof Array)) S.dq=null; if(!S.evo||typeof S.evo!=="object") S.evo={}; if(!S.sea||typeof S.sea!=="object") S.sea=null; if(!S.cos||typeof S.cos!=="object"||!(S.cos.t instanceof Array)) S.cos={t:[],s:[]}; if(!S.ev||typeof S.ev!=="object") S.ev=null; if(!(S.evHist instanceof Array)) S.evHist=[]; if(!(S.trans>=0)) S.trans=0; if(!(S.relics instanceof Array)) S.relics=[]; if(!(S.relEq instanceof Array)) S.relEq=[]; if(!(S.rdust>=0)) S.rdust=0; if(!(S.aether>=0)) S.aether=0; if(!S.aesk||typeof S.aesk!=="object") S.aesk={}; if(S.cust&&!(S.cust.rows instanceof Array)) S.cust=null; if(!["bal","stage","ball"].includes(S.autoP)) S.autoP="bal"; S.playT=S.playT||0; if(![0,1500,3000,5000].includes(S.capMode)) S.capMode=0; S.dropN=S.dropN||0; S.medals=S.medals||0; if(!(S.ess>=0)) S.ess=0; if(!S.pets||typeof S.pets!=="object") S.pets={}; if(!(S.food>=0)) S.food=0; S.fpass=S.fpass||0; if(!S.aby||typeof S.aby!=="object"||!(S.aby.n>=0)) S.aby={n:0,b:0,best:0}; if(!S.hist||!(S.hist.v instanceof Array)||!(S.hist.t>0)) S.hist={t:Date.now(),v:[]}; if(S.offSh&&!(S.offSh.st instanceof Array)) S.offSh=null; S.newQ=S.newQ||0; if(!(S.dqStreak>=0)) S.dqStreak=0; if(!(S.dqDays>=0)) S.dqDays=0;
 /* trophies: earned automatically, kept forever (also through rebirth), each one adds +4% to all ball values */
 const TROPH=[];
 function trGroup(id,ic,name,cur,goals,unit){ goals.forEach((g,i)=>TROPH.push({id:id+i,ic,name:name+(goals.length>1?" "+["I","II","III","IV","V","VI","VII","VIII","IX"][i]:""),cur,g,unit})); }
-trGroup("st","🗼","Climber",()=>S.best||1,[5,10,25,50,75,100,125,150,175,200,225,250,275,300],g=>"Reach stage "+g);
+trGroup("st","🗼","Climber",()=>S.best||1,[5,10,25,50,75,100,125,150,175,200,225,250,275,300,400,500,750,1000],g=>"Reach stage "+g);
 trGroup("rb","♻️","Reborn",()=>S.rebirths||0,[1,3,10,25],g=>g===1?"Rebirth once":"Rebirth "+g+" times");
 trGroup("tt","💵","Tycoon",()=>S.total||0,[1e6,1e12,1e18,1e24,1e36,1e48],g=>"Earn "+money(g)+" in total");
 trGroup("bt","🎨","Collector",()=>S.rate.filter(r=>r>0).length,[5,10,20],g=>"Own "+g+" ball types at once");
@@ -379,7 +382,7 @@ const PAL=[["Lava","#3a1410","#120605","#ff6a3d"],["Honey","#55421a","#201806","
   ["Sunset","#52301f","#1f0f07","#ff8c5a"],["Cocoa","#3b2a22","#140d09","#d9a57c"],["Candy","#4a2342","#1f0b1b","#ff8ad8"],["Brick","#4a2620","#1a0c09","#ff9b7a"],["Copper","#3f2a1c","#170e07","#e08a4a"],["Frost","#463a3e","#1a1416","#ffe0d0"],["Nebula","#2e1f3a","#110a16","#ff9ee0"],
   ["Jungle","#2f3d1a","#111806","#c8e05a"],["Brass","#4a3a1e","#1a1308","#e6b450"],["Crystal","#3a2440","#140a18","#ff9ef0"],["Lagoon","#1f3a3a","#0a1616","#ffb27a"],["Moon","#3c3a40","#141318","#f0e6d0"],
   ["Core","#4a140a","#180503","#ff7a2a"],["Sky","#4a3a3a","#1a1414","#ffd0a0"],["Haunt","#2a1f36","#0f0a14","#b8a0ff"],["Neon","#2a1030","#0d0412","#ff4fd8"],["Void","#1a1418","#060406","#ffd400"]];
-const WPAL=[[1,11],[5,7],[15,13],[0,6],[10,2],[14,13],[12,9],[4,16],[3,11],[8,1],[17,1],[18,8],[19,12],[20,10],[21,15],[22,0],[23,3],[24,16],[25,9],[26,14]]; // two palettes per world
+const WPAL0=[[1,11],[5,7],[15,13],[0,6],[10,2],[14,13],[12,9],[4,16],[3,11],[8,1],[17,1],[18,8],[19,12],[20,10],[21,15],[22,0],[23,3],[24,16],[25,9],[26,14]], WPAL=WPAL0.concat(Array.from({length:28},(_,z)=>WPAL0[(z%19)+1])); // two palettes per world
 const PATS=["stripes","grid","dots","waves","chevrons","rings","bricks","crosses"], CONNS=["zig","funnel","split","belts","steps","spinfun"];
 const styleOf=L=>{ const i=L-11; return {pal:PAL[WPAL[worldOf(L)][i%2]],pat:PATS[i%PATS.length],draw:i%3,conn:CONNS[(i*5)%CONNS.length]}; };
 const NEWM=["plinko","merge","seesaw","sorter","vortex","spiral","flipper","pater"];
@@ -638,6 +641,7 @@ function buildStage(L){
     if(fx==="under") b.gmul=(b.gmul||1)*0.85; if(fx==="moon") b.gmul=(b.gmul||1)*0.5; if(fx==="sky") b.gmul=(b.gmul||1)*0.85; if(fx==="void") b.gmul=(b.gmul||1)*0.7; if(b.gmul) b.gmul=Math.max(0.42,b.gmul);
     if(fx==="crystal"){ for(let n=0;n<8;n++){ const p=spot(30,oy,oy+h); if(p) b.circ.push({x:p[0],y:p[1],r:11,lit:0,split:1}); } }
     if(fx==="lava"||fx==="core"){ for(let n=0;n<(fx==="core"?10:6);n++){ const p=spot(30,oy,oy+h); if(p) b.circ.push({x:p[0],y:p[1],r:11,lit:0,lava:1}); } }
+    if(b.mech==="sticky"&&L>TOWER2){ for(const g of b.segs){ if(g.poly||g.belt) continue; const dx=g.x2-g.x1, dy=g.y2-g.y1, l=Math.hypot(dx,dy)||1; if(Math.abs(dy)<8) continue; const d=dy>0?1:-1; g.belt=[dx/l*d,dy/l*d]; g.beltK=0.5; } b.ownBelt=1; } // endless sticky stages: ramps carry the balls so nothing rests in the thick air
     if(fx==="factory"&&b.mech!=="belt"){ for(const g of b.segs){ if(g.poly) continue; const dx=g.x2-g.x1, dy=g.y2-g.y1, l=Math.hypot(dx,dy)||1; if(Math.abs(dy)<4) continue; const d=dy>0?1:-1; g.belt=[dx/l*d,dy/l*d]; g.beltK=0.4; } } }
   // gates
   for(const y of gy){ const pat=GPAT[Math.floor(r()*GPAT.length)], w=Math.max(70,120-v*4); b.gates.push({y:oy+y,pat,w,xa:16,xb:W-16-w,sp:40+r()*30,ph:r()*20,x1:16,x2:16+w,lit:0}); }
@@ -657,11 +661,11 @@ const ballCap=()=>Math.min(capOf(S.unlocked),S.capMode>0?S.capMode:(S.perfCap||4
 const radius=k=>6.5+Math.min(k,8)*0.3;
 const exitY=()=>OY[S.unlocked+1];
 const OFFS=[25,50,100,150,200,250,300], offCap=()=>4+OFFS.filter(x=>(S.best||1)>=x).length+R("off"); // offline hours: 4, +1 at stages 25, 50, 100 and 150
-function bossHit(L,d,sim){ const bw=WORLDS[worldOf(L)].boss, half=bossHp(L)/2, was=S.bossDmg[L]||0; S.bossDmg[L]=was+d*(1+0.25*R("siege"))*(bw[2]&&was>=half?0.5:1); /* second form: your hits count half */ if(bw[2]&&was<half&&S.bossDmg[L]>=half&&!sim&&typeof floatText==="function"){ floatText(bw[2]+" "+bw[1]+" changes form! Phase 2",innerWidth/2-120,150); buzz(60); } bossFx=0.25; if(S.bossDmg[L]>=bossHp(L)&&!bossDone(L)) bossWin(L,sim); }
+function bossHit(L,d,sim){ const bw=WORLDS[worldOf(L)].boss, hp=bossHp(L), half=hp/2, q3=hp*0.75, was=S.bossDmg[L]||0; S.bossDmg[L]=was+d*(1+0.25*R("siege"))*REL.boss*(bw[3]&&was>=q3?0.33:bw[2]&&was>=half?0.5:1); /* second form: hits count half, Titans' third form a third */ if(bw[2]&&was<half&&S.bossDmg[L]>=half&&!sim&&typeof floatText==="function"){ floatText(bw[2]+" "+bw[1]+" changes form! Phase 2",innerWidth/2-120,150); buzz(60); } if(bw[3]&&was<q3&&S.bossDmg[L]>=q3&&!sim&&typeof floatText==="function"){ floatText(bw[3]+" "+bw[1]+" – final form! Phase 3",innerWidth/2-120,150); buzz(90); } bossFx=0.25; if(S.bossDmg[L]>=bossHp(L)&&!bossDone(L)) bossWin(L,sim); }
 function bossWin(L,sim){ S.bossDone[L]=1; seaXP(150); const w=WORLDS[worldOf(L)], gain=Math.max(S.avg||0,rateNow||0,1)*60; pay(gain); let card=null, up=false;
-  addEss((S.bossFirst[L]?1:3)); S.food=(S.food||0)+(S.bossFirst[L]?2:5); if(!S.bossFirst[L]){ S.bossFirst[L]=1; [card,up]=drawCard(4); }
+  addEss((S.bossFirst[L]?1:3)); let relic=null; if(L>TOWER2||!S.bossFirst[L]||Math.random()<0.35){ relic=dropRelic(L>TOWER2?3:1); } S.food=(S.food||0)+(S.bossFirst[L]?2:5); if(!S.bossFirst[L]){ S.bossFirst[L]=1; [card,up]=drawCard(4); }
   if(sim) return; buzz(80); if(S.sound) [392,523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.09,0.05),i*90)); save(true); uiList(true); uiTop();
-  const nw=WORLDS[worldOf(L+1)], msg=`<div style="font-size:46px">${w.boss[0]}</div><h1>${w.boss[1]} defeated!</h1><p>Reward: <b style="color:#ffd400">${money(gain)}</b></p>${card?`<p style="margin-top:6px">Boss card: <b style="color:${RCOL[card.r]}">${card.ic} ${card.name}</b> <small style="color:${RCOL[card.r]}">${RAR[card.r]}</small>${up?` · level ${C(card.id)}!`:""}</p>`:""}${L<NST?`<p style="margin-top:6px">World ${worldOf(L)+2} ${nw.ic} <b>${nw.name}</b> is open – unlock stage ${L+1}.</p>`:""}<button class="btn" id="ok">Onwards</button>`;
+  const nw=WORLDS[worldOf(L+1)], msg=`<div style="font-size:46px">${w.boss[0]}</div><h1>${w.boss[1]} defeated!</h1><p>Reward: <b style="color:#ffd400">${money(gain)}</b></p>${card?`<p style="margin-top:6px">Boss card: <b style="color:${RCOL[card.r]}">${card.ic} ${card.name}</b> <small style="color:${RCOL[card.r]}">${RAR[card.r]}</small>${up?` · level ${C(card.id)}!`:""}</p>`:""}${relic?`<p style="margin-top:6px">Relic: <b style="color:${RCOL[relic.r]}">🗿 ${RAR[relic.r]}</b> · ${relTxt(relic)}</p>`:""}${L<NST?`<p style="margin-top:6px">World ${worldOf(L)+2} ${nw.ic} <b>${nw.name}</b> is open – unlock stage ${L+1}.</p>`:""}<button class="btn" id="ok">Onwards</button>`;
   floatText("⚔️ "+w.boss[1]+" defeated! +"+money(gain),innerWidth/2-110,150); bigPop(msg); }
 /* important popups (boss fights) are shown even with AUTO on; if another popup is open they wait for it */
 let popQ=[]; function bigPop(h){ if(document.querySelector(".pop")) popQ.push(h); else popup(h); }
@@ -718,6 +722,21 @@ function showEvent(){ evCheck(); const e=S.ev, r=EVR[e.rule], wd=WORLDS[e.w], le
     <p style="font-size:22px;font-weight:900;color:#ffd400;margin-top:8px">${money(e.score)}</p>${evW<0?`<p style="color:#ffb3a8;font-size:12px">Unlock world ${e.w+1} again to play this event.</p>`:""}
     <div class="tros" style="max-height:none">${MEDAL.map((m,i)=>`<div class="tro ${e.m>i?"ok":""}"><span class="pi">${e.m>i?m[0]:"🔒"}</span><span><b>${m[1]} · ${money(e.base*m[2])}</b><small>🍖${[3,6,10,20][i]} · 🧪${[1,2,3,5][i]}${i>=2?" · 🃏 "+(i===2?"Legendary+":"Exotic+")+" card":""} · 🏅200 XP</small><i><u style="width:${Math.round(Math.min(1,e.score/(e.base*m[2]))*100)}%"></u></i></span></div>`).join("")}</div>
     <p style="margin-top:8px;text-align:left;font-weight:800;color:#fff">Your past weeks</p>${S.evHist.length?S.evHist.slice().reverse().slice(0,6).map(h=>`<div class="sbar"><span class="n">${EVR[h.rule]?EVR[h.rule][0]+" "+EVR[h.rule][1]:""}</span><b>${h.m?MEDAL[h.m-1][0]:"–"} ${money(h.score)}</b></div>`).join(""):`<p style="font-size:12px;color:#9aa0aa">No finished events yet.</p>`}${best?`<p style="font-size:12px;color:#9aa0aa">Best medal so far: ${MEDAL[best-1][0]} ${MEDAL[best-1][1]}</p>`:""}<button class="btn" id="ok">Close</button>`); }
+/* v82 relics: bosses drop them (Titans always, with better rarity); equip up to 6; level with relic dust, melt the rest */
+const RSTAT={g:["🚪","Gates",5],v:["💰","All values",6],r:["⏩","Spawns",3],vip:["👑","VIP chance",10],boss:["⚔️","Boss damage",10],w:["🌍","Gates in",15]}, REL_MAX=6, REL_INV=60;
+const FXS=[...new Set(WORLDS.map(w=>w.fx).filter(Boolean))];
+let REL={g:1,v:1,r:1,vip:1,boss:1,w:{}};
+const relVal=x=>RSTAT[x.st][2]*x.r*(1+0.25*((x.lv||1)-1));
+const relTxt=x=>`${RSTAT[x.st][0]} ${RSTAT[x.st][1]}${x.st==="w"?" "+(WORLDS.find(w=>w.fx===x.fx)||{name:x.fx}).name.replace(/^Endless \d+ · /,"")+" worlds":""} +${Math.round(relVal(x))}%`;
+function calcRelics(){ const o={g:1,v:1,r:1,vip:1,boss:1,w:{}}; for(const id of (S.relEq||[])){ const x=(S.relics||[]).find(q=>q.id===id); if(!x) continue; if(x.st==="w") o.w[x.fx]=(o.w[x.fx]||1)+relVal(x)/100; else o[x.st]+=relVal(x)/100; } REL=o; }
+function dropRelic(minR){ S.relics=S.relics||[]; const sts=Object.keys(RSTAT), st=sts[Math.floor(Math.random()*sts.length)], x={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),r:pickRar(minR),st,lv:1}; if(st==="w") x.fx=FXS[Math.floor(Math.random()*FXS.length)];
+  S.relics.push(x); if(S.relics.length>REL_INV){ let wi=-1, wr=99; S.relics.forEach((q,i)=>{ if(!(S.relEq||[]).includes(q.id)&&q.r<wr){ wr=q.r; wi=i; } }); if(wi>=0){ S.rdust=(S.rdust||0)+2*(1+S.relics[wi].r); S.relics.splice(wi,1); } } return x; }
+function showRelics(){ S.relics=S.relics||[]; S.relEq=(S.relEq||[]).filter(id=>S.relics.some(q=>q.id===id)); const eq=S.relEq, inv=S.relics.slice().sort((a,b)=>b.r-a.r||b.lv-a.lv);
+  const row=x=>{ const on=eq.includes(x.id), up=(x.lv||1)*(1+x.r); return `<div class="tro ${on?"ok":""}" style="align-items:center"><span class="pi" style="color:${RCOL[x.r]}">🗿</span><span style="flex:1"><b style="color:${RCOL[x.r]}">${RAR[x.r]} relic · Lv ${x.lv||1}</b><small>${relTxt(x)}</small></span><span style="display:flex;flex-direction:column;gap:3px"><button class="tg ${on?"on":""}" data-req="${x.id}">${on?"Equipped":"Equip"}</button>${(x.lv||1)<10?`<button class="tg ${(S.rdust||0)>=up?"on":""}" data-rup="${x.id}" ${(S.rdust||0)>=up?"":"disabled"}>⬆ ${up}💠</button>`:""}${on?"":`<button class="tg" data-rml="${x.id}">Melt</button>`}</span></div>`; };
+  const L=popup(`<h1>🗿 Relics</h1><p>Equipped ${eq.length}/${REL_MAX} · 💠 relic dust <b style="color:#9fd8ff">${S.rdust||0}</b><br><small style="color:#9aa0aa">Bosses drop relics (first win always, again 35%); Titans after stage 300 always drop better ones.</small></p><div class="tros">${inv.length?inv.map(row).join(""):`<p style="font-size:12px;color:#9aa0aa">No relics yet – beat a boss.</p>`}</div><button class="btn" id="ok">Close</button>`);
+  L.querySelectorAll("[data-req]").forEach(b=>b.onclick=()=>{ const id=b.dataset.req, i=eq.indexOf(id); if(i>=0) eq.splice(i,1); else if(eq.length<REL_MAX) eq.push(id); else { floatText("All 6 slots are full",innerWidth/2-60,innerHeight/2); return; } S.relEq=eq; calcRelics(); save(true); showRelics(); });
+  L.querySelectorAll("[data-rup]").forEach(b=>b.onclick=()=>{ const x=S.relics.find(q=>q.id===b.dataset.rup), up=(x.lv||1)*(1+x.r); if((S.rdust||0)<up) return; S.rdust-=up; x.lv=(x.lv||1)+1; calcRelics(); save(true); showRelics(); });
+  L.querySelectorAll("[data-rml]").forEach(b=>b.onclick=()=>{ const i=S.relics.findIndex(q=>q.id===b.dataset.rml); if(i<0) return; const x=S.relics[i]; S.rdust=(S.rdust||0)+2*(1+x.r)+Math.floor(((x.lv||1)-1)*(1+x.r)*0.7); S.relics.splice(i,1); save(true); showRelics(); }); }
 function chromaK(){ const own=[]; for(let k=0;k<TYPES.length;k++) if(S.rate[k]) own.push(k); return own.length?own[Math.floor(gt/10)%own.length]:0; }
 function pay(v,nq){ S.coins=Math.min(1e300,S.coins+v); S.total=Math.min(1e300,S.total+v); earnWin+=v; if(!nq) dqE+=v; }
 /* daily quests 📜: 3 goals a day, tracked automatically; each pays 10 min of income, all 3 open the daily chest (30 min income + Epic+ card, Legendary+ from a 3-day streak) */
@@ -763,7 +782,7 @@ function statTick(dt){ bkT+=dt; statT=Math.min(60,statT+dt); if(bkT>=10){ bkT=0;
 const slotX=k=>18+(k%10)*36, slotY=k=>52+Math.floor(k/10)*30;
 /* VIP balls: any ball type has a small chance to spawn as a gold-crowned VIP that pays ×10 */
 const VIP_CHANCE=0.006, VIP_PAY=10;
-function spawn(k,x,y){ S.dropN=(S.dropN||0)+1; const vip=Math.random()<VIP_CHANCE*(1+0.5*P("tap"))*(1+0.15*R("vip"))*(evRule==="vip"?3:1); if(vip) S.vipN=(S.vipN||0)+1; if(balls.length+tankN>=ballCap()){
+function spawn(k,x,y){ S.dropN=(S.dropN||0)+1; const vip=Math.random()<VIP_CHANCE*(1+0.5*P("tap"))*(1+0.15*R("vip"))*(evRule==="vip"?3:1)*REL.vip; if(vip) S.vipN=(S.vipN||0)+1; if(balls.length+tankN>=ballCap()){
     /* board full: most new balls pay instantly, but a slow trickle (enough to refill the whole board every ~10 min) still drops at the top;
        for each of those, the ball that has waited longest in the most crowded stage (below stage 1) is cashed out – it pays what it would still have earned.
        Never the front-runners, so balls still reach every stage. */
@@ -1117,12 +1136,12 @@ function render(){
       ctx.save(); ctx.strokeStyle="#ff7a1a"; ctx.globalAlpha=0.5+0.3*Math.sin(gt*3); ctx.lineWidth=4; ctx.strokeRect(2,Math.max(oy,cam-4)+2,W-4,Math.min(oy+s.h,cam+viewH+4)-Math.max(oy,cam-4)-4); ctx.restore(); } if(s.mech){ ctx.font="700 10px system-ui"; ctx.fillStyle=locked?"#777":"#cfd3dc"; ctx.fillText(MECH[s.mech][2],8,oy+58); }
     if(isHeavy(L)){ const ok=heavyOk(L); ctx.font="800 10px system-ui"; ctx.fillStyle=ok?"#9dffb0":"#ffb3a8"; ctx.textAlign="left"; ctx.fillText(ok?"⚙️ HEAVY MACHINES RUNNING · gates ×1.5":"⛓️ HEAVY MACHINES crawl until a ball reaches value Lv "+heavyReq(L)+" (best "+topVal()+")",8,oy+(s.mech?72:32)); }
     if(isToll(L)&&!locked){ ctx.font="800 10px system-ui"; ctx.fillStyle="#ffd86b"; ctx.textAlign="left"; ctx.fillText(S.tollDone[L]||L<S.unlocked?"🎟️ TOLL STAGE · paid":"🎟️ TOLL STAGE · send balls to the end to open stage "+(L+1),8,oy+(s.mech?72:32)); }
-    if(L%15===1){ const wd=WORLDS[worldOf(L)]; ctx.fillStyle="rgba(20,16,14,.72)"; ctx.fillRect(0,oy,W,24); ctx.fillStyle=wd.col; ctx.fillRect(0,oy+22,W,2); ctx.font="900 12px system-ui"; ctx.textAlign="center"; ctx.fillText(wd.ic+" WORLD "+(worldOf(L)+1)+" · "+wd.name.toUpperCase()+(wd.fx?" · "+wd.d.split(" – ")[0]:""),W/2,oy+16); ctx.textAlign="left"; }
+    if(worldStart(L)){ const wd=WORLDS[worldOf(L)]; ctx.fillStyle="rgba(20,16,14,.72)"; ctx.fillRect(0,oy,W,24); ctx.fillStyle=wd.col; ctx.fillRect(0,oy+22,W,2); ctx.font="900 12px system-ui"; ctx.textAlign="center"; ctx.fillText(wd.ic+" WORLD "+(worldOf(L)+1)+" · "+wd.name.toUpperCase()+(wd.fx?" · "+wd.d.split(" – ")[0]:""),W/2,oy+16); ctx.textAlign="left"; }
     if(isBoss(L)){ const bw=WORLDS[worldOf(L)].boss, done=bossDone(L)||(L<S.unlocked&&!isBoss(S.unlocked))||L<S.unlocked, live=L===S.unlocked&&!bossDone(L), sh=live&&bossFx>0?Math.sin(gt*80)*3:0;
-      ctx.font="44px system-ui"; ctx.textAlign="center"; ctx.globalAlpha=locked?0.35:done?0.5:1; ctx.fillText(bw[2]&&!done&&(S.bossDmg[L]||0)>=bossHp(L)/2?bw[2]:bw[0],W-40+sh*(bw[2]&&(S.bossDmg[L]||0)>=bossHp(L)/2?2:1),oy+(s.mech?118:92)); ctx.globalAlpha=1;
+      ctx.font="44px system-ui"; ctx.textAlign="center"; ctx.globalAlpha=locked?0.35:done?0.5:1; ctx.fillText(bw[3]&&!done&&(S.bossDmg[L]||0)>=bossHp(L)*0.75?bw[3]:bw[2]&&!done&&(S.bossDmg[L]||0)>=bossHp(L)/2?bw[2]:bw[0],W-40+sh*(bw[2]&&(S.bossDmg[L]||0)>=bossHp(L)/2?2:1),oy+(s.mech?118:92)); ctx.globalAlpha=1;
       const hp=done?0:Math.max(0,1-(S.bossDmg[L]||0)/bossHp(L)), by=oy+(s.mech?66:28);
       ctx.fillStyle="rgba(20,16,14,.8)"; roundBox(8,by,W-96,16,8); ctx.fill(); ctx.fillStyle=done?"#6a6a6a":"#e8413a"; roundBox(9,by+1,(W-98)*hp,14,7); ctx.fill();
-      ctx.font="900 10px system-ui"; ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.fillText("BOSS "+bw[1].toUpperCase()+(done?" · DEFEATED ✔":" · "+Math.ceil(hp*100)+"%"+(bw[2]&&hp<=0.5?" · PHASE 2":"")),14,by+12);
+      ctx.font="900 10px system-ui"; ctx.fillStyle="#fff"; ctx.textAlign="left"; ctx.fillText("BOSS "+bw[1].toUpperCase()+(done?" · DEFEATED ✔":" · "+Math.ceil(hp*100)+"%"+(bw[3]&&hp<=0.25?" · PHASE 3":bw[2]&&hp<=0.5?" · PHASE 2":"")),14,by+12);
       if(live){ ctx.save(); ctx.strokeStyle="#e8413a"; ctx.globalAlpha=0.35+0.25*Math.sin(gt*4); ctx.lineWidth=5; ctx.strokeRect(3,Math.max(oy,cam-4)+3,W-6,Math.min(oy+s.h,cam+viewH+4)-Math.max(oy,cam-4)-6); ctx.restore(); } }
     if(locked){ ctx.textAlign="center"; ctx.fillStyle="rgba(20,21,24,.88)"; const yy=oy+60; roundBox(50,yy,W-100,84,14); ctx.fill();
       ctx.font="900 18px system-ui"; ctx.fillStyle=L===S.unlocked+1&&S.coins>=priceOf(L)?"#ffd400":"#ddd"; ctx.fillText("🔒 Stage "+L,W/2,yy+32); ctx.font="800 13px system-ui"; ctx.fillStyle="#bbb"; ctx.fillText(L===S.unlocked+1?"Unlock for "+money(priceOf(L)):money(priceOf(L)),W/2,yy+54); ctx.font="700 10px system-ui"; ctx.fillText(L===S.unlocked+1&&tollBlock()?"🎟️ pay the toll above first":L===S.unlocked+1&&bossBlock()?"⚔️ beat the boss above first":"all gates pay ×1.35 more",W/2,yy+72); }
@@ -1182,7 +1201,7 @@ function uiList(force){
     h+=`<p style="color:#9aa0aa;font-size:11px;padding:8px 6px">One research at a time. It keeps running while the app is closed. AUTO starts the quickest one when the lab is free.</p>`; }
   else { h+=`<div class="hd"><span>STAGES</span><span>SHRINK</span><span>GATES</span></div>`;
     for(let L=1;L<=S.unlocked;L++){ const st=stOf(L);
-      if(L%15===1){ const wd=WORLDS[worldOf(L)]; h+=`<div class="wh" style="border-color:${wd.col}" data-go="${L}"><b style="color:${wd.col}">${wd.ic} WORLD ${worldOf(L)+1} · ${wd.name.toUpperCase()}</b><small>${wd.d}</small></div>`; }
+      if(worldStart(L)){ const wd=WORLDS[worldOf(L)]; h+=`<div class="wh" style="border-color:${wd.col}" data-go="${L}"><b style="color:${wd.col}">${wd.ic} WORLD ${worldOf(L)+1} · ${wd.name.toUpperCase()}</b><small>${wd.d}</small></div>`; }
       h+=`<div class="srow2"><div class="num"${isBoss(L)?' style="background:#5a1f24;color:#ffb3a8"':""}>${L}</div><div class="rt" data-go="${L}"><b>${isBoss(L)?WORLDS[worldOf(L)].boss[0]+(bossDone(L)||L<S.unlocked?"✔ ":" "):""}${isToll(L)?"🎟️ ":""}${isHeavy(L)?(heavyOk(L)?"⚙️ ":"⛓️ "):""}${L===hotL?`<span style="color:#ff8a3a">🔥×${HOT_MULT}</span> `:""}${stageName(L)}${mastLv(L)?` <span style="color:${MCOL[mastLv(L)]}">🎖️${mastLv(L)}</span>`:""}</b><small>size ${Math.round(shrinkOf(L)*100)}% · gates ×${gateBoost(L).toFixed(2)} · 🎖️${mastLv(L)<5?10*Math.floor(10*mastN(L)/MAST[mastLv(L)])+"%":"max"}</small></div>${btn("o"+L,st.o,OMAX,l=>costObs(L,l))}${btn("g"+L,st.g,GMAX,l=>costGate(L,l))}</div>`; } }
   if(!force&&h===listSig) return; const sc_=$("list").scrollTop; listSig=h; $("list").innerHTML=h; $("list").scrollTop=sc_; }
 $("list").addEventListener("click",e=>{ const rs=e.target.closest("[data-res]"); if(rs) return startRes(+rs.dataset.res); const ev=e.target.closest("[data-ev]"); if(ev) return showEvo(+ev.dataset.ev); const bp=e.target.closest("[data-bp]"); if(bp) return ballPrestige(+bp.dataset.bp); const b=e.target.closest("[data-b]"); if(b) return buy(b.dataset.b); const g=e.target.closest("[data-go]"); if(g) goTo(+g.dataset.go); });
@@ -1349,7 +1368,7 @@ cv.addEventListener("wheel",e=>{ cam+=e.deltaY*0.6; clampCam(); e.preventDefault
 $("menuB").onclick=openMenu;
 $("questB").onclick=()=>showQuests(); $("hubB").onclick=()=>showHub();
 /* v81 hub: one button for all the extra screens */
-const HUB=[["🏅","Season pass",()=>showSeason(),()=>1],["🎪","Weekly event",()=>showEvent(),()=>1],["🐾","Pets",()=>showPets(),()=>1]];
+const HUB=[["🏅","Season pass",()=>showSeason(),()=>1],["🎪","Weekly event",()=>showEvent(),()=>1],["🐾","Pets",()=>showPets(),()=>1],["🗿","Relics",()=>showRelics(),()=>1]];
 function showHub(){ const items=HUB.filter(h=>h[3]()); const L=popup(`<h1>🎒 More</h1><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px">${items.map((h,i)=>`<button class="btn g" data-hub="${i}" style="margin:0;padding:14px 6px;font-size:14px"><div style="font-size:26px">${h[0]}</div>${h[1]}</button>`).join("")}</div><button class="btn" id="ok">Close</button>`);
   L.querySelectorAll("[data-hub]").forEach(b=>b.onclick=()=>{ L.innerHTML=""; items[+b.dataset.hub][2](); }); }
 /* v81 save backup: copy a code / download a file, and import it again */
@@ -1408,7 +1427,7 @@ window.ascendApkUpdate=v=>{ apkUpdate=v; floatText("📦 Update ready – see �
 window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
 
 /* ================= boot ================= */
-calcSets(); calcEvo(); calcPets(); seaCheck(); evCheck(); checkHot(); dqNew(); getStage(1); { const n0=checkTrophies(true); if(n0) setTimeout(()=>floatText("🏆 "+n0+" trophies · values +"+(4*n0)+"%",innerWidth/2-90,110),1200); } uiTop(); uiList(true); resize();
+calcSets(); calcEvo(); calcPets(); calcRelics(); seaCheck(); evCheck(); checkHot(); dqNew(); getStage(1); { const n0=checkTrophies(true); if(n0) setTimeout(()=>floatText("🏆 "+n0+" trophies · values +"+(4*n0)+"%",innerWidth/2-90,110),1200); } uiTop(); uiList(true); resize();
 try{ new ResizeObserver(()=>resize()).observe($("wrap")); }catch(e){}
 syncPanel(); syncAuto();
 document.querySelectorAll("#tabs .t").forEach(x=>x.classList.toggle("on",x.dataset.t===S.tab)); document.querySelectorAll("#modes [data-m]").forEach(x=>x.classList.toggle("on",x.dataset.m===S.mode));
@@ -1441,7 +1460,7 @@ const simOpts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){
   for(let L=1;L<=S.unlocked;L++){ const st=stOf(L); if(st.o<OMAX) o.push(["o"+L,costObs(L,st.o)]); if(st.g<GMAX) o.push(["g"+L,costGate(L,st.g)]); }
   WSHOP.forEach((u,i)=>{ const l=WS(u.id); if(l<u.max) o.push(["w"+i,costWs(i,l)]); }); return o; };
 function simBuy(){ for(let q=0;q<40;q++){ const o=simOpts().sort((a,b)=>a[1]-b[1])[0]; if(o&&S.coins>=o[1]) buy(o[0],true); else break; } }
-window.__z={showHub,showBackup,HUB,showBuilder,transcend,openAsc,canBall,showSeason,showEvent,seaXP,evCheck,showPets,showEvo,petTick,calcPets,calcEvo,dqTick,dqNew,autoBuy,calcSets,histTick,offShares,get SETB(){return SETB;},step,getStage,OY,stageAt,setCam:y=>{ cam=y; camV=0; clampCam(); },unlockNext,goTo,MUSIC,get S(){return S;},get STG(){return STG;},get hotL(){return hotL;},checkHot,showStats,drawCard,get balls(){return balls;},get PRICES(){return PRICES;},setPrices:a=>{ PRICES=a; },
+window.__z={showRelics,dropRelic,calcRelics,get REL(){return REL;},bossWin,showHub,showBackup,HUB,showBuilder,transcend,openAsc,canBall,showSeason,showEvent,seaXP,evCheck,showPets,showEvo,petTick,calcPets,calcEvo,dqTick,dqNew,autoBuy,calcSets,histTick,offShares,get SETB(){return SETB;},step,getStage,OY,stageAt,setCam:y=>{ cam=y; camV=0; clampCam(); },unlockNext,goTo,MUSIC,get S(){return S;},get STG(){return STG;},get hotL(){return hotL;},checkHot,showStats,drawCard,get balls(){return balls;},get PRICES(){return PRICES;},setPrices:a=>{ PRICES=a; },
   // calibration: let a greedy player run tgt(L) seconds on L stages, the money earned becomes the price of stage L+1
   calib(N,tgt){ const dt=1/120, out=[0,150]; PRICES=PRICES.map((p,i)=>i<2?p:1e300); const m=S.mode; S.mode="1"; const t0=performance.now();
     for(let L=1;L<N;L++){ const T=tgt(L), c0=S.total; for(let t=0;t<T;t+=dt){ step(dt,true); if(((t*120)|0)%30===0) simBuy(); if(L===1&&S.coins>=150&&S.unlocked===1){} }
