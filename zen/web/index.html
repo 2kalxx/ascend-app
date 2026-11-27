@@ -95,7 +95,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 77; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 78; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -104,8 +104,10 @@ const money=n=>"$"+fmt(n);
 const NST=300; /* v75: the second tower – stages 151-300 */
 
 /* ================= balls & economy ================= */
-const TYPES=[{name:"White",col:"#f4f4f4"},{name:"Cyan",col:"#3fd6e8"},{name:"Lime",col:"#a6e33b"},{name:"Orange",col:"#ff9f1c"},{name:"Purple",col:"#b86bff"},{name:"Red",col:"#ff4d5e"},{name:"Pink",col:"#ff7fd1"},{name:"Gold",col:"#ffd400"},{name:"Teal",col:"#1fbf9f"},{name:"Sky",col:"#7ec8ff"},{name:"Coral",col:"#ff8a65"},{name:"Mint",col:"#9dffb0"},{name:"Lavender",col:"#d6b3ff"},{name:"Magenta",col:"#ff3df0"},{name:"Bronze",col:"#c98a4b"},{name:"Silver",col:"#c9d1d9"},{name:"Crimson",col:"#d1124f"},{name:"Royal",col:"#5c6bff"},{name:"Olive",col:"#a3b83b"},{name:"Rainbow",col:"#ffffff",rainbow:1}];
-const GATE=[1,3,8,15,25,40,60,85,90,95,100,106,112,118,124,130,136,142,148,150]; // stages you need to own to unlock each ball
+const TYPES=[{name:"White",col:"#f4f4f4"},{name:"Cyan",col:"#3fd6e8"},{name:"Lime",col:"#a6e33b"},{name:"Orange",col:"#ff9f1c"},{name:"Purple",col:"#b86bff"},{name:"Red",col:"#ff4d5e"},{name:"Pink",col:"#ff7fd1"},{name:"Gold",col:"#ffd400"},{name:"Teal",col:"#1fbf9f"},{name:"Sky",col:"#7ec8ff"},{name:"Coral",col:"#ff8a65"},{name:"Mint",col:"#9dffb0"},{name:"Lavender",col:"#d6b3ff"},{name:"Magenta",col:"#ff3df0"},{name:"Bronze",col:"#c98a4b"},{name:"Silver",col:"#c9d1d9"},{name:"Crimson",col:"#d1124f"},{name:"Royal",col:"#5c6bff"},{name:"Olive",col:"#a3b83b"},{name:"Rainbow",col:"#ffffff",rainbow:1},
+  {name:"Amber",col:"#ffb347"},{name:"Ruby",col:"#e0115f"},{name:"Jade",col:"#00c27a"},{name:"Sapphire",col:"#4f7bff"},{name:"Topaz",col:"#ffc87c"},{name:"Opal",col:"#b8e0d8"},{name:"Garnet",col:"#c2413b"},{name:"Peridot",col:"#b4d424"},{name:"Citrine",col:"#f0d81a"},{name:"Aether",col:"#fff6c8",rainbow:1}];
+const GATE=[1,3,8,15,25,40,60,85,90,95,100,106,112,118,124,130,136,142,148,150,160,175,190,205,220,235,250,265,280,295];
+const canBall=k=>S.unlocked>=GATE[k]&&(k<20||(S.trans||0)>=k-19); // v78: colours 21-30 need Transcends // stages you need to own to unlock each ball
 const RMAX=25;
 const spawnTime=r=>3.2/(1+0.22*(r-1));
 /* v69: every ball type gets pricier upgrades than the one before (base ×8 per type, steeper growth per level), and value levels get harder and harder (quadratic term) */
@@ -178,8 +180,8 @@ const cardNeed=l=>l; // copies needed to go from level l to l+1
 
 
 let trN=0; // trophies earned (each +4% all values)
-const valueMult=()=>SETB.v*(SK("root")?1.5:1)*(SK("val1")?2:1)*(SK("val2")?3:1)*(1+(0.04+0.01*R("troph"))*trN)*(S.pm||1)*Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"))*(1+0.5*C("ph"))*(1+C("sg"))*(1+2*C("bb"))*(1+0.5*C("om"));
-const rateMult=()=>SETB.r*(SK("spd1")?1.2:1)*(SK("spd2")?1.4:1)*Math.pow(1.15,P("rate"))*(1+0.05*C("sr"))*(1+0.12*C("tw"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
+const valueMult=()=>SETB.v*(AE("ae1")?3:1)*(AE("ae9")?5:1)*(SK("root")?1.5:1)*(SK("val1")?2:1)*(SK("val2")?3:1)*(1+(0.04+0.01*R("troph"))*trN)*(S.pm||1)*Math.pow(1.3,P("value"))*(1+0.1*C("cr"))*(1+0.25*C("md"))*(1+0.5*C("ph"))*(1+C("sg"))*(1+2*C("bb"))*(1+0.5*C("om"));
+const rateMult=()=>SETB.r*(AE("ae2")?1.5:1)*(SK("spd1")?1.2:1)*(SK("spd2")?1.4:1)*Math.pow(1.15,P("rate"))*(1+0.05*C("sr"))*(1+0.12*C("tw"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 /* value milestones: every 25 value levels a ball pays ×1.5 (up to 8 times = ×25.6); they restart after a ball prestige */
 const MS_STEP=25, MS_MAX=8, msN=k=>Math.min(MS_MAX,Math.floor((S.val[k]||1)/MS_STEP)), msMult=k=>Math.pow(1.5,msN(k));
 /* v76 ball evolution: a ball with ✨2+ can evolve into one form (costs 🧪 essence from bosses, daily chests and the Abyss) */
@@ -191,7 +193,7 @@ const ballVal=k=>Math.pow(6,k)*Math.pow(1.2,S.val[k]-1)*valueMult()*(S.bpm[k]||1
 /* prestige: REBIRTH resets stages + ball upgrades for a permanent profit multiplier based on how far you got;
    BALL PRESTIGE resets one ball's value level for a permanent multiplier on that ball */
 const REB_MIN=10;
-const rebGain=()=>(1+0.5*Math.max(0,S.unlocked-REB_MIN))*(SK("reb1")?1.5:1)*(SK("reb2")?2:1); // the button shows ×N → exactly N is added: stage 10 → +1, 20 → +6, 50 → +21
+const rebGain=()=>(1+0.5*Math.max(0,S.unlocked-REB_MIN))*(SK("reb1")?1.5:1)*(SK("reb2")?2:1)*(AE("ae5")?3:1); // the button shows ×N → exactly N is added: stage 10 → +1, 20 → +6, 50 → +21
 const mx=n=>n<1000?String(+n.toFixed(1)):fmt(n); // multiplier display: 17.8, not 17
 const rebAfter=()=>(S.pm||1)+rebGain();
 /* v67 fix: the old rule (need 50+25n, gain 1+level/25) could be repeated forever with MAX. Now the need grows steeply (50, 200, 450, 800 …) and every prestige gives a flat ×3 */
@@ -209,7 +211,7 @@ const mastTotal=()=>{ let t=0; for(const k in S.mast) t+=mastLv(+k); return t; }
 function mastHit(L,sim){ if(++S.fpass>=4000){ S.fpass=0; S.food=(S.food||0)+1; } const n=(S.mast[L]=(S.mast[L]||0)+1); const i=MAST.indexOf(n); if(i<0) return; seaXP(100); if(sim) return;
   if(typeof floatText==="function") floatText("🎖️ Stage "+L+" mastery "+(i+1)+"/5 · gates +"+(10*(i+1))+"%",innerWidth/2-110,150);
   if(S.sound&&typeof tone==="function") [659,880].forEach((f,j)=>setTimeout(()=>tone(f,0.05,0.04),j*90)); }
-const gateBoost=L=>(L>NOLD?(WORLDS[worldOf(L)].fx==="neon"?1.25:WORLDS[worldOf(L)].fx==="void"?2:1):1)*SETB.g*(1+0.05*((S.aby&&S.aby.n)||0))*(1+0.1*mastLv(L))*(L>135?1.5:1)*(SK("gat1")?1.5:1)*(SK("gat2")?2:1)*(wxIn(L)?wx.g:1)*(isHeavy(L)&&heavyOk(L)?1.5:1)*(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
+const gateBoost=L=>(L>NOLD?(WORLDS[worldOf(L)].fx==="neon"?1.25:WORLDS[worldOf(L)].fx==="void"?2:1):1)*SETB.g*(AE("ae3")?3:1)*(1+0.05*((S.aby&&S.aby.n)||0))*(1+0.1*mastLv(L))*(L>135?1.5:1)*(SK("gat1")?1.5:1)*(SK("gat2")?2:1)*(wxIn(L)?wx.g:1)*(isHeavy(L)&&heavyOk(L)?1.5:1)*(1+0.25*stOf(L).g)*(1+0.1*P("gates"))*(1+0.1*C("gm"))*(1+0.25*C("gg"))*(1+0.25*C("inf"))*(1+0.5*C("om"));
 const shrinkOf=L=>(1-0.04*stOf(L).o)*Math.pow(0.97,P("hits"));
 
 /* ================= Zen Drop 2.0: 10 worlds × 15 stages, a boss at the end of every world, the workshop ================= */
@@ -278,7 +280,14 @@ const SKILLS=[
  {id:"bld1",ic:"🛠️",name:"Master builder",cost:2,req:"root",d:"Stage & workshop upgrades −30%"},
  {id:"bld2",ic:"🏗️",name:"Architect",cost:5,req:"bld1",d:"Stage & workshop upgrades −30%"}];
 const SK=id=>!!(S.skills&&S.skills[id]);
-const ascGain=()=>Math.floor(Math.sqrt(S.pm||1));
+/* v78 Transcend: from 3 ascensions – resets ascensions, stars and the skill tree for ✴️ aether; each Transcend opens a new ball colour (21-30) and aether buys the third tree */
+const TR_MIN=3, AETH=[{id:"ae1",ic:"✴️",name:"Aether core",cost:1,req:null,d:"All values ×3"},{id:"ae2",ic:"🌊",name:"Aether tide",cost:2,req:"ae1",d:"Spawns ×1.5"},{id:"ae3",ic:"🚪",name:"Aether gates",cost:2,req:"ae1",d:"All gates ×3"},
+  {id:"ae4",ic:"🌟",name:"Star harvest",cost:3,req:"ae1",d:"Ascensions give ×2 stars"},{id:"ae5",ic:"♻️",name:"Rebirth echo",cost:3,req:"ae4",d:"Rebirth bonus ×3"},{id:"ae6",ic:"🍀",name:"Lucky draws",cost:3,req:"ae1",d:"Every card draw rolls twice and keeps the rarer"},
+  {id:"ae7",ic:"🐾",name:"Pet whisperer",cost:2,req:"ae1",d:"Pet levels cost half"},{id:"ae8",ic:"🧪",name:"Essence well",cost:2,req:"ae1",d:"Double essence from every source"},{id:"ae9",ic:"💠",name:"Aether mastery",cost:5,req:"ae3",d:"All values ×5"}];
+const AE=id=>!!(S.aesk&&S.aesk[id]);
+const trGain=()=>(S.asc||0)+Math.floor(((S.stars||0)+SKILLS.filter(k=>SK(k.id)).reduce((a,k)=>a+k.cost,0))/10);
+function addEss(n){ S.ess=(S.ess||0)+n*(AE("ae8")?2:1); }
+const ascGain=()=>Math.floor(Math.sqrt(S.pm||1))*(AE("ae4")?2:1);
 /* world weather: every few minutes one of your worlds gets a 40-second event */
 const WX=[["🌸","Bloom",{g:2}],["🌪️","Sandstorm",{g:1.5,wind:200}],["❄️","Blizzard",{g:2,drag:0.6}],["☄️","Meteor shower",{g:1.5,lava:5}],["🌊","High tide",{g:1.5,grav:0.75}],
   ["⚡","Overdrive",{g:1.5,spin:1.6}],["🍭","Sugar rush",{g:2}],["🌠","Zero-G",{g:2,grav:0.6}],["⛈️","Thunder",{g:1.5,bolt:1}],["👑","Royal parade",{g:3}],
@@ -295,7 +304,7 @@ const heavyOk=L=>topVal()>=heavyReq(L);
 
 /* ================= state ================= */
 const LS="zen_state_v3";
-function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(19).fill(0)),val:Array(20).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(20).fill(0),bpm:Array(20).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0,ws:{},bossDone:{},bossDmg:{},bossFirst:{},wv:0,res:{},resCur:null,skills:{},stars:0,asc:0,toll:{},tollDone:{},mast:{},aby:{n:0,b:0,best:0},hist:{t:Date.now(),v:[]},evo:{},ess:0,pets:{},food:0,fpass:0,sea:null,cos:{t:[],s:[]},trail:"",skin:"",ev:null,evHist:[]}; }
+function fresh(){ return {ver:2,coins:0,unlocked:1,rate:[1].concat(Array(TYPES.length-1).fill(0)),val:Array(TYPES.length).fill(1),st:{},perks:{},cards:{},copies:{},pendPerk:0,newCards:0,mode:"1",tab:"balls",panelHidden:false,auto:false,sound:true,music:true,haptic:true,last:Date.now(),avg:0,total:0,seen:0,cam:0,pm:1,rebirths:0,best:1,bstar:Array(TYPES.length).fill(0),bpm:Array(TYPES.length).fill(1),troph:{},newTro:0,vipN:0,hot:null,dust:0,ws:{},bossDone:{},bossDmg:{},bossFirst:{},wv:0,res:{},resCur:null,skills:{},stars:0,asc:0,toll:{},tollDone:{},mast:{},aby:{n:0,b:0,best:0},hist:{t:Date.now(),v:[]},evo:{},ess:0,pets:{},food:0,fpass:0,sea:null,cos:{t:[],s:[]},trail:"",skin:"",ev:null,evHist:[],trans:0,aether:0,aesk:{},cust:null,autoP:"bal",playT:0,dropN:0,medals:0}; }
 let S; try{ S=Object.assign(fresh(),JSON.parse(localStorage.getItem(LS))||{}); }catch(e){ S=fresh(); }
 while(S.rate.length<TYPES.length) S.rate.push(0); while(S.val.length<TYPES.length) S.val.push(1);
 while(S.bstar.length<TYPES.length) S.bstar.push(0); while(S.bpm.length<TYPES.length) S.bpm.push(1);
@@ -304,7 +313,7 @@ if((S.ver||0)<2){ for(const k in S.st) S.st[k].o=0; S.ver=2; } // v2: "o" is now
 for(const k_ of ["ws","bossDone","bossDmg","bossFirst","res","skills","toll","tollDone","mast"]) if(!S[k_]||typeof S[k_]!=="object") S[k_]={}; if(!(S.stars>=0)) S.stars=0; if(!(S.asc>=0)) S.asc=0; if(S.resCur&&!(S.resCur.end>0)) S.resCur=null;
 if(!(S.wv>=2)){ for(let L=23;L<(S.unlocked||1);L+=15) S.tollDone[L]=1; if(S.wv>=1) S.wv=2; } // saves from before part 3: tolls you already passed count as paid
 if(!(S.wv>=1)){ S.wv=2; for(let L=15;L<(S.unlocked||1);L+=15) S.bossDone[L]=1; for(let L=15;L<(S.best||1);L+=15) S.bossFirst[L]=1; } // saves from before 2.0: bosses you already passed count as beaten
-if(!S.troph||typeof S.troph!=="object") S.troph={}; if(!(S.dust>=0)) S.dust=0; if(S.hot&&!(S.hot.L>=1)) S.hot=null; S.newTro=S.newTro||0; S.vipN=S.vipN||0; if(S.dq&&!(S.dq.q instanceof Array)) S.dq=null; if(!S.evo||typeof S.evo!=="object") S.evo={}; if(!S.sea||typeof S.sea!=="object") S.sea=null; if(!S.cos||typeof S.cos!=="object"||!(S.cos.t instanceof Array)) S.cos={t:[],s:[]}; if(!S.ev||typeof S.ev!=="object") S.ev=null; if(!(S.evHist instanceof Array)) S.evHist=[]; if(!(S.ess>=0)) S.ess=0; if(!S.pets||typeof S.pets!=="object") S.pets={}; if(!(S.food>=0)) S.food=0; S.fpass=S.fpass||0; if(!S.aby||typeof S.aby!=="object"||!(S.aby.n>=0)) S.aby={n:0,b:0,best:0}; if(!S.hist||!(S.hist.v instanceof Array)||!(S.hist.t>0)) S.hist={t:Date.now(),v:[]}; if(S.offSh&&!(S.offSh.st instanceof Array)) S.offSh=null; S.newQ=S.newQ||0; if(!(S.dqStreak>=0)) S.dqStreak=0; if(!(S.dqDays>=0)) S.dqDays=0;
+if(!S.troph||typeof S.troph!=="object") S.troph={}; if(!(S.dust>=0)) S.dust=0; if(S.hot&&!(S.hot.L>=1)) S.hot=null; S.newTro=S.newTro||0; S.vipN=S.vipN||0; if(S.dq&&!(S.dq.q instanceof Array)) S.dq=null; if(!S.evo||typeof S.evo!=="object") S.evo={}; if(!S.sea||typeof S.sea!=="object") S.sea=null; if(!S.cos||typeof S.cos!=="object"||!(S.cos.t instanceof Array)) S.cos={t:[],s:[]}; if(!S.ev||typeof S.ev!=="object") S.ev=null; if(!(S.evHist instanceof Array)) S.evHist=[]; if(!(S.trans>=0)) S.trans=0; if(!(S.aether>=0)) S.aether=0; if(!S.aesk||typeof S.aesk!=="object") S.aesk={}; if(S.cust&&!(S.cust.rows instanceof Array)) S.cust=null; if(!["bal","stage","ball"].includes(S.autoP)) S.autoP="bal"; S.playT=S.playT||0; S.dropN=S.dropN||0; S.medals=S.medals||0; if(!(S.ess>=0)) S.ess=0; if(!S.pets||typeof S.pets!=="object") S.pets={}; if(!(S.food>=0)) S.food=0; S.fpass=S.fpass||0; if(!S.aby||typeof S.aby!=="object"||!(S.aby.n>=0)) S.aby={n:0,b:0,best:0}; if(!S.hist||!(S.hist.v instanceof Array)||!(S.hist.t>0)) S.hist={t:Date.now(),v:[]}; if(S.offSh&&!(S.offSh.st instanceof Array)) S.offSh=null; S.newQ=S.newQ||0; if(!(S.dqStreak>=0)) S.dqStreak=0; if(!(S.dqDays>=0)) S.dqDays=0;
 /* trophies: earned automatically, kept forever (also through rebirth), each one adds +4% to all ball values */
 const TROPH=[];
 function trGroup(id,ic,name,cur,goals,unit){ goals.forEach((g,i)=>TROPH.push({id:id+i,ic,name:name+(goals.length>1?" "+["I","II","III","IV","V","VI","VII","VIII","IX"][i]:""),cur,g,unit})); }
@@ -318,6 +327,16 @@ trGroup("bs","⚔️","Boss Slayer",()=>Object.keys(S.bossFirst).length,[1,5,10,
 trGroup("as","🌟","Ascended",()=>S.asc||0,[1,3],g=>g===1?"Ascend once":"Ascend "+g+" times");
 trGroup("ms","🎖️","Master",()=>mastTotal(),[5,25,100,300],g=>g+" mastery tiers in total");
 trGroup("dq","📜","Questor",()=>S.dqDays||0,[1,7,30],g=>g===1?"Open a daily chest":"Open "+g+" daily chests");
+trGroup("ab","🕳️","Deep Diver",()=>(S.aby&&S.aby.best)||0,[1,5,10,25],g=>"Reach Abyss depth "+g);
+trGroup("ev","🧬","Evolver",()=>Object.keys(S.evo||{}).length,[1,5,10],g=>g===1?"Evolve a ball":"Evolve "+g+" balls");
+trGroup("pt","🐾","Pet Lover",()=>Object.values(S.pets||{}).reduce((a,p)=>a+(p.lv||0),0),[1,10,25,40],g=>g===1?"Adopt a pet":g+" pet levels in total");
+trGroup("se","🏅","Seasoned",()=>(S.sea&&S.sea.got)||0,[10,20,30],g=>"Reach season tier "+g);
+trGroup("md","🎪","Medalist",()=>S.medals||0,[1,5,15],g=>g===1?"Win an event medal":"Win "+g+" event medals");
+trGroup("cl","🃏","Card Lord",()=>{ let m=0; for(const c of CARDS) if(C(c.id)) m=Math.max(m,c.r); return m; },[8,11,15],g=>"Own a "+RAR[g]+" card");
+trGroup("sk","🔥","Streaker",()=>S.dqStreak||0,[3,7,30],g=>"Daily chest streak of "+g);
+trGroup("tr","✴️","Transcendent",()=>S.trans||0,[1,3,5],g=>g===1?"Transcend once":"Transcend "+g+" times");
+trGroup("bd","🏗️","Architect",()=>S.built?1:0,[1],g=>"Build your own stage");
+trGroup("ww","🌍","World Walker",()=>worldOf(S.best||1)+1,[11,15,20],g=>"Reach world "+g);
 trGroup("vp","👑","VIP Club",()=>S.vipN||0,[1,100,1000],g=>g===1?"Drop a VIP ball":"Drop "+g+" VIP balls");
 const trCount=()=>TROPH.filter(t=>S.troph[t.id]).length;
 trN=trCount();
@@ -370,7 +389,7 @@ const sigOf=L=>L>NOLD&&[1,4,7].includes(L%10)?NEW8[(Math.floor((L-151)/10)*3+[1,
 const EARLY_MECH=[null,"gold","belt","wind","flip","boost"], EARLY_NAME=[null,"Windmill Zigzag","Fan Funnels","Wiper Zigzag","Cup Ladder","Bucket Drop"];
 const nmIdx=L=>Math.floor((L-11)/10)*2+(L%10===8?1:0), isNewM=L=>L>10&&(L%10===2||L%10===8);
 const mechOf=L=>L>NOLD?MECHS2[((L-151)*3+Math.floor((L-151)/19))%MECHS2.length]:L<=5?EARLY_MECH[L]:isNewM(L)?MECHS[(nmIdx(L)%8+3*Math.floor(nmIdx(L)/8))%MECHS.length]:L>10&&L%10===5?MECHS[((L-15)/10)%MECHS.length]:L>10?MECHS[(roundOf(L)+(L-11)%MODLIST.length)%MECHS.length]:null;
-const stageName=L=>L<=5?MECH[mechOf(L)][1]+" "+EARLY_NAME[L]:L>10?MECH[mechOf(L)][1]+" "+MODNAME[sigOf(L)]:themeOf(L).name+(variantOf(L)?" "+ROMAN[variantOf(L)]:"");
+const stageName=L=>S&&S.cust&&S.cust.L===L&&L>10?"🏗️ My Stage":L<=5?MECH[mechOf(L)][1]+" "+EARLY_NAME[L]:L>10?MECH[mechOf(L)][1]+" "+MODNAME[sigOf(L)]:themeOf(L).name+(variantOf(L)?" "+ROMAN[variantOf(L)]:"");
 const heightOf=L=>(themeOf(L).scr+(variantOf(L)%2))*SCR;
 // stage offsets (stages are stacked) + which stage each 620px chunk belongs to
 const OY=[0,0], HT=[0]; for(let L=1;L<=NST;L++){ HT[L]=heightOf(L); OY[L+1]=OY[L]+HT[L]; }
@@ -522,6 +541,7 @@ function buildStage(L){
   };
   for(const k_ of ["drum","swings","clock","fans","crosses","gears","sliders","ferris","wheel","bumpers","jelly"]){ const base=MODS[k_]; MODS[k_]=q=>{ const m=base(q); return {h:m.h+50,f:y=>{ GUARD(y); m.f(y+50); }}; }; }
   const SHAPES=[(x,y)=>C_(x,y,16),(x,y)=>tri(x,y,20),(x,y)=>diamond(x,y,24,24),(x,y)=>hexa(x,y,22),(x,y)=>star(x,y,24,17,7,0),(x,y)=>C_(x,y,13,{bump:1}),(x,y)=>diamond(x,y,34,14)];
+  const cust=S.cust&&S.cust.L===L&&S.cust.rows&&S.cust.rows.length&&L>NEWL?S.cust:null; if(cust) b.name="🏗️ My Stage";
   if(L>NEWL){ const sig=sigOf(L), q=rng(L*104729+7), shape=SHAPES[Math.floor(q()*SHAPES.length)], main=MODS[sig](q), pool=MODLIST.filter(m=>m!==sig&&!FUNNELS.includes(m));
     const extras=[0,1,2].map(()=>pool[Math.floor(q()*pool.length)]);
     for(const [y0,y1] of zones){ let y=y0+10, n=0;
@@ -531,8 +551,8 @@ function buildStage(L){
         belts:[90,(y,j)=>{ if(j%2) S_(W,y+10,120,y+70,12); else S_(0,y+10,W-120,y+70,12); BELT(); }],
         steps:[125,(y,j)=>{ for(let t=0;t<3;t++){ const x0=40+t*100; if(j%2) S_(W-x0,y+10+t*38,W-x0-80,y+28+t*38,12); else S_(x0,y+10+t*38,x0+80,y+28+t*38,12); } }],
         spinfun:[150,(y,j)=>{ const c=j%2?130:230; S_(0,y+5,c-45,y+70,14); S_(W,y+5,c+45,y+70,14); BAR(c,y+112,32,(j%2?1:-1)*2.4); }]};
-      const con=CON[b.sty.conn];
-      while(true){ const isMain=n%2===0, m=isMain?main:MODS[extras[(n>>1)%3]](q); if(y+m.h>y1) { if(!isMain&&y+main.h<=y1){ main.f(y); y+=main.h; } break; } m.f(y); y+=m.h; n++;
+      const con=CON[cust&&CON[cust.conn]?cust.conn:b.sty.conn];
+      while(true){ const isMain=n%2===0, m=cust?MODS[MODS[cust.rows[n%cust.rows.length]]?cust.rows[n%cust.rows.length]:sig](q):isMain?main:MODS[extras[(n>>1)%3]](q); if(y+m.h>y1) { if(!cust&&!isMain&&y+main.h<=y1){ main.f(y); y+=main.h; } break; } m.f(y); y+=m.h; n++;
         if(con[0]&&y+con[0]+60<=y1){ con[1](y,n); y+=con[0]; }
         if(y+70<=y1&&n%2===1) q(); /* keeps the random sequence (machine sizes) as before */
         if(y+76<=y1&&n%2===1&&b.sty.conn!=="steps"&&b.sty.conn!=="spinfun"){ /* v69: moving fillers instead of static shapes, placed beside the stream so they never plug a gap */
@@ -627,7 +647,7 @@ function buildStage(L){
   return b;
 }
 /* ================= physics ================= */
-let balls=[], acc=new Array(20).fill(0), gt=0, earnWin=0, winStart=0, rateNow=0, chimeT=0, fever=0, avgNorm=3;
+let balls=[], acc=new Array(TYPES.length).fill(0), gt=0, earnWin=0, winStart=0, rateNow=0, chimeT=0, fever=0, avgNorm=3;
 const MAXB_ABS=5000;
 // measured: how many balls each stage holds while it still flows (×10, from a 30 balls/s stress test of every stage)
 const STAGE_CAP=[78,65,24,113,92,70,52,96,57,145,66,142,64,83,61,30,118,127,74,119,105,52,147,57,145,82,67,49,21,85,90,59,112,96,44,146,46,141,64,84,61,32,112,128,74,127,105,53,147,57,146,82,68,50,23,87,89,59,121,96,42,146,47,142,64,82,61,34,103,127,73,136,105,54,146,58,146,81,68,50,23,91,89,58,135,96,41,145,44,141,64,83,62,34,109,127,73,140,105,51,146,59,146,81,68,50,23,84,90,59,136,96,40,146,46,141,63,84,61,33,111,127,74,141,105,53,145,56,146,82,67,50,22,81,89,59,136,96,43,146,45,141,63,84,61,33,101,127,75,141];
@@ -639,7 +659,7 @@ const exitY=()=>OY[S.unlocked+1];
 const OFFS=[25,50,100,150,200,250,300], offCap=()=>4+OFFS.filter(x=>(S.best||1)>=x).length+R("off"); // offline hours: 4, +1 at stages 25, 50, 100 and 150
 function bossHit(L,d,sim){ const bw=WORLDS[worldOf(L)].boss, half=bossHp(L)/2, was=S.bossDmg[L]||0; S.bossDmg[L]=was+d*(1+0.25*R("siege"))*(bw[2]&&was>=half?0.5:1); /* second form: your hits count half */ if(bw[2]&&was<half&&S.bossDmg[L]>=half&&!sim&&typeof floatText==="function"){ floatText(bw[2]+" "+bw[1]+" changes form! Phase 2",innerWidth/2-120,150); buzz(60); } bossFx=0.25; if(S.bossDmg[L]>=bossHp(L)&&!bossDone(L)) bossWin(L,sim); }
 function bossWin(L,sim){ S.bossDone[L]=1; seaXP(150); const w=WORLDS[worldOf(L)], gain=Math.max(S.avg||0,rateNow||0,1)*60; pay(gain); let card=null, up=false;
-  S.ess=(S.ess||0)+(S.bossFirst[L]?1:3); S.food=(S.food||0)+(S.bossFirst[L]?2:5); if(!S.bossFirst[L]){ S.bossFirst[L]=1; [card,up]=drawCard(4); }
+  addEss((S.bossFirst[L]?1:3)); S.food=(S.food||0)+(S.bossFirst[L]?2:5); if(!S.bossFirst[L]){ S.bossFirst[L]=1; [card,up]=drawCard(4); }
   if(sim) return; buzz(80); if(S.sound) [392,523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.09,0.05),i*90)); save(true); uiList(true); uiTop();
   const nw=WORLDS[worldOf(L+1)], msg=`<div style="font-size:46px">${w.boss[0]}</div><h1>${w.boss[1]} defeated!</h1><p>Reward: <b style="color:#ffd400">${money(gain)}</b></p>${card?`<p style="margin-top:6px">Boss card: <b style="color:${RCOL[card.r]}">${card.ic} ${card.name}</b> <small style="color:${RCOL[card.r]}">${RAR[card.r]}</small>${up?` · level ${C(card.id)}!`:""}</p>`:""}${L<NST?`<p style="margin-top:6px">World ${worldOf(L)+2} ${nw.ic} <b>${nw.name}</b> is open – unlock stage ${L+1}.</p>`:""}<button class="btn" id="ok">Onwards</button>`;
   floatText("⚔️ "+w.boss[1]+" defeated! +"+money(gain),innerWidth/2-110,150); bigPop(msg); }
@@ -650,12 +670,12 @@ function tollHit(L,sim){ const t=S.toll[L]; t.n++; if(t.n>=tollNeed(L)){ S.tollD
 function startRes(i,quiet){ const r=RES[i]; if(!r||S.resCur||R(r.id)>=r.max) return false; const tot=resTime(R(r.id)); S.resCur={id:r.id,end:Date.now()+tot*1000,tot}; save(true); if(!quiet){ uiList(true); if(S.sound) tone(880,0.05,0.03); } return true; }
 function checkRes(){ const c=S.resCur; if(!c||Date.now()<c.end) return; S.res[c.id]=R(c.id)+1; S.resCur=null; const r=RES.find(x=>x.id===c.id); floatText("🔬 "+r.name+" Lv "+R(c.id)+" done!",innerWidth/2-90,190); if(S.sound) [659,988].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.04),i*90)); save(true); uiList(true); uiTop(); }
 const abyNeed=n=>Math.round(400*Math.pow(1.5,n));
-function abyHit(sim){ const a=S.aby; a.b++; if(a.b<abyNeed(a.n)) return; a.b-=abyNeed(a.n); a.n++; S.ess=(S.ess||0)+1; a.best=Math.max(a.best||0,a.n); if(sim) return;
+function abyHit(sim){ const a=S.aby; a.b++; if(a.b<abyNeed(a.n)) return; a.b-=abyNeed(a.n); a.n++; addEss(1); a.best=Math.max(a.best||0,a.n); if(sim) return;
   floatText("🕳️ Abyss depth "+a.n+" · all gates +"+(5*a.n)+"%",innerWidth/2-110,150); if(S.sound) [330,262,196].forEach((f,i)=>setTimeout(()=>tone(f,0.1,0.05),i*110)); save(true); }
 /* v76 pets: they live on one stage each and work on their own (no tapping); level them up with 🍖 food */
 const PETS=[{id:"owl",ic:"🦉",name:"Owl",need:25,d:l=>`Watches its stage: gates there ×${(1+0.25*l).toFixed(2)}`},{id:"bird",ic:"🐦",name:"Bird",need:50,d:l=>`Every ${Math.max(1,4-0.25*l).toFixed(2)} s it gilds a ball on its stage (value ×2 for the rest of the way)`},
   {id:"frog",ic:"🐸",name:"Frog",need:100,d:l=>`Every ${Math.max(5,22-1.5*l).toFixed(1)} s it turns a ball on its stage into a 👑 VIP`},{id:"dragon",ic:"🐉",name:"Dragon",need:150,d:l=>`Every 20 s it breathes fire on its stage: gates ×${3+0.5*l} for ${(3+0.3*l).toFixed(1)} s`}];
-const petLv=id=>(S.pets[id]&&S.pets[id].lv)||0, petL=id=>(S.pets[id]&&S.pets[id].L)||0, petCost=l=>2+3*l;
+const petLv=id=>(S.pets[id]&&S.pets[id].lv)||0, petL=id=>(S.pets[id]&&S.pets[id].L)||0, petCost=l=>Math.ceil((2+3*l)*(AE("ae7")?0.5:1));
 let owlL=0, owlM=1, petT={bird:0,frog:0,dragon:0}, petFx=[];
 function calcPets(){ owlL=petLv("owl")?petL("owl"):0; owlM=1+0.25*petLv("owl"); }
 function petTick(dt,sim){ for(const p of PETS){ const l=petLv(p.id), L=petL(p.id); if(!l||!L||L>S.unlocked||p.id==="owl") continue; petT[p.id]+=dt;
@@ -672,7 +692,7 @@ const dayN=()=>Math.floor((Date.now()-new Date().getTimezoneOffset()*60000)/8640
 const seaRwTxt=r=>r[0]==="food"?"🍖 "+r[1]+" food":r[0]==="ess"?"🧪 "+r[1]+" essence":r[0]==="card"?"🃏 "+RAR[r[1]]+"+ card":r[0]==="trail"?"💫 "+TRAILS[r[1]][0]+" trail":"🎨 "+SKINS[r[1]][1]+" skin";
 function seaCheck(){ const id=seaId(); if(!S.sea||S.sea.id!==id){ S.sea={id,xp:0,got:0}; } }
 function seaXP(n){ if(!S.sea) seaCheck(); S.sea.xp+=n; let msg=[]; while(S.sea.got<SEA_R.length&&S.sea.xp>=(S.sea.got+1)*SEA_XP){ const r=SEA_R[S.sea.got++]; 
-    if(r[0]==="food") S.food=(S.food||0)+r[1]; else if(r[0]==="ess") S.ess=(S.ess||0)+r[1]; else if(r[0]==="card"){ drawCard(r[1]); S.newCards++; } else if(r[0]==="trail"){ if(!S.cos.t.includes(r[1])) S.cos.t.push(r[1]); if(!S.trail) S.trail=r[1]; } else { if(!S.cos.s.includes(r[1])) S.cos.s.push(r[1]); if(!S.skin) S.skin=r[1]; }
+    if(r[0]==="food") S.food=(S.food||0)+r[1]; else if(r[0]==="ess") addEss(r[1]); else if(r[0]==="card"){ drawCard(r[1]); S.newCards++; } else if(r[0]==="trail"){ if(!S.cos.t.includes(r[1])) S.cos.t.push(r[1]); if(!S.trail) S.trail=r[1]; } else { if(!S.cos.s.includes(r[1])) S.cos.s.push(r[1]); if(!S.skin) S.skin=r[1]; }
     msg.push(seaRwTxt(r)); }
   if(msg.length&&typeof floatText==="function"){ floatText("🏅 Season tier "+S.sea.got+": "+msg.join(", "),innerWidth/2-130,200); if(S.sound) [659,880,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.06,0.04),i*80)); } }
 function showSeason(){ seaCheck(); const d=SEA_DAYS-(dayN()%SEA_DAYS), cur=S.sea.got, nx=Math.min(1,(S.sea.xp-cur*SEA_XP)/SEA_XP);
@@ -690,7 +710,7 @@ function evCheck(){ const wk=weekN(); if(!S.ev||S.ev.wk!==wk){ if(S.ev&&S.ev.sco
     const own=[]; for(let k=0;k<TYPES.length;k++) if(S.rate[k]) own.push(k); const w=wk%(worldOf(Math.max(1,S.best||1))+1);
     S.ev={wk,rule:EVK_[wk%EVK_.length],w,k:own.length?own[wk%own.length]:0,score:0,m:0,base:Math.max(100,(S.avg||0)*600*15/Math.max(15,S.unlocked||1))}; }
   evW=S.ev.w<=worldOf(S.unlocked)?S.ev.w:-1; evRule=evW>=0?S.ev.rule:"";
-  while(S.ev.m<MEDAL.length&&S.ev.score>=S.ev.base*MEDAL[S.ev.m][2]){ const md=MEDAL[S.ev.m++]; const lv=S.ev.m; S.food=(S.food||0)+[3,6,10,20][lv-1]; S.ess=(S.ess||0)+[1,2,3,5][lv-1]; if(lv>=3){ drawCard(lv===3?4:6); S.newCards++; } seaXP(200);
+  while(S.ev.m<MEDAL.length&&S.ev.score>=S.ev.base*MEDAL[S.ev.m][2]){ const md=MEDAL[S.ev.m++]; const lv=S.ev.m; S.medals=(S.medals||0)+1; S.food=(S.food||0)+[3,6,10,20][lv-1]; addEss([1,2,3,5][lv-1]); if(lv>=3){ drawCard(lv===3?4:6); S.newCards++; } seaXP(200);
     if(typeof floatText==="function") floatText("🎪 Event medal: "+md[0]+" "+md[1]+"!",innerWidth/2-90,180); if(S.sound) [523,784,1046].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*90)); save(true); } }
 const evGate=(b,sec)=>{ const r=S.ev.rule; return r==="rush"?(b.k===S.ev.k?5:1):r==="heavy"?2:r==="frenzy"?(sec===1?3:1):r==="spin"?1.5:1; };
 function showEvent(){ evCheck(); const e=S.ev, r=EVR[e.rule], wd=WORLDS[e.w], left=7-((dayN()+3)%7), best=S.evHist.reduce((a,h)=>Math.max(a,h.m||0),0);
@@ -722,7 +742,7 @@ function dqTick(){ histTick(); calcSets(); calcEvo(); calcPets(); seaCheck(); ev
   for(const x of q.q){ if(x.ok||!DQ[x.t]) continue; if(x.t==="vip") x.n=Math.max(0,(S.vipN||0)-x.b); else x.n+=add[x.t]||0;
     if(x.n>=x.g){ x.n=x.g; x.ok=1; got++; seaXP(100); S.newQ=(S.newQ||0)+1; const gain=Math.max(S.avg||0,rateNow||0,1)*600; S.coins+=gain; S.total+=gain;
       floatText(DQ[x.t][0]+" Quest done: "+DQ[x.t][1]+" · +"+money(gain),innerWidth/2-120,170); if(S.sound) [784,988].forEach((f,i)=>setTimeout(()=>tone(f,0.06,0.04),i*80)); } }
-  if(!q.all&&q.q.every(x=>x.ok)){ q.all=1; seaXP(200); S.ess=(S.ess||0)+2; S.food=(S.food||0)+5; S.dqStreak=S.dqLast===dqYest()?(S.dqStreak||0)+1:1; S.dqLast=q.d; S.dqDays=(S.dqDays||0)+1;
+  if(!q.all&&q.q.every(x=>x.ok)){ q.all=1; seaXP(200); addEss(2); S.food=(S.food||0)+5; S.dqStreak=S.dqLast===dqYest()?(S.dqStreak||0)+1:1; S.dqLast=q.d; S.dqDays=(S.dqDays||0)+1;
     const gain=Math.max(S.avg||0,rateNow||0,1)*1800; S.coins+=gain; S.total+=gain; /* quest rewards do not count as income ($/s) */ const [card,up]=drawCard(S.dqStreak>=3?4:3); S.newCards++; buzz(60);
     if(S.sound) [523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.08,0.05),i*90));
     bigPop(`<div style="font-size:46px">🎁</div><h1>Daily chest!</h1><p>All 3 quests done · streak <b style="color:#ff7a1a">${S.dqStreak} 🔥</b></p><p style="margin-top:6px">Reward: <b style="color:#ffd400">${money(gain)}</b></p><p style="margin-top:6px">Card: <b style="color:${RCOL[card.r]}">${card.ic} ${card.name}</b> <small style="color:${RCOL[card.r]}">${RAR[card.r]}</small>${up?` · level ${C(card.id)}!`:""}</p>${S.dqStreak<3?`<p style="margin-top:6px;font-size:12px;color:#9aa0aa">Finish all quests ${3-S.dqStreak} more day${S.dqStreak===2?"":"s"} in a row for Legendary+ chests.</p>`:""}<button class="btn" id="ok">Nice</button>`); got++; }
@@ -735,15 +755,15 @@ function checkHot(quiet){ const d=new Date().toDateString(); if(!S.hot||S.hot.d!
     if(!quiet&&typeof floatText==="function") setTimeout(()=>floatText("🔥 Hot stage "+(prev?"moved to ":"today: ")+S.hot.L+" · gates ×"+HOT_MULT,innerWidth/2-100,130),1500); }
   hotL=S.hot.L; }
 /* stats: money earned per stage and per ball type over the last minute (6 buckets of 10 s) */
-const SBK=6, stBk=[], tyBk=[]; for(let i=0;i<SBK;i++){ stBk.push(new Float64Array(NST+2)); tyBk.push(new Float64Array(20)); } let bkI=0, bkT=0, statT=0;
+const SBK=6, stBk=[], tyBk=[]; for(let i=0;i<SBK;i++){ stBk.push(new Float64Array(NST+2)); tyBk.push(new Float64Array(TYPES.length)); } let bkI=0, bkT=0, statT=0;
 function offShares(){ const st=[], ty=[]; let a=0, b=0; for(let L=1;L<=S.unlocked;L++){ let v=0; for(const x of stBk) v+=x[L]; st.push([L,v]); a+=v; } for(let k=0;k<TYPES.length;k++){ let v=0; for(const x of tyBk) v+=x[k]; if(v>0) ty.push([k,v]); b+=v; } if(!(a>0)||!(b>0)) return; st.sort((x,y)=>y[1]-x[1]); ty.sort((x,y)=>y[1]-x[1]); S.offSh={st:st.slice(0,3).map(([L,v])=>[L,v/a]),ty:ty.slice(0,3).map(([k,v])=>[k,v/b])}; }
 function statTick(dt){ bkT+=dt; statT=Math.min(60,statT+dt); if(bkT>=10){ bkT=0; if(statT>=30) offShares(); bkI=(bkI+1)%SBK; stBk[bkI].fill(0); tyBk[bkI].fill(0); } }
 // more balls than the unlocked stages can hold while flowing: the extra ones pay what an average ball earned on its way down
 /* spawn slots: every ball type has its own spot in two rows of 10 at the top of stage 1 */
-const slotX=k=>18+(k%10)*36, slotY=k=>52+Math.floor(k/10)*33;
+const slotX=k=>18+(k%10)*36, slotY=k=>52+Math.floor(k/10)*30;
 /* VIP balls: any ball type has a small chance to spawn as a gold-crowned VIP that pays ×10 */
 const VIP_CHANCE=0.006, VIP_PAY=10;
-function spawn(k,x,y){ const vip=Math.random()<VIP_CHANCE*(1+0.5*P("tap"))*(1+0.15*R("vip"))*(evRule==="vip"?3:1); if(vip) S.vipN=(S.vipN||0)+1; if(balls.length+tankN>=ballCap()){
+function spawn(k,x,y){ S.dropN=(S.dropN||0)+1; const vip=Math.random()<VIP_CHANCE*(1+0.5*P("tap"))*(1+0.15*R("vip"))*(evRule==="vip"?3:1); if(vip) S.vipN=(S.vipN||0)+1; if(balls.length+tankN>=ballCap()){
     /* board full: most new balls pay instantly, but a slow trickle (enough to refill the whole board every ~10 min) still drops at the top;
        for each of those, the ball that has waited longest in the most crowded stage (below stage 1) is cashed out – it pays what it would still have earned.
        Never the front-runners, so balls still reach every stage. */
@@ -810,7 +830,7 @@ function stageHits(b,L,sim){ if(L<1||L>NST) return; const s=getStage(L);
   for(const c of s.cups){ const dx=b.x-c.x, dy=b.y-c.y; const rr=c.w+c.h+20; if(dx*dx+dy*dy>rr*rr) continue; for(const e of cupEdges(c)) segHit(b,e,0.3,-dy*c.av,dx*c.av); }
   for(const sp of s.spins){ const dx=b.x-sp.x, dy=b.y-sp.y, R=sp.len+(sp.br||0)+b.r+8; if(dx*dx+dy*dy>R*R) continue; const ww=sp.ctl?sp.w:sp.w*SPM*(s.hv||1); if((sp.kind==="bar"||sp.kind==="seesaw")&&sp.hub) collide(b,sp.x,sp.y,5,0.3); if(sp.kind==="seesaw"&&ptSeg(b.x,b.y,spinEdges(sp)[0])<b.r+9){ if(b.x<sp.x) sp.cl++; else sp.cr++; } /* a small hub: no ball can balance on the pivot of a spinning bar */ for(const e of spinEdges(sp)) if(!e.nc) segHit(b,e,Math.min(0.95,0.4*em),-dy*ww,dx*ww);
     const bl=spinBalls(sp); if(bl) for(const [x,y] of bl) if(collide(b,x,y,sp.br,0.7,-(y-sp.y)*sp.w*SPM,(x-sp.x)*sp.w*SPM)&&!sim) tick(y-s.oy); } }
-let trickle=0; const mergeQ=[];
+let trickle=0, slowT=0, slowNext=20; const mergeQ=[];
 function step(dt,sim){ tankN=tankBalls(); statTick(dt);
   if(!wx&&gt>wxNext){ const w=Math.floor(Math.random()*(worldOf(S.unlocked)+1)), e=WX[w]; wx=Object.assign({w,end:gt+40,ic:e[0],name:e[1]},e[2]); if(!sim){ floatText(e[0]+" "+e[1]+" in "+WORLDS[w].ic+" "+WORLDS[w].name+"! Gates ×"+e[2].g,innerWidth/2-120,170); if(S.sound) [330,440].forEach((f,i)=>setTimeout(()=>tone(f,0.12,0.04),i*120)); } }
   if(wx&&gt>wx.end){ wx=null; wxNext=gt+150+Math.random()*150; }
@@ -831,7 +851,7 @@ function step(dt,sim){ tankN=tankBalls(); statTick(dt);
   for(let i=0;i<nb;i++){ const b=balls[i], c0=b.c, cx=c0%GW, cy=(c0/GW)|0;
     for(let gy=cy-1;gy<=cy+1;gy++){ if(gy<0||gy>=GH) continue; for(let gx=cx-1;gx<=cx+1;gx++){ if(gx<0||gx>=GW) continue;
       for(let j=gHead[gy*GW+gx];j!==-1;j=gNext[j]){ if(j<=i) continue; const o=balls[j]; const dx=o.x-b.x, dy=o.y-b.y, m=b.r+o.r, d2=dx*dx+dy*dy; if(d2>=m*m||d2===0) continue;
-        if(b.mz&&o.mz&&b.k===o.k&&!b.mg&&!o.mg&&b.k<TYPES.length-1){ b.mg=2; o.mg=3; mergeQ.push(i,j); }
+        if(b.mz&&o.mz&&b.k===o.k&&!b.mg&&!o.mg&&b.k<TYPES.length-1&&(b.k<19||S.rate[b.k+1]>0)){ b.mg=2; o.mg=3; mergeQ.push(i,j); }
         const d=Math.sqrt(d2), nx=dx/d, ny=dy/d, ov=(m-d)/2; b.x-=nx*ov; b.y-=ny*ov; o.x+=nx*ov; o.y+=ny*ov;
         const vn=(o.vx-b.vx)*nx+(o.vy-b.vy)*ny; if(vn<0){ const jj=-(it?1.0:1.3)*vn/2; b.vx-=jj*nx; b.vy-=jj*ny; o.vx+=jj*nx; o.vy+=jj*ny; } } } } }
   }
@@ -861,7 +881,7 @@ function step(dt,sim){ tankN=tankBalls(); statTick(dt);
       else if(s.mech==="magnet") for(const m of s.mags){ if(Math.sin(gt*2.1+m.ph)<0) continue; const dx=m.x-b.x, dy=m.y-b.y, d=Math.hypot(dx,dy); if(d>95||d<1) continue; const f=700*(1-d/95)*dt; b.vx+=dx/d*f-dy/d*f*0.5; b.vy+=dy/d*f+dx/d*f*0.5; }
       else if(s.mech==="portal"&&!(b.pc>gt)) for(const p of s.ports){ if(Math.abs(b.x-p.x)<14&&Math.abs(b.y-p.y)<14){ b.x=p.bx; b.y=p.by; b.vx*=0.5; b.vy=Math.max(40,b.vy*0.5); b.pc=gt+0.6; break; } } }
     // gates pay money when a ball passes them
-    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; b.cmb=sec===1?(b.cmb||0)+1:0; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1)*(s.mech==="chroma"&&b.k===chromaK()?3:1), cmb=1+0.1*Math.min(10,Math.max(0,b.cmb-1)); const ev=EVK[b.k], v=ballVal(b.k)*(b.vm||1)*cmb*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1)*(b.vip?VIP_PAY:1)*(L===hotL?HOT_MULT:1)*(ev==="ghost"?2:ev==="magnet"?1.5:1)*(s.fire>gt?s.fireM:1)*(L===owlL?owlM:1)*(evW>=0&&worldOf(L)===evW?evGate(b,sec):1); pay(v); if(evW>=0&&worldOf(L)===evW) S.ev.score+=v; if(ev==="split"&&Math.random()<0.05&&balls.length+tankN<ballCap()) balls.push(Object.assign({},b,{vx:-b.vx,x:b.x+(b.vx>0?-3:3)})); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(L===bossL) bossHit(L,b.vip?10:1,sim); mastHit(L,sim); dqG++; if(sec===1) dqM++; if(b.vip&&!sim&&Math.random()<0.3) pops.push({x:b.x,y:q.y-14,t:1,txt:"👑"+money(v)}); b.norm+=m;
+    for(const q of s.gates){ if(py<q.y&&b.y>=q.y){ const sec=b.x<q.x1?0:b.x<=q.x2?1:2; b.cmb=sec===1?(b.cmb||0)+1:0; const m=q.pat[sec]*(sec===1?lucky:1)*gateBoost(L)*(s.mech==="jackpot"?2:1)*(s.mech==="chroma"&&b.k===chromaK()?3:1), cmb=1+0.1*Math.min(10,Math.max(0,b.cmb-1)); const ev=EVK[b.k], v=ballVal(b.k)*(b.vm||1)*cmb*m*wm*(C("ff")&&Math.random()<0.02*C("ff")?10:1)*(b.vip?VIP_PAY:1)*(L===hotL?HOT_MULT:1)*(ev==="ghost"?2:ev==="magnet"?1.5:1)*(s.fire>gt?s.fireM:1)*(L===owlL?owlM:1)*(evW>=0&&worldOf(L)===evW?evGate(b,sec):1); pay(v); if(evW>=0&&worldOf(L)===evW) S.ev.score+=v; if(ev==="split"&&Math.random()<0.05&&balls.length+tankN<ballCap()) balls.push(Object.assign({},b,{vx:-b.vx,x:b.x+(b.vx>0?-3:3)})); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(L===bossL) bossHit(L,b.vip?10:1,sim); mastHit(L,sim); dqG++; if(sec===1) dqM++; if(b.vip&&!sim&&!S.eco&&gt>slowNext&&b.y>cam&&b.y<cam+viewH){ slowT=0.7; slowNext=gt+45; } if(b.vip&&!sim&&Math.random()<0.3) pops.push({x:b.x,y:q.y-14,t:1,txt:"👑"+money(v)}); b.norm+=m;
         q.lit=1; q.hit=sec; if(!sim&&Math.random()<0.05) pops.push({x:b.x,y:q.y-14,t:1,txt:money(v)}); } }
     for(const q of s.bins){ if(py<q.y&&b.y>=q.y){ let j=0; while(j<q.m.length-1&&b.x>=q.xs[j+1]) j++; const v=ballVal(b.k)*(b.vm||1)*wm*q.m[j]*0.25*(b.vip?VIP_PAY:1)*(1+0.2*R("gold"))*(evRule==="gold"&&worldOf(L)===evW?3:1); pay(v); stBk[bkI][L]+=v; tyBk[bkI][b.k]+=v; if(!sim&&Math.random()<0.06) pops.push({x:b.x,y:q.y-12,t:1,txt:"×"+q.m[j]+" "+money(v)}); } }
     if(sp<25) b.slow+=dt; else b.slow=0;
@@ -1034,7 +1054,8 @@ function drawWorldFx(fx){ if(!fx) return; ctx.save(); const n=16;
     else if(fx==="palace"){ const x=sx, y=y0+((ph*H+gt*18)%H); ctx.fillStyle="rgba(255,215,0,"+(0.25+0.3*Math.sin(gt*3+i))+")"; ctx.fillRect(x,y,2,2); } }
   ctx.restore(); }
 function render(){
-  ctx.setTransform(sc,0,0,sc,0,-cam*sc); ctx.fillStyle="#2e2624"; ctx.fillRect(0,cam,W,viewH);
+  const bsL=isBoss(S.unlocked)&&!bossDone(S.unlocked)?S.unlocked:0, shk=!S.eco&&bossFx>0&&bsL&&OY[bsL]<cam+viewH&&OY[bsL+1]>cam?(Math.random()-.5)*4*bossFx/0.25:0;
+  ctx.setTransform(sc,0,0,sc,shk*sc,(-cam+shk*0.6)*sc); ctx.fillStyle="#2e2624"; ctx.fillRect(-6,cam-6,W+12,viewH+12);
   const L0=stageAt(cam), L1=stageAt(cam+viewH), EY=exitY();
   for(let L=L0;L<=L1;L++){ const s=getStage(L), oy=s.oy, locked=L>S.unlocked;
     ctx.globalAlpha=locked?0.3:1; const st=s.sty, OB=st?st.pal[2]:"#141518", AC=st?st.pal[3]:"#3fd6e8";
@@ -1087,6 +1108,7 @@ function render(){
       ctx.font="800 11px system-ui"; ctx.textAlign="center";
       for(let i=0;i<3;i++){ const [a,c]=xs[i]; if(c-a<4) continue; const lit=q.lit>0&&q.hit===i; const jp=s.mech==="jackpot", fr=s.fire>gt; ctx.fillStyle=fr?(Math.sin(gt*20+i)>0?"#ff9a2a":"#ffcf3a"):jp?(lit?"#fff3a0":"#e0a800"):lit?"#ff7a63":"#d4483a"; ctx.fillRect(a,y0,c-a,hgt);
         if(c-a>40){ ctx.fillStyle=jp?"#2a1d00":"#fff"; ctx.fillText("x"+(q.pat[i]*(i===1?lucky:1)*gb*(jp?2:1)*(L===hotL?HOT_MULT:1)).toFixed(2),(a+c)/2,q.y+4); } }
+      if(q.lit>0&&!S.eco){ ctx.save(); ctx.globalAlpha=Math.min(0.5,q.lit*0.5); ctx.fillStyle=s.fire>gt?"#ffb020":"#ffd0a0"; ctx.fillRect(0,y0-6,W,hgt+12); ctx.restore(); }
       ctx.fillStyle=OB; ctx.fillRect(q.x1-3,y0-2,6,hgt+4); ctx.fillRect(q.x2-3,y0-2,6,hgt+4); }
     // tips (dark boxes like in the video)
     if(false) for(const t of s.tips){ ctx.font="700 11px system-ui"; const lines=wrapText(t.txt,150), bh=14*lines.length+14; ctx.fillStyle="rgba(24,25,30,.92)"; roundBox(W/2-88,t.y-bh/2,176,bh,8); ctx.fill(); ctx.fillStyle="#fff"; ctx.textAlign="center"; lines.forEach((ln,i)=>ctx.fillText(ln,W/2,t.y-bh/2+18+i*14)); }
@@ -1124,7 +1146,7 @@ function render(){
         else if(sk==="eye"){ ctx.moveTo(b.x+r*0.35,b.y); ctx.arc(b.x,b.y,r*0.35,0,Math.PI*2); }
         else if(sk==="gem"){ ctx.moveTo(b.x,b.y-r*0.5); ctx.lineTo(b.x+r*0.4,b.y); ctx.lineTo(b.x,b.y+r*0.5); ctx.lineTo(b.x-r*0.4,b.y); ctx.closePath(); } }
       if(sk==="ring"||sk==="spiral"){ ctx.beginPath(); for(const b of balls){ if(b.y<y0||b.y>y1) continue; const r=(b.r0||b.r); if(sk==="ring"){ ctx.moveTo(b.x+r*0.55,b.y); ctx.arc(b.x,b.y,r*0.55,0,Math.PI*2); } else { const a=gt*4+b.x; ctx.moveTo(b.x+Math.cos(a)*r*0.6,b.y+Math.sin(a)*r*0.6); ctx.arc(b.x,b.y,r*0.6,a,a+3.6); } } ctx.stroke(); } else ctx.fill(); }
-    if(cam<140){ ctx.lineWidth=2; for(let k=0;k<TYPES.length;k++){ const own=S.rate[k]>0, can=!own&&S.unlocked>=GATE[k]; ctx.globalAlpha=own?0.9:can?0.55:0.18; ctx.strokeStyle=own||can?(TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col):"#9aa0aa"; ctx.beginPath(); ctx.arc(slotX(k),slotY(k),own?6:5,0,Math.PI*2); ctx.stroke(); } ctx.globalAlpha=1; }
+    if(cam<140){ ctx.lineWidth=2; for(let k=0;k<TYPES.length;k++){ const own=S.rate[k]>0, can=!own&&canBall(k); ctx.globalAlpha=own?0.9:can?0.55:0.18; ctx.strokeStyle=own||can?(TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col):"#9aa0aa"; ctx.beginPath(); ctx.arc(slotX(k),slotY(k),own?6:5,0,Math.PI*2); ctx.stroke(); } ctx.globalAlpha=1; }
     PETS.forEach((p,pi)=>{ const L=petL(p.id); if(!petLv(p.id)||!L||L>S.unlocked) return; const py=OY[L]+170+pi*72+Math.sin(gt*2+pi)*6; if(py<y0-30||py>y1+30) return; ctx.font="30px system-ui"; ctx.textAlign="center"; ctx.fillText(p.ic,26,py); ctx.font="900 10px system-ui"; ctx.fillStyle="#ffd400"; ctx.fillText("Lv "+petLv(p.id),26,py+16); });
     for(const f of petFx){ f.t-=1/60; if(f.y===undefined) continue; ctx.globalAlpha=Math.max(0,f.t); ctx.font="18px system-ui"; ctx.textAlign="center"; ctx.fillText(f.ic,f.x,f.y-12-(0.8-f.t)*20); ctx.globalAlpha=1; } petFx=petFx.filter(f=>f.t>0); ctx.textAlign="left";
     if(!S.eco) for(let k=0;k<TYPES.length;k++){ const ev=EVK[k]; if(!ev||!S.rate[k]) continue; ctx.strokeStyle=ev==="fire"?"#ff7a2a":ev==="ice"?"#9fd8ff":ev==="ghost"?"rgba(255,255,255,.6)":ev==="magnet"?"#c06bff":"#ff7fd1"; ctx.lineWidth=2; ctx.setLineDash(ev==="ghost"?[3,3]:[]); ctx.beginPath(); for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; const rr=(b.r0||b.r)+1.5+(ev==="fire"?Math.sin(gt*20+b.x)*1:0); ctx.moveTo(b.x+rr,b.y); ctx.arc(b.x,b.y,rr,0,Math.PI*2); } ctx.stroke(); ctx.setLineDash([]); }
@@ -1149,7 +1171,7 @@ function uiList(force){
   if(S.tab==="balls"){ h+=`<div class="hd"><span>BALLS</span><span>VALUE</span><span>TIME</span></div>`;
     for(let k=0;k<TYPES.length;k++){ const t=TYPES[k];
       if(S.rate[k]>0){ h+=`<div class="row"><div class="dot" style="background:${t.col}"></div><div class="rt"><b>${money(ballVal(k))}</b><small>${(spawnTime(S.rate[k])/rateMult()).toFixed(2)} sec${S.bstar[k]?` · ✨${Math.min(S.bstar[k],BP_MAX)}/${BP_MAX} ×${fmt(S.bpm[k])}`:""}${msN(k)?` · 🎖️×${mx(msMult(k))}`:""}</small>${S.val[k]>=bpNeed(k)?`<button class="bp" data-bp="${k}">✨ PRESTIGE ×${bpGain(k).toFixed(1)}</button>`:""}${(S.bstar[k]||0)>=EVO_STARS?`<button class="bp" data-ev="${k}" style="background:#2a6a4a">${EVK[k]?EVOS[EVK[k]][0]+" "+EVOS[EVK[k]][1]:"🧬 EVOLVE"}</button>`:""}</div>${btn("v"+k,S.val[k],1e9,l=>costVal(k,l))}${btn("r"+k,S.rate[k],RMAX,l=>costRate(k,l))}</div>`; continue; }
-      if(S.unlocked<GATE[k]){ h+=`<div class="row"><div class="dot" style="background:#26272c"></div><div class="rt"><b style="color:#777">${t.name} ball</b><small>🔒 Unlock stage ${GATE[k]}</small></div></div>`; break; }
+      if(!canBall(k)){ h+=`<div class="row"><div class="dot" style="background:#26272c"></div><div class="rt"><b style="color:#777">${t.name} ball</b><small>🔒 ${S.unlocked<GATE[k]?"Unlock stage "+GATE[k]:"✴️ Transcend "+(k-19)+"×"}</small></div></div>`; break; }
       const c=costUnlock(k); h+=`<div class="row"><div class="dot" style="background:${t.col};opacity:.5"></div><div class="rt"><b>${t.name} ball</b><small>New ball · 6× value</small></div><button class="buy ${S.coins>=c?"ok":""}" data-b="u${k}" style="width:172px"><span>${money(c)}</span><em>UNLOCK</em></button></div>`; break; } }
   else if(S.tab==="shop"){ h+=`<div class="hd"><span>WORKSHOP · machine upgrades</span><span></span><span></span></div>`;
     WSHOP.forEach((u,i)=>{ const l=WS(u.id); h+=`<div class="row ws"><div class="dot wsi">${u.ic}</div><div class="rt"><b>${u.name}${l?` <small style="display:inline;color:#ffd400">Lv ${l}</small>`:""}</b><small>${l?u.d(l):"Next: "+u.d(1)}</small></div>${btn("w"+i,l,u.max,ll=>costWs(i,ll))}</div>`; });
@@ -1167,7 +1189,7 @@ $("list").addEventListener("click",e=>{ const rs=e.target.closest("[data-res]");
 function buy(id,quiet,one){
   const t=id[0], k=+id.slice(1); let n=0;
   const run=(get,set,max,cf)=>{ const [cnt,tot]=bulk(cf,get(),max,one||null); if(S.coins<tot) return; /* x10 only buys when all 10 are affordable */ for(let i=0;i<cnt;i++){ const l=get(); if(l>=max) break; const c=cf(l); if(S.coins<c) break; S.coins-=c; set(l+1); n++; } };
-  if(t==="u"){ const c=costUnlock(k); if(S.coins>=c&&S.unlocked>=GATE[k]&&!S.rate[k]){ S.coins-=c; S.rate[k]=1; n=1; } }
+  if(t==="u"){ const c=costUnlock(k); if(S.coins>=c&&canBall(k)&&!S.rate[k]){ S.coins-=c; S.rate[k]=1; n=1; } }
   if(t==="r") run(()=>S.rate[k],v=>S.rate[k]=v,RMAX,l=>costRate(k,l));
   if(t==="v"){ const m0=msN(k); run(()=>S.val[k],v=>S.val[k]=v,1e9,l=>costVal(k,l)); if(msN(k)>m0&&typeof floatText==="function") floatText("🎖️ "+TYPES[k].name+" Lv "+msN(k)*MS_STEP+" · value ×"+mx(msMult(k)),innerWidth/2-90,innerHeight-240); }
   if(t==="o"&&k<=S.unlocked){ const st=stOf(k); run(()=>st.o,v=>st.o=v,OMAX,l=>costObs(k,l)); if(n) rebuildStage(k); }
@@ -1203,7 +1225,9 @@ function uiTop(){ if(typeof syncAuto==='function') syncAuto();
   { const qb=$("questB"), q=S.dq; if(q&&q.q){ const k=q.q.filter(x=>x.ok).length; qb.firstChild.textContent=q.all?"🎁✓":"📜 "+k+"/"+q.q.length; qb.classList.toggle("done",!!q.all); } $("questN").style.display=S.newQ?"block":"none"; $("questN").textContent=S.newQ; } $("troN").style.display=S.newTro?"block":"none"; $("troN").textContent=S.newTro; $("cardN").style.display=S.newCards?"block":"none"; $("cardN").textContent=S.newCards; $("perkB").style.boxShadow=S.pendPerk?"0 0 0 2px #ffd400":"none"; }
 function popup(html,acts){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; L.querySelectorAll("button[id]").forEach(b=>b.onclick=()=>{ L.innerHTML=""; (acts&&acts[b.id]||(()=>{}))(); }); return L; }
 function floatText(t,x,y){ const d=document.createElement("div"); d.className="float"; d.textContent=t; d.style.left=x+"px"; d.style.top=y+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),1000); }
-function drawCard(minR){ const r0=minR||1; let tot=0; for(let r=r0;r<=RMAX_;r++) tot+=RCHANCE[r]; let roll=Math.random()*tot, rar=r0; for(let r=RMAX_;r>=r0;r--){ if(roll<RCHANCE[r]){ rar=r; break; } roll-=RCHANCE[r]; }
+function drawCard(minR){ let rar=pickRar(minR); if(AE("ae6")) rar=Math.max(rar,pickRar(minR)); return drawCardR(rar); }
+function pickRar(minR){ const r0=minR||1; let tot=0; for(let r=r0;r<=RMAX_;r++) tot+=RCHANCE[r]; let roll=Math.random()*tot, rar=r0; for(let r=RMAX_;r>=r0;r--){ if(roll<RCHANCE[r]){ rar=r; break; } roll-=RCHANCE[r]; } return rar; }
+function drawCardR(rar){
   const _=0, pool=CARDS.filter(c=>c.r===rar), c=pool[Math.floor(Math.random()*pool.length)];
   S.copies[c.id]=(S.copies[c.id]||0)+1; let up=false; while(S.copies[c.id]>=cardNeed(C(c.id)+1)&&C(c.id)<10){ S.copies[c.id]-=cardNeed(C(c.id)+1); S.cards[c.id]=C(c.id)+1; up=true; } dustUp(); calcSets(); return [c,up]; }
 const DUST_COST=5;
@@ -1232,11 +1256,18 @@ function resetRun(){ S.coins=0; S.unlocked=1; S.rate=[1].concat(Array(TYPES.leng
 function ascend(){ const g=ascGain(); if((S.pm||1)<ASC_MIN) return; S.stars=(S.stars||0)+g; S.asc=(S.asc||0)+1; S.pm=1; S.rebirths=0; resetRun(); buzz(120);
   if(S.sound) [262,392,523,659,784,1046,1318].forEach((f,i)=>setTimeout(()=>tone(f,0.1,0.05),i*90));
   popup(`<div style="font-size:44px">🌟</div><h1>Ascension ${S.asc}!</h1><p>You gained <b style="color:#ffd400">⭐ ${g} stars</b>. Spend them in the skill tree (☰ → Ascension).</p><button class="btn" id="ok">To the stars</button>`); }
+function transcend(){ if((S.asc||0)<TR_MIN) return; const g=trGain(); S.aether=(S.aether||0)+g; S.trans=(S.trans||0)+1; S.asc=0; S.stars=0; S.skills={}; S.pm=1; S.rebirths=0; resetRun(); buzz(150);
+  if(S.sound) [196,262,330,392,523,659,784,1046,1318,1568].forEach((f,i)=>setTimeout(()=>tone(f,0.12,0.05),i*80));
+  const nk=19+Math.min(10,S.trans); popup(`<div style="font-size:48px">✴️</div><h1>Transcendence ${S.trans}!</h1><p>You gained <b style="color:#e2c8ff">✴️ ${g} aether</b> – spend it in the aether tree (☰ → Ascension).</p>${S.trans<=10?`<p style="margin-top:6px">New ball colour: <b style="color:${TYPES[nk].col}">${TYPES[nk].name}</b> (from stage ${GATE[nk]})</p>`:""}<button class="btn" id="ok" style="background:#b86bff">Beyond</button>`); }
 function openAsc(){ const can=(S.pm||1)>=ASC_MIN;
   const L=popup(`<div style="font-size:38px">🌟</div><h1>Ascension</h1><p>Reset your rebirths (♻️×${mx(S.pm||1)}) for <b style="color:#ffd400">⭐ ${ascGain()}</b> stars (√ of your multiplier). Needs ♻️×${ASC_MIN}. Keeps perks, cards, trophies, research and the skill tree.</p>
     <button class="btn ${can?"":"g"}" id="asc" ${can?"":"disabled"}>🌟 Ascend → +⭐${ascGain()}</button>
+    ${(S.asc||0)>=TR_MIN||S.trans?`<div style="margin-top:10px;padding:10px;border-radius:12px;background:#2a2040;box-shadow:inset 0 0 0 1.5px #b86bff"><b style="color:#e2c8ff">✴️ Transcend</b><p style="font-size:12px;margin-top:4px">Resets ascensions, stars and the skill tree for <b style="color:#e2c8ff">✴️ ${trGain()} aether</b>. Each Transcend opens a new ball colour (${Math.min(10,S.trans||0)}/10). Needs ${TR_MIN} ascensions (you have ${S.asc||0}). Transcended ${S.trans||0}×.</p><button class="btn ${(S.asc||0)>=TR_MIN?"":"g"}" id="trs" ${(S.asc||0)>=TR_MIN?"":"disabled"} style="background:${(S.asc||0)>=TR_MIN?"#b86bff":""}">✴️ Transcend → +${trGain()}</button>
+      <p style="margin-top:8px;font-weight:900;color:#fff">Aether tree · ✴️ ${S.aether||0} to spend</p><div class="tros" style="max-height:none">${AETH.map(k=>{ const own=AE(k.id), open=!k.req||AE(k.req), afford=(S.aether||0)>=k.cost; return `<div class="tro ${own?"ok":""}" style="${k.req?"margin-left:18px":""}"><span class="pi">${own||open?k.ic:"🔒"}</span><span style="flex:1"><b>${k.name}</b><small>${k.d}</small></span>${own?"✔":`<button class="tg ${open&&afford?"on":""}" data-ae="${k.id}" ${open&&afford?"":"disabled"}>✴️${k.cost}</button>`}</div>`; }).join("")}</div></div>`:""}
     <p style="margin-top:10px;font-weight:900;color:#fff">Skill tree · ⭐ ${S.stars||0} to spend · ascended ${S.asc||0}×</p>
     <div class="tros">${SKILLS.map(k=>{ const own=SK(k.id), open=!k.req||SK(k.req), afford=(S.stars||0)>=k.cost; return `<div class="tro ${own?"ok":""}" style="${k.req?"margin-left:18px":""}"><span class="pi">${own?k.ic:open?k.ic:"🔒"}</span><span style="flex:1"><b>${k.name}</b><small>${k.d}${k.req&&!open?" · needs "+SKILLS.find(x=>x.id===k.req).name:""}</small></span>${own?"✔":`<button class="tg ${open&&afford?"on":""}" data-sk="${k.id}" ${open&&afford?"":"disabled"}>⭐${k.cost}</button>`}</div>`; }).join("")}</div><button class="btn" id="ok">Close</button>`,{asc:()=>popup(`<h1>Ascend?</h1><p>Rebirth multiplier ×${mx(S.pm)} and ${S.rebirths||0} rebirths go back to ×1 and 0, and the run restarts at stage 1. You get <b>⭐ ${ascGain()}</b>.</p><button class="btn" id="yes">🌟 Ascend</button><button class="btn g" id="no">Not yet</button>`,{yes:ascend})});
+  const tb=L.querySelector("#trs"); if(tb) tb.onclick=()=>popup(`<div style="font-size:40px">✴️</div><h1>Transcend?</h1><p>Ascensions, ⭐ stars and the skill tree reset (and your run, like an ascension). You get <b style="color:#e2c8ff">✴️ ${trGain()} aether</b> and the next new ball colour.</p><button class="btn" id="yes" style="background:#b86bff">✴️ Transcend</button><button class="btn g" id="no">Not yet</button>`,{yes:transcend});
+  L.querySelectorAll("[data-ae]").forEach(b=>b.onclick=()=>{ const k=AETH.find(x=>x.id===b.dataset.ae); if(!k||AE(k.id)||(k.req&&!AE(k.req))||(S.aether||0)<k.cost) return; S.aether-=k.cost; S.aesk[k.id]=1; calcSets(); save(true); buzz(30); if(S.sound) tone(1175,0.06,0.04); uiList(true); uiTop(); openAsc(); });
   L.querySelectorAll("[data-sk]").forEach(b=>b.onclick=()=>{ const k=SKILLS.find(x=>x.id===b.dataset.sk); if(!k||SK(k.id)||(k.req&&!SK(k.req))||(S.stars||0)<k.cost) return; S.stars-=k.cost; S.skills[k.id]=1; save(true); buzz(30); if(S.sound) tone(988,0.06,0.04); uiList(true); uiTop(); openAsc(); }); }
 function rebirth(){ S.pm=rebAfter(); S.rebirths=(S.rebirths||0)+1;
   S.coins=0; S.unlocked=1; S.rate=[1].concat(Array(TYPES.length-1).fill(0)); S.val=Array(TYPES.length).fill(1); S.st={}; S.avg=0; S.ws={}; S.bossDone={}; S.bossDmg={}; S.toll={}; S.tollDone={};
@@ -1256,6 +1287,16 @@ function showPets(){ const viewL=Math.min(S.unlocked,stageAt(cam+viewH/2));
   const L=popup(`<h1>Pets 🐾</h1><p>🍖 Food: <b style="color:#ffb020">${S.food||0}</b><br><small style="color:#9aa0aa">1 per 4,000 gate passes · bosses 5 (2 again) · daily chests 5</small></p>${PETS.map(p=>{ const l=petLv(p.id), ok=(S.best||1)>=p.need, c=petCost(l); return `<div class="perk" style="align-items:center;${ok?"":"opacity:.5"}"><span class="pi">${ok?p.ic:"🔒"}</span><span style="flex:1"><b>${p.name}${l?" Lv "+l:""}</b><small>${ok?p.d(Math.max(1,l)):"Reach stage "+p.need}</small>${l?`<small>Lives on stage <b>${petL(p.id)}</b></small>`:""}</span><span style="display:flex;flex-direction:column;gap:4px">${ok&&l<10?`<button class="btn ${(S.food||0)>=c?"":"g"}" data-pf="${p.id}" style="width:auto;margin:0;padding:6px 9px;font-size:12px" ${(S.food||0)>=c?"":"disabled"}>${l?"Lv up":"Adopt"} 🍖${c}</button>`:""}${l&&petL(p.id)!==viewL?`<button class="btn g" data-pm="${p.id}" style="width:auto;margin:0;padding:6px 9px;font-size:11px">Move to ${viewL}</button>`:""}</span></div>`; }).join("")}<p style="font-size:11px;color:#9aa0aa;margin-top:6px">Pets move to the stage in the middle of your screen. Max level 10.</p><button class="btn" id="ok">Close</button>`);
   L.querySelectorAll("[data-pf]").forEach(b=>b.onclick=()=>{ const id=b.dataset.pf, l=petLv(id), c=petCost(l); if((S.food||0)<c) return; S.food-=c; S.pets[id]={lv:l+1,L:petL(id)||viewL}; calcPets(); save(true); buzz(30); if(S.sound) tone(880,0.06,0.04); showPets(); });
   L.querySelectorAll("[data-pm]").forEach(b=>b.onclick=()=>{ const id=b.dataset.pm; S.pets[id].L=viewL; calcPets(); save(true); showPets(); }); }
+/* v78 stage builder: turn one stage you own (11+) into your own: pick the machine for every row (any machine you have reached) and the connector */
+function knownMachines(){ const o=[]; for(let L=11;L<=Math.min(NST,S.best||1);L++){ const g=sigOf(L); if(!o.includes(g)) o.push(g); } for(const m of MODLIST) if(!FUNNELS.includes(m)&&(S.best||1)>=11&&!o.includes(m)) o.push(m); return o; }
+function showBuilder(){ const viewL=Math.max(11,Math.min(S.unlocked,stageAt(cam+viewH/2))), ms=knownMachines(), c=S.cust&&S.cust.L===viewL?S.cust:{L:viewL,rows:[sigOf(viewL),"","",""],conn:styleOf(viewL).conn};
+  if(S.unlocked<11){ popup(`<h1>🏗️ Stage builder</h1><p>Unlock stage 11 to build your own stage.</p><button class="btn" id="ok">OK</button>`); return; }
+  const sel=(i,v)=>`<select data-row="${i}" style="width:100%;padding:8px;border-radius:9px;background:#1d1e22;color:#fff;border:1px solid #444;margin-top:5px"><option value="">${i?"– (repeat) –":"choose"}</option>${ms.map(m=>`<option value="${m}" ${m===v?"selected":""}>${MODNAME[m]||m}</option>`).join("")}</select>`;
+  const L=popup(`<h1>🏗️ Stage builder</h1><p>Rebuild <b>stage ${viewL}</b> (the one in the middle of your screen) with your own machines. Its gates pay like any stage. Tip: many narrow machines in a row (sluices, pistons, spirals) make balls queue. ${S.cust?`Your current stage: <b>${S.cust.L}</b>.`:""}</p>${[0,1,2,3].map(i=>`<p style="text-align:left;margin-top:8px;font-size:12px;color:#9aa0aa">Row ${i+1}</p>`+sel(i,c.rows[i])).join("")}
+    <p style="text-align:left;margin-top:8px;font-size:12px;color:#9aa0aa">Connector</p><select id="bconn" style="width:100%;padding:8px;border-radius:9px;background:#1d1e22;color:#fff;border:1px solid #444">${CONNS.map(k=>`<option value="${k}" ${k===c.conn?"selected":""}>${{zig:"Zig-zag",funnel:"Neck funnels",split:"Split roof",belts:"Belts",steps:"Steps",spinfun:"Funnel + spinner"}[k]||k}</option>`).join("")}</select>
+    <button class="btn" id="bsave">🏗️ Build stage ${viewL}</button>${S.cust?`<button class="btn g" id="breset">Restore stage ${S.cust.L}</button>`:""}<button class="btn g" id="ok">Close</button>`);
+  L.querySelector("#bsave").onclick=()=>{ const rows=[...L.querySelectorAll("[data-row]")].map(x=>x.value).filter(Boolean); if(!rows.length) return; const old=S.cust&&S.cust.L; S.cust={L:viewL,rows,conn:L.querySelector("#bconn").value}; S.built=1; if(old&&old!==viewL) rebuildStage(old); rebuildStage(viewL); save(true); uiList(true); L.innerHTML=""; floatText("🏗️ Stage "+viewL+" rebuilt!",innerWidth/2-70,innerHeight/2); };
+  const rb=L.querySelector("#breset"); if(rb) rb.onclick=()=>{ const old=S.cust.L; S.cust=null; rebuildStage(old); save(true); uiList(true); L.innerHTML=""; }; }
 function ballPrestige(k){ if(S.val[k]<bpNeed(k)) return; const g=bpGain(k), t=TYPES[k];
   popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> and time level <b>${S.rate[k]}</b> go back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p><p style="margin-top:6px;font-size:12px;color:#ffb3a8">Its upgrades get ×5 pricier and climb faster after this prestige.</p>
     <p style="margin-top:8px;font-size:15px">×${fmt(S.bpm[k])} → <b style="color:#c9b6ff">×${fmt(S.bpm[k]*g)}</b></p><p style="margin-top:6px;font-size:12px;color:#9aa0aa">${(S.bstar[k]||0)+1<BP_MAX?`Prestige ${(S.bstar[k]||0)+1} of ${BP_MAX} · the next one needs level ${BP_REQ[(S.bstar[k]||0)+1]}`:`This is the last prestige for this ball (${BP_MAX}/${BP_MAX})`}. Survives rebirths.</p>
@@ -1265,8 +1306,9 @@ $("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.aut
 let autoT=0;
 // AUTO: buys the cheapest thing (upgrade or next stage) as soon as it is affordable – no cooldown
 /* smart AUTO: estimates how much income an upgrade adds from the last minute of stats (ball types + stages) */
-function autoShares(){ const st=new Float64Array(NST+2), ty=new Float64Array(20); let tot=0; for(const a of stBk) for(let L=1;L<=S.unlocked;L++){ st[L]+=a[L]; tot+=a[L]; } for(const a of tyBk) for(let k=0;k<20;k++) ty[k]+=a[k]; if(!(tot>0)) return null; for(let L=1;L<=S.unlocked;L++) st[L]/=tot; let tt=0; for(let k=0;k<20;k++) tt+=ty[k]; if(tt>0) for(let k=0;k<20;k++) ty[k]/=tt; return {st,ty}; }
-function autoGain(id,sh){ if(id==="next") return 1; const t=id[0], k=+id.slice(1);
+function autoShares(){ const st=new Float64Array(NST+2), ty=new Float64Array(TYPES.length); let tot=0; for(const a of stBk) for(let L=1;L<=S.unlocked;L++){ st[L]+=a[L]; tot+=a[L]; } for(const a of tyBk) for(let k=0;k<TYPES.length;k++) ty[k]+=a[k]; if(!(tot>0)) return null; for(let L=1;L<=S.unlocked;L++) st[L]/=tot; let tt=0; for(let k=0;k<TYPES.length;k++) tt+=ty[k]; if(tt>0) for(let k=0;k<TYPES.length;k++) ty[k]/=tt; return {st,ty}; }
+function autoGain(id,sh){ const g0=autoGain0(id,sh), t=id[0], P_=S.autoP; return P_==="stage"?g0*(t==="g"||t==="o"||t==="w"?3:t==="v"||t==="r"?0.5:1):P_==="ball"?g0*(t==="v"||t==="r"||t==="u"?3:t==="g"||t==="o"?0.5:1):g0; }
+function autoGain0(id,sh){ if(id==="next") return 1; const t=id[0], k=+id.slice(1);
   if(t==="u") return 1; if(t==="v"){ const l=S.val[k]; return (sh.ty[k]||0.001)*(0.2+((l+1)%MS_STEP===0&&msN(k)<MS_MAX?0.5:0)); }
   if(t==="r"){ const r=S.rate[k]; return (sh.ty[k]||0.001)*(spawnTime(r)/spawnTime(r+1)-1); }
   if(t==="g") return (sh.st[k]||0.0005)*0.25/(1+0.25*stOf(k).g); if(t==="o") return (sh.st[k]||0.0005)*0.03+0.0005; return 0.005; }
@@ -1309,12 +1351,14 @@ $("questB").onclick=()=>showQuests(); $("seaB").onclick=()=>showSeason(); $("evB
 $("ballCount").onclick=()=>popup(`<div style="font-size:36px">⚡</div><h1>Ball limit</h1><p>The board holds up to <b>${ballCap().toLocaleString("de-DE")}</b> balls – as many as your phone moves smoothly (it adjusts itself). When it's full, most new balls pay their value <b>instantly</b> (⚡) and a slow trickle keeps dropping at the top, so you lose nothing.</p><p style="margin-top:8px">Tip: 🧱 shrinking obstacles in the STAGES tab makes balls flow faster, so more of them fit on the board.</p><button class="btn" id="ok">OK</button>`);
 function openMenu(){ const L=$("layer");
   L.innerHTML=`<div class="menu"><div class="sh"><h2>Zen Drop</h2><p style="color:#9aa0aa;font-size:12px;margin-top:4px">${NST} stages stacked on top of each other. Balls fall through every stage you own – scroll the board to see them all. Unlock the next stage with money.</p>
-    <div class="srow"><span>🎵 Lo-fi music</span><button class="tg ${S.music?"on":""}" id="tm">${S.music?"On":"Off"}</button></div>
+    <div class="srow"><span>🎵 Music</span><button class="tg ${S.music?"on":""}" id="tm">${S.music?"On":"Off"}</button></div>
     <div class="srow"><span>🔔 Sounds</span><button class="tg ${S.sound?"on":""}" id="ts">${S.sound?"On":"Off"}</button></div>
     <div class="srow"><span>📳 Vibration</span><button class="tg ${S.haptic?"on":""}" id="th">${S.haptic?"On":"Off"}</button></div>
     <div class="srow"><span>🔋 Power saving<br><small style="color:#9aa0aa;font-size:11px">30 fps, lower resolution, simpler graphics</small></span><button class="tg ${S.eco?"on":""}" id="teco">${S.eco?"On":"Off"}</button></div>
     <div class="srow"><span>ℹ️ How to play</span><button class="tg" id="info">Open</button></div>
     <div class="srow"><span>📊 Stats</span><button class="tg" id="stats">Open</button></div>
+    <div class="srow"><span>🏗️ Stage builder<br><small style="color:#9aa0aa;font-size:11px">build your own stage from your machines</small></span><button class="tg on" id="bld">Open</button></div>
+    <div class="srow"><span>🤖 AUTO profile<br><small style="color:#9aa0aa;font-size:11px">what AUTO prefers to buy</small></span><span style="display:flex;gap:4px">${[["stage","Stages"],["bal","Balanced"],["ball","Balls"]].map(([k,n])=>`<button class="tg ${S.autoP===k?"on":""}" data-ap="${k}">${n}</button>`).join("")}</span></div>
     <div class="srow"><span>🌟 Ascension &amp; skill tree<br><small style="color:#9aa0aa;font-size:11px">${(S.pm||1)>=ASC_MIN?"ready: +⭐"+ascGain():"needs ♻️×"+ASC_MIN} · ⭐ ${S.stars||0} to spend</small></span><button class="tg ${(S.pm||1)>=ASC_MIN||S.stars?"on":""}" id="ascB">Open</button></div>
     <div class="srow"><span>🌙 Offline earnings<br><small style="color:#9aa0aa;font-size:11px">${OFFS.some(x=>(S.best||1)<x)?"+1h at stage "+OFFS.find(x=>(S.best||1)<x):"maximum reached"}</small></span><b>up to ${offCap()}h</b></div>
     <div class="srow"><span>Total earned</span><b>${money(S.total)}</b></div>
@@ -1325,7 +1369,7 @@ function openMenu(){ const L=$("layer");
   const q=s=>L.querySelector(s);
   q("#cl").onclick=()=>{ L.innerHTML=""; };
   q("#info").onclick=()=>popup(`<h1>ℹ️ How to play</h1>${TIPS.map(t=>`<p style="text-align:left;margin-top:10px">• ${t[2]}</p>`).join("")}<p style="text-align:left;margin-top:10px">• ♻️ Rebirth (from stage ${REB_MIN}): back to stage 1, and you add +1 at stage 10 and +0.5 more for every stage beyond (bonuses add up) – the further you got, the bigger.</p><p style="text-align:left;margin-top:10px">• ✨ Ball prestige (value level 50+): reset one ball's value for a permanent multiplier on it.</p><p style="text-align:left;margin-top:10px">• ⚡ When the board is full, most new balls pay instantly and a slow trickle keeps dropping at the top. The ♻️ button pulses when a rebirth would raise your multiplier by 50% or more.</p><p style="text-align:left;margin-top:10px">• 🌍 10 worlds × 15 stages, each with its own effect, look and music key. The last stage of every world has a ⚔️ boss: every ball through its gates hits it – beat it to open the next world (+1 minute of income, first time also a Legendary-or-better card).</p><p style="text-align:left;margin-top:10px">• 2.0 machines on stages ending in 2 or 8: 🎯 Plinko Board (bins ×1–×5), ✨ Merge Lab (two balls of one colour fuse into the next colour), ⚖️ Seesaws, 🎨 Colour Sorter (lanes by colour with multipliers), 🌀 Vortex, 🐚 Spiral Ramp, 🕹️ Flipper Alley, 🛗 Paternoster.</p><p style="text-align:left;margin-top:10px">• 🔬 Research lab (🔧 SHOP tab): one research at a time on a real timer, also while the app is closed. Permanent.</p><p style="text-align:left;margin-top:10px">• 🌟 Ascension (☰ menu, from ♻️×25): reset your rebirths for ⭐ stars and buy skills in a permanent tree.</p><p style="text-align:left;margin-top:10px">• ⛈️ Weather: every few minutes one of your worlds gets a 40-second event with bigger gates.</p><p style="text-align:left;margin-top:10px">• 🎟️ Toll stages (23, 38, 53 …): send N balls of one colour to the end to open the next stage. ⛓️ Heavy machines (26, 41, 56 …) crawl until a ball reaches the shown value level – then they run and pay ×1.5.</p><p style="text-align:left;margin-top:10px">• 🔥 Gate combo: a ball that hits the middle of gates in a row pays ×1.1, ×1.2 … up to ×2 (gold trail).</p><p style="text-align:left;margin-top:10px">• 🔧 WORKSHOP tab: machine upgrades (faster spinners, slick ramps, wider buckets, quicker cups, longer hatches, wider sweet spot).</p><p style="text-align:left;margin-top:10px">• The bar on the right edge is a map of your tower – drag it to fly anywhere. Red = pile-up, orange = hot stage.</p><p style="text-align:left;margin-top:10px">• 🔥 Every day one of your stages is the hot stage: its gates pay ×5 until midnight.</p><p style="text-align:left;margin-top:10px">• ✨ Copies of level-10 cards become card dust – 5 dust buys an Epic-or-better card.</p><p style="text-align:left;margin-top:10px">• 🎡 Ferris Wheel stages (15, 25, 35 …): buckets on a slow wheel catch balls at the top and pour them out.</p><p style="text-align:left;margin-top:10px">• 🏆 Trophies are earned automatically for milestones; each one adds +4% to all ball values forever.</p><p style="text-align:left;margin-top:10px">• Shrink makes a stage's obstacles smaller so balls flow faster.</p><button class="btn" id="ok">Got it</button>`);
-  q("#stats").onclick=showStats; q("#ascB").onclick=openAsc;
+  q("#stats").onclick=showStats; q("#ascB").onclick=openAsc; q("#bld").onclick=showBuilder; L.querySelectorAll("[data-ap]").forEach(b=>b.onclick=()=>{ S.autoP=b.dataset.ap; save(true); openMenu(); });
   q("#tm").onclick=()=>{ S.music=!S.music; syncMusic(); save(true); uiTop(); openMenu(); };
   q("#ts").onclick=()=>{ S.sound=!S.sound; save(true); uiTop(); openMenu(); };
   q("#th").onclick=()=>{ S.haptic=!S.haptic; save(true); if(S.haptic) buzz(); openMenu(); };
@@ -1333,7 +1377,7 @@ function openMenu(){ const L=$("layer");
   q("#upd")&&(q("#upd").onclick=()=>{ try{ NATIVE.checkUpdates(); }catch(e){} });
   q("#inst")&&(q("#inst").onclick=()=>{ try{ NATIVE.installApk(); }catch(e){} });
   q("#rst").onclick=()=>popup(`<h1>Start over?</h1><p>Money, upgrades, stages, perks and cards are reset.</p><button class="btn" id="yes">Yes, start over</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ const keep={sound:S.sound,music:S.music,haptic:S.haptic,seen:1}; S=Object.assign(fresh(),keep); trN=0; checkHot(true); balls=[]; STG.length=1; getStage(1); goTo(1); uiList(true); uiTop(); save(true); }}); }
-function showStats(){ const T=Math.max(1,statT), st=new Float64Array(NST+2), ty=new Float64Array(20); for(const a of stBk) for(let L=1;L<=NST;L++) st[L]+=a[L]; for(const a of tyBk) for(let k=0;k<20;k++) ty[k]+=a[k];
+function showStats(){ const T=Math.max(1,statT), st=new Float64Array(NST+2), ty=new Float64Array(TYPES.length); for(const a of stBk) for(let L=1;L<=NST;L++) st[L]+=a[L]; for(const a of tyBk) for(let k=0;k<TYPES.length;k++) ty[k]+=a[k];
   const tot=st.reduce((x,y)=>x+y,0)/T, top=[]; for(let L=1;L<=S.unlocked;L++) top.push([L,st[L]/T]); top.sort((a,b)=>b[1]-a[1]); const mxS=(top[0]&&top[0][1])||1;
   const tys=[]; for(let k=0;k<TYPES.length;k++) if(S.rate[k]) tys.push([k,ty[k]/T]); tys.sort((a,b)=>b[1]-a[1]); const mxT=(tys[0]&&tys[0][1])||1;
   const bar=(name,v,mx,col)=>`<div class="sbar"><span class="n">${name}</span><i><u style="width:${Math.round(100*v/mx)}%;background:${col}"></u></i><b>${money(v)}/s</b></div>`;
@@ -1341,7 +1385,8 @@ function showStats(){ const T=Math.max(1,statT), st=new Float64Array(NST+2), ty=
     ${top.length&&top[0][1]>0?`<p style="margin-top:6px">Best stage: <b>${top[0][0]} · ${stageName(top[0][0])}</b> (${Math.round(100*top[0][1]/Math.max(tot,1e-9))}%)</p>`:""}
     <p style="margin-top:10px;text-align:left;font-weight:800;color:#fff">Top stages</p>${top.slice(0,8).map(([L,v])=>bar((L===hotL?"🔥":"")+L+" · "+stageName(L),v,mxS,L===hotL?"#ff7a1a":"#ffb020")).join("")}
     <p style="margin-top:10px;text-align:left;font-weight:800;color:#fff">Ball types</p>${tys.slice(0,8).map(([k,v])=>bar(TYPES[k].name,v,mxT,TYPES[k].col)).join("")}
-    ${histSvg()}${S.aby.best?`<p style="margin-top:8px">🕳️ Abyss depth <b>${S.aby.n}</b> · all gates +${5*S.aby.n}%</p>`:""}<p style="margin-top:10px;font-size:11px;color:#9aa0aa">Tip: upgrade the gates of your top stages first. Tap a stage in the STAGES list to jump there.</p><button class="btn" id="ok">Close</button>`); }
+    ${histSvg()}<p style="margin-top:10px;text-align:left;font-weight:800;color:#fff">Lifetime</p>${[["⏱️ Time played",fmtT(S.playT||0)],["💵 Total earned",money(S.total)],["⚪ Balls dropped",fmt(S.dropN||0)],["🚪 Gate passes",fmt(Object.values(S.mast).reduce((a,b)=>a+b,0))],["👑 VIP balls",fmt(S.vipN||0)],["⚔️ Bosses beaten",Object.keys(S.bossFirst).length],["♻️ Rebirths · 🌟 Ascensions · ✴️ Transcends",(S.rebirths||0)+" · "+(S.asc||0)+" · "+(S.trans||0)],["🕳️ Abyss record",(S.aby&&S.aby.best)||0],["🏅 Event medals",S.medals||0]].map(([a,b])=>`<div class="sbar"><span class="n">${a}</span><b>${b}</b></div>`).join("")}
+    <p style="margin-top:10px;text-align:left;font-weight:800;color:#fff">Ball family</p>${TYPES.map((t,k)=>S.rate[k]||(S.bstar[k]||0)?`<div class="sbar"><span class="n"><b style="color:${t.col}">●</b> ${t.name}</span><b>Lv ${S.val[k]} · ✨${Math.min(BP_MAX,S.bstar[k]||0)}${EVK[k]?" · "+EVOS[EVK[k]][0]:""}</b></div>`:"").join("")}${S.aby.best?`<p style="margin-top:8px">🕳️ Abyss depth <b>${S.aby.n}</b> · all gates +${5*S.aby.n}%</p>`:""}<p style="margin-top:10px;font-size:11px;color:#9aa0aa">Tip: upgrade the gates of your top stages first. Tap a stage in the STAGES list to jump there.</p><button class="btn" id="ok">Close</button>`); }
 let apkUpdate=null;
 window.ascendApkUpdate=v=>{ apkUpdate=v; floatText("📦 Update ready – see ☰",innerWidth/2-90,90); };
 window.ascendToast=m=>floatText(m,innerWidth/2-80,90);
@@ -1373,14 +1418,14 @@ function tunePerf(dt,work){ if(dt>0.004&&dt<0.04) refI=Math.min(refI*1.002,dt); 
   else if(workA<target*0.7&&n>cap*0.9) S.perfCap=Math.min(100000,Math.round(cap*1.06)); }
 let ecoSkip=false, trT=0;
 function frame(t){ if(S.eco){ ecoSkip=!ecoSkip; if(ecoSkip){ requestAnimationFrame(frame); return; } } /* power saving: ~30 fps, fewer physics steps, 1× resolution, no background patterns */
-  const dt=Math.min(0.05,(t-lastT)/1000); lastT=t; const w0=performance.now(); const n=S.eco?2:(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); if(!document.hidden) tunePerf(dt,performance.now()-w0); uiT+=dt; if(uiT>0.25){ uiT=0; if(popQ.length&&!document.querySelector(".pop")) popup(popQ.shift()); if(!document.hidden) drawMini(); trT=(trT||0)+1; if(trT>=4){ trT=0; checkTrophies(); checkHot(); checkRes(); dqTick(); if(S.auto&&!S.resCur){ let bi=-1, bt=1e18; RES.forEach((r,i)=>{ const l=R(r.id); if(l<r.max&&resTime(l)<bt){ bt=resTime(l); bi=i; } }); if(bi>=0) startRes(bi,true); } if(S.tab==="shop") uiList(true); } uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
+  const dt0=Math.min(0.05,(t-lastT)/1000), dt=slowT>0?dt0*0.3:dt0; if(slowT>0) slowT-=dt0; lastT=t; S.playT=(S.playT||0)+dt0; const w0=performance.now(); const n=S.eco?2:(balls.length>2000?2:3)+(dt>0.025?1:0); for(let i=0;i<n;i++) step(dt/n); autoBuy(dt); render(); if(!document.hidden) tunePerf(dt0,performance.now()-w0); uiT+=dt; if(uiT>0.25){ uiT=0; if(popQ.length&&!document.querySelector(".pop")) popup(popQ.shift()); if(!document.hidden) drawMini(); trT=(trT||0)+1; if(trT>=4){ trT=0; checkTrophies(); checkHot(); checkRes(); dqTick(); if(S.auto&&!S.resCur){ let bi=-1, bt=1e18; RES.forEach((r,i)=>{ const l=R(r.id); if(l<r.max&&resTime(l)<bt){ bt=resTime(l); bi=i; } }); if(bi>=0) startRes(bi,true); } if(S.tab==="shop") uiList(true); } uiTop(); uiList(); save(); } requestAnimationFrame(frame); }
 requestAnimationFrame(frame);
 /* test hooks */
-const simOpts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(S.unlocked>=GATE[k]) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); }
+const simOpts=()=>{ const o=[]; for(let k=0;k<TYPES.length;k++){ if(!S.rate[k]){ if(canBall(k)) o.push(["u"+k,costUnlock(k)]); break; } if(S.rate[k]<RMAX) o.push(["r"+k,costRate(k,S.rate[k])]); o.push(["v"+k,costVal(k,S.val[k])]); }
   for(let L=1;L<=S.unlocked;L++){ const st=stOf(L); if(st.o<OMAX) o.push(["o"+L,costObs(L,st.o)]); if(st.g<GMAX) o.push(["g"+L,costGate(L,st.g)]); }
   WSHOP.forEach((u,i)=>{ const l=WS(u.id); if(l<u.max) o.push(["w"+i,costWs(i,l)]); }); return o; };
 function simBuy(){ for(let q=0;q<40;q++){ const o=simOpts().sort((a,b)=>a[1]-b[1])[0]; if(o&&S.coins>=o[1]) buy(o[0],true); else break; } }
-window.__z={showSeason,showEvent,seaXP,evCheck,showPets,showEvo,petTick,calcPets,calcEvo,dqTick,dqNew,autoBuy,calcSets,histTick,offShares,get SETB(){return SETB;},step,getStage,OY,stageAt,setCam:y=>{ cam=y; camV=0; clampCam(); },unlockNext,goTo,MUSIC,get S(){return S;},get STG(){return STG;},get hotL(){return hotL;},checkHot,showStats,drawCard,get balls(){return balls;},get PRICES(){return PRICES;},setPrices:a=>{ PRICES=a; },
+window.__z={showBuilder,transcend,openAsc,canBall,showSeason,showEvent,seaXP,evCheck,showPets,showEvo,petTick,calcPets,calcEvo,dqTick,dqNew,autoBuy,calcSets,histTick,offShares,get SETB(){return SETB;},step,getStage,OY,stageAt,setCam:y=>{ cam=y; camV=0; clampCam(); },unlockNext,goTo,MUSIC,get S(){return S;},get STG(){return STG;},get hotL(){return hotL;},checkHot,showStats,drawCard,get balls(){return balls;},get PRICES(){return PRICES;},setPrices:a=>{ PRICES=a; },
   // calibration: let a greedy player run tgt(L) seconds on L stages, the money earned becomes the price of stage L+1
   calib(N,tgt){ const dt=1/120, out=[0,150]; PRICES=PRICES.map((p,i)=>i<2?p:1e300); const m=S.mode; S.mode="1"; const t0=performance.now();
     for(let L=1;L<N;L++){ const T=tgt(L), c0=S.total; for(let t=0;t<T;t+=dt){ step(dt,true); if(((t*120)|0)%30===0) simBuy(); if(L===1&&S.coins>=150&&S.unlocked===1){} }
