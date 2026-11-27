@@ -1,7 +1,7 @@
 {
-  "web": 79,
+  "web": 80,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Prestiged balls are much harder to level: each ✨ star makes value upgrades ×1000 pricier, grow steeper, and the extra-hard zone starts 15 levels earlier"
+  "notes": "⚡ Ball limit setting in ☰: Auto (adjusts to your phone, as before) or a fixed 1.5k / 3k / 5k"
 }
