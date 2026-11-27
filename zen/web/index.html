@@ -93,7 +93,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 72; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 73; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -789,10 +789,14 @@ const MUSIC=(()=>{ let on=false, mg=null, rv=null, dry=null, timer=null, nextT=0
     {name:"Glass Citadel",bpm:96,root:53,minor:0,prog:[3,0,4,5],seed:59},{name:"Northwind March",bpm:112,root:47,minor:1,prog:[5,6,0,0],seed:67},
     {name:"Heart of the Storm",bpm:120,root:50,minor:1,prog:[0,5,3,4],seed:73},{name:"Golden Dawn",bpm:88,root:55,minor:0,prog:[5,3,0,4],seed:89},
     {name:"Starfall Requiem",bpm:80,root:49,minor:1,prog:[0,2,6,5],seed:97},{name:"Titan's Promise",bpm:104,root:51,minor:0,prog:[0,5,3,4],seed:101},
-    {name:"Phoenix Ascent",bpm:116,root:46,minor:1,prog:[0,6,5,4],seed:113}];
-  const SEC=[["intro",4],["build",8],["climax",16],["outro",4]], BARS=32;
+    {name:"Phoenix Ascent",bpm:116,root:46,minor:1,prog:[0,6,5,4],seed:113},
+    // v73: Celtic fire laments – drone, driving frame drums, a singing modal lead with ornaments, low whistle
+    {name:"Ember Lament",bpm:146,root:48,minor:1,phry:1,prog:[0,6,5,6],seed:131,celt:1},{name:"Fires of Ys",bpm:140,root:50,minor:1,prog:[0,5,6,0],seed:137,celt:1},
+    {name:"Stone Circle",bpm:150,root:45,minor:1,phry:1,prog:[0,1,0,6],seed:149,celt:1},{name:"Highland Pyre",bpm:144,root:52,minor:1,prog:[0,6,3,0],seed:151,celt:1},
+    {name:"Sea of Embers",bpm:138,root:43,minor:1,prog:[0,5,6,4],seed:163,celt:1}];
+  const SEC0=[["intro",4],["build",8],["climax",16],["outro",4]], SEC1=[["intro",8],["build",8],["climax",16],["outro",8]]; let SEC=SEC0, BARS=32;
   const hz=m=>440*Math.pow(2,(m-69)/12);
-  const scale=()=>tr.minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
+  const scale=()=>tr.phry?[0,1,3,5,7,8,10]:tr.minor?[0,2,3,5,7,8,10]:[0,2,4,5,7,9,11];
   const deg=(d,oct)=>{ const sc=scale(), o=Math.floor(d/7); return tr.root+12*(oct+o)+sc[((d%7)+7)%7]; };
   const chordOf=b=>{ const d=tr.prog[b%4]; return [deg(d,0),deg(d+2,0),deg(d+4,0)]; };
   const secOf=b=>{ let a=0; for(const [n,l] of SEC){ if(b<a+l) return [n,b-a]; a+=l; } return ["outro",3]; };
@@ -811,15 +815,39 @@ const MUSIC=(()=>{ let on=false, mg=null, rv=null, dry=null, timer=null, nextT=0
     const n=AC.createBufferSource(), f=AC.createBiquadFilter(), ng=AC.createGain(); n.buffer=noise(); f.type="lowpass"; f.frequency.value=900; env(ng,t,0.002,vol*0.5,0.01,0.12); n.connect(f).connect(ng); out(ng,0.3); n.start(t,Math.random()*0.5); n.stop(t+0.2); }
   function snare(t,vol){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); n.buffer=noise(); f.type="bandpass"; f.frequency.value=1900; f.Q.value=0.7; env(g,t,0.002,vol,0.01,0.18); n.connect(f).connect(g); out(g,0.5); n.start(t,Math.random()*0.5); n.stop(t+0.3); }
   function cymbal(t,vol){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); n.buffer=noise(); n.loop=true; f.type="highpass"; f.frequency.value=6000; env(g,t,0.01,vol,0.05,2.2); n.connect(f).connect(g); out(g,0.6); n.start(t); n.stop(t+2.5); }
+  function voice(m,t,len,vol,grace){ /* a singing lead: sawtooth through "ah" formants, delayed vibrato, grace-note ornaments */ const o=AC.createOscillator(), f1=AC.createBiquadFilter(), f2=AC.createBiquadFilter(), lp=AC.createBiquadFilter(), g=AC.createGain(), lfo=AC.createOscillator(), lg=AC.createGain();
+    o.type="sawtooth"; if(grace){ o.frequency.setValueAtTime(hz(m+grace),t); o.frequency.setTargetAtTime(hz(m),t+0.07,0.025); } else { o.frequency.setValueAtTime(hz(m-0.5),t); o.frequency.setTargetAtTime(hz(m),t,0.03); }
+    lfo.frequency.value=5.4; lg.gain.setValueAtTime(0,t); lg.gain.linearRampToValueAtTime(len>0.5?22:6,t+Math.min(0.6,len)); lfo.connect(lg).connect(o.detune);
+    f1.type="bandpass"; f1.frequency.value=720; f1.Q.value=5; f2.type="bandpass"; f2.frequency.value=1180; f2.Q.value=7; lp.type="lowpass"; lp.frequency.value=3200;
+    env(g,t,0.07,vol,Math.max(0.05,len-0.12),0.35); o.connect(f1).connect(g); o.connect(f2).connect(g); g.connect(lp); out(lp,0.65); o.start(t); o.stop(t+len+0.5); lfo.start(t); lfo.stop(t+len+0.5); }
+  function whistle(m,t,len,vol){ const o=AC.createOscillator(), g=AC.createGain(), lfo=AC.createOscillator(), lg=AC.createGain(); o.type="sine"; o.frequency.value=hz(m); lfo.frequency.value=6; lg.gain.value=10; lfo.connect(lg).connect(o.detune); env(g,t,0.04,vol,Math.max(0.05,len-0.08),0.2); o.connect(g); out(g,0.6); o.start(t); o.stop(t+len+0.3); lfo.start(t); lfo.stop(t+len+0.3);
+    const n=AC.createBufferSource(), f=AC.createBiquadFilter(), ng=AC.createGain(); n.buffer=noise(); f.type="bandpass"; f.frequency.value=hz(m)*2; f.Q.value=8; env(ng,t,0.02,vol*0.25,Math.max(0.05,len-0.08),0.15); n.connect(f).connect(ng); out(ng,0.5); n.start(t,Math.random()*0.5); n.stop(t+len+0.2); }
+  function drone(m,t,len,vol){ const f=AC.createBiquadFilter(), g=AC.createGain(); f.type="lowpass"; f.frequency.value=900; env(g,t,0.3,vol,Math.max(0.1,len-0.3),0.5); f.connect(g); out(g,0.4);
+    for(const [mm,det] of [[m,-5],[m,5],[m+7,0]]){ const o=AC.createOscillator(); o.type="sawtooth"; o.frequency.value=hz(mm); o.detune.value=det; o.connect(f); o.start(t); o.stop(t+len+0.6); } }
+  function makeVox(seed){ let a=seed>>>0; const r=()=>{ a=(a*1664525+1013904223)>>>0; return a/4294967296; };
+    const RH=[[8,4,4],[12,4],[6,2,8],[16],[4,4,8],[8,8],[2,2,4,8]], out=[]; let d=4+Math.floor(r()*2);
+    for(let b=0;b<4;b++){ const rh=RH[Math.floor(r()*RH.length)]; let s=0; rh.forEach((len,i)=>{ d+=(r()<0.5?-1:1)*(r()<0.75?1:2); if(b===3&&i===rh.length-1) d=7; d=Math.max(3,Math.min(11,d)); out.push([b,s,len,d,len>=6&&r()<0.6?(r()<0.5?1:2):0]); s+=len; }); }
+    return out; }
+  function scheduleCelt(t,SP){ const [sec,sb]=secOf(bar), ph=bar%4, d0=tr.prog[ph];
+    if(step===0){ drone(tr.root-12,t,SP*16,sec==="intro"?0.02:0.028); if(sec!=="intro") choir(deg(d0+4,0)+12,t,SP*16,sec==="climax"?0.035:0.022); if(sec==="climax"||sec==="outro") strings(deg(d0,0),t,SP*16,0.014);
+      if((sec==="intro"&&sb===0)||(sec==="climax"&&sb===0)) cymbal(t,0.06); }
+    // voice: the whole song, quieter in the intro, an octave answer from the whistle in the climax
+    if(sec!=="outro"||sb<4) for(const [b,s,len,d,gr] of mel) if(b===ph&&s===step){ voice(deg(d,1)-(sec==="intro"&&bar%8<4?12:0),t,SP*len*0.95,sec==="intro"?0.05:0.065,gr?(gr===1?1:2):0); if(sec==="climax"&&bar%8>=4) whistle(deg(d,2),t,SP*len*0.9,0.035); }
+    if(sec==="build"||sec==="climax"){ if(step%2===0) pluck(tr.root+(step%8===4?7:0)+(step===12?12:0),t,0.02+(sec==="climax"?0.008:0)); // driving bass ostinato
+      if(step===0||step===3||step===8||step===11) taiko(t,sec==="climax"?0.36:0.22+0.015*sb,step===3||step===11?120:85); if(step===4||step===12) snare(t,sec==="climax"?0.09:0.05);
+      hissT(t,step%4===2?0.05:0.022); }
+    if(sec==="intro"&&sb>=4&&step%8===0) taiko(t,0.15,70);
+    if(sec==="outro"&&step===0&&sb%2===0) taiko(t,0.25,60); }
+  function hissT(t,vol){ const n=AC.createBufferSource(), f=AC.createBiquadFilter(), g=AC.createGain(); n.buffer=noise(); f.type="highpass"; f.frequency.value=7000; env(g,t,0.002,vol,0.005,0.05); n.connect(f).connect(g); out(g,0.2); n.start(t,Math.random()*0.5); n.stop(t+0.1); }
   function makeMel(seed){ let a=seed>>>0; const r=()=>{ a=(a*1664525+1013904223)>>>0; return a/4294967296; };
     const RH=[[4,4,4,4],[8,4,4],[4,4,8],[6,2,8],[2,2,4,8],[12,4],[4,2,2,8]], out=[]; let d=4+Math.floor(r()*3);
     for(let b=0;b<4;b++){ const rh=RH[Math.floor(r()*RH.length)], cd=tr.prog[b]; let s=0; rh.forEach((len,i)=>{ const ct=[cd,cd+2,cd+4,cd+7].map(x=>x+(x<d-3?7:0));
         d=i===0?ct.reduce((p,c)=>Math.abs(c-d)<Math.abs(p-d)?c:p,ct[0]):d+(r()<0.5?-1:1)*(r()<0.7?1:2); d=Math.max(2,Math.min(12,d)); out.push([b,s,len,d]); s+=len; }); }
     out[out.length-1][3]=7; return out; }
   function nextTrack(){ if(!bag.length){ bag=TRACKS.map((_,i)=>i).sort(()=>Math.random()-.5); if(tr&&bag[0]===TRACKS.indexOf(tr)) bag.push(bag.shift()); }
-    tr=TRACKS[bag.shift()]; mel=makeMel(tr.seed); bar=0; step=0; curName=tr.name; if(!document.hidden&&typeof floatText==="function") setTimeout(()=>floatText("🎵 "+tr.name,innerWidth/2-70,innerHeight/2+60),300); }
+    tr=TRACKS[bag.shift()]; SEC=tr.celt?SEC1:SEC0; BARS=SEC.reduce((a,x)=>a+x[1],0); mel=tr.celt?makeVox(tr.seed):makeMel(tr.seed); bar=0; step=0; curName=tr.name; if(!document.hidden&&typeof floatText==="function") setTimeout(()=>floatText("🎵 "+tr.name,innerWidth/2-70,innerHeight/2+60),300); }
   function schedule(){ const SP=60/tr.bpm/4; // 16th notes
-    while(nextT<AC.currentTime+0.4){ const t=nextT, [sec,sb]=secOf(bar), ch=chordOf(bar), ph=bar%4, beat=step%4===0;
+    while(nextT<AC.currentTime+0.4){ if(tr.celt){ scheduleCelt(nextT,SP); step++; if(step>=16){ step=0; bar++; if(bar>=BARS){ nextTrack(); nextT+=SP; return; } } nextT+=SP; continue; } const t=nextT, [sec,sb]=secOf(bar), ch=chordOf(bar), ph=bar%4, beat=step%4===0;
       if(step===0){ const len=SP*16;
         if(sec==="intro"&&sb===0||sec==="climax"&&sb===0) cymbal(t,sec==="climax"?0.09:0.04);
         strings(ch[0]-12,t,len,sec==="intro"?0.018:0.026); ch.forEach(m=>strings(m,t,len,sec==="intro"?0.012:0.018));
@@ -833,7 +861,7 @@ const MUSIC=(()=>{ let on=false, mg=null, rv=null, dry=null, timer=null, nextT=0
       if(sec==="climax"){ if(step===0||step===6||step===10) taiko(t,0.42); if(step===4||step===12) snare(t,0.11); if(step===14) taiko(t,0.28,130); }
       if(sec==="outro"&&step===0&&sb<2) taiko(t,0.3,60);
       if(sec==="climax") for(const [b,s,len,d] of mel) if(b===ph&&s===step) brass(deg(d,1),t,SP*len*0.95,0.055);
-      step++; if(step>=16){ step=0; bar++; if(bar>=BARS) nextTrack(); } nextT+=SP; } }
+      step++; if(step>=16){ step=0; bar++; if(bar>=BARS){ nextTrack(); nextT+=SP; return; } } nextT+=SP; } }
   function impulse(){ const len=AC.sampleRate*2.6, b=AC.createBuffer(2,len,AC.sampleRate); for(let c=0;c<2;c++){ const d=b.getChannelData(c); for(let i=0;i<len;i++) d[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.4); } return b; }
   return {
     get on(){ return on; }, get track(){ return curName; },
