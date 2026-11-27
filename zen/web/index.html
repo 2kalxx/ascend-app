@@ -48,7 +48,8 @@ canvas{display:block;touch-action:none}
 .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:10px;max-height:56vh;overflow-y:auto;padding:4px}
 .card{border-radius:10px;padding:8px 4px;background:#2f3137;border:2px solid #444;text-align:center;font-size:11px}
 .card .ci{font-size:26px}.card b{display:block;font-size:11.5px;margin:2px 0}.card small{color:#aab;display:block;font-size:10px;line-height:1.25}
-.card.c1{border-color:#9aa0aa}.card.c2{border-color:#3fa8ff}.card.c3{border-color:#c06bff}.card.c4{border-color:#ffb020;box-shadow:0 0 10px rgba(255,176,32,.35)}.card.c5{border-color:#ff4d5e;box-shadow:0 0 12px rgba(255,77,94,.45)}.card.c6{border-color:#3fffd2;box-shadow:0 0 14px rgba(63,255,210,.5);animation:exo 3s linear infinite}.card.c7{border-color:#fff6c8;background:linear-gradient(135deg,#3a2f10,#2a1f3a,#10303a);box-shadow:0 0 18px rgba(255,246,200,.6);animation:exo 1.6s linear infinite}@keyframes exo{0%{border-color:#3fffd2}33%{border-color:#ff7fd1}66%{border-color:#ffd400}100%{border-color:#3fffd2}}.card.none{opacity:.3}
+.card.c1{border-color:#9aa0aa}.card.c2{border-color:#3fa8ff}.card.c3{border-color:#c06bff}.card.c4{border-color:#ffb020;box-shadow:0 0 10px rgba(255,176,32,.35)}.card.c5{border-color:#ff4d5e;box-shadow:0 0 12px rgba(255,77,94,.45)}.card.c6{border-color:#3fffd2;box-shadow:0 0 14px rgba(63,255,210,.5);animation:exo 3s linear infinite}.card.c7{border-color:#fff6c8;background:linear-gradient(135deg,#3a2f10,#2a1f3a,#10303a);box-shadow:0 0 18px rgba(255,246,200,.6);animation:exo 1.6s linear infinite}.card.c8{border-color:#9fd8ff;box-shadow:0 0 14px rgba(159,216,255,.6)}.card.c9{border-color:#ffe98a;background:linear-gradient(135deg,#3a3210,#1e1e24);box-shadow:0 0 16px rgba(255,233,138,.6)}.card.c10{border-color:#b48cff;background:linear-gradient(135deg,#1a1036,#0d1a33);box-shadow:0 0 16px rgba(180,140,255,.6);animation:exo 3s linear infinite}.card.c11{border-color:#7dffb0;background:linear-gradient(135deg,#0f3324,#1e1e24);box-shadow:0 0 18px rgba(125,255,176,.6);animation:exo 2.4s linear infinite}.card.c12{border-color:#ff9a5c;background:linear-gradient(135deg,#3a1a0a,#2a0a1a);box-shadow:0 0 18px rgba(255,154,92,.7);animation:exo 2s linear infinite}.card.c13{border-color:#ff8af0;background:linear-gradient(135deg,#3a1036,#10203a);box-shadow:0 0 20px rgba(255,138,240,.7);animation:exo 1.6s linear infinite}.card.c14{border-color:#ffd700;background:linear-gradient(135deg,#4a3a00,#2a1a00,#4a3a00);box-shadow:0 0 22px rgba(255,215,0,.8);animation:exo 1.2s linear infinite}.card.c15{border-color:#fff;background:linear-gradient(135deg,#ff4d5e55,#ffd40055,#3fffd255,#b86bff55);box-shadow:0 0 26px rgba(255,255,255,.85);animation:exo .9s linear infinite}
+@keyframes exo{0%{border-color:#3fffd2}33%{border-color:#ff7fd1}66%{border-color:#ffd400}100%{border-color:#3fffd2}}.card.none{opacity:.3}
 .card .st{color:#ffd400;font-size:10px;letter-spacing:-1px}
 .menu{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:40;display:flex;align-items:flex-end}
 .menu .sh{background:#24262b;border-radius:18px 18px 0 0;width:100%;max-height:88vh;overflow-y:auto;padding:16px 14px calc(16px + env(safe-area-inset-bottom))}
@@ -93,7 +94,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 73; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 74; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -149,16 +150,28 @@ const CARDS=[
  {id:"sg",r:6,ic:"🌌",name:"Singularity",d:l=>`All values ×${1+l}`},
  {id:"inf",r:6,ic:"♾️",name:"Infinity",d:l=>`Spawns & gates ×${(1+0.25*l).toFixed(2)}`},
  {id:"bb",r:7,ic:"💥",name:"Big Bang",d:l=>`All values ×${1+2*l}`},
- {id:"om",r:7,ic:"👁️",name:"Omega",d:l=>`Values, spawns & gates ×${(1+0.5*l).toFixed(1)}`}];
-const RAR=["","Common","Rare","Epic","Legendary","Mythic","Exotic","Extraordinary"], RCOL=["","#ddd","#3fa8ff","#c06bff","#ffb020","#ff4d5e","#3fffd2","#fff6c8"];
-const RCHANCE=[0,46.6,30,12,7,3,1,0.4]; // % chance per card draw
+ {id:"om",r:7,ic:"👁️",name:"Omega",d:l=>`Values, spawns & gates ×${(1+0.5*l).toFixed(1)}`},
+ // v74: 8 new rarities, two cards each (effects: v = all values, g = gates, r = spawns; each level adds the number shown)
+ {id:"halo",r:8,ic:"😇",name:"Halo",e:{g:0.6}},{id:"comet",r:8,ic:"☄️",name:"Comet",e:{r:0.3}},
+ {id:"seraph",r:9,ic:"🪽",name:"Seraph",e:{v:1.5}},{id:"aurora",r:9,ic:"🌈",name:"Aurora",e:{g:1}},
+ {id:"nebula",r:10,ic:"🌠",name:"Nebula",e:{v:2.5}},{id:"pulsar",r:10,ic:"💫",name:"Pulsar",e:{r:0.5}},
+ {id:"chrono",r:11,ic:"⌛",name:"Chronos",e:{r:0.75}},{id:"aeon",r:11,ic:"🌀",name:"Aeon",e:{v:4}},
+ {id:"titan",r:12,ic:"🗿",name:"Titan",e:{g:2.5}},{id:"genesis",r:12,ic:"🌋",name:"Genesis",e:{v:6}},
+ {id:"zenith",r:13,ic:"🏔️",name:"Zenith",e:{g:5}},{id:"ascend",r:13,ic:"🕊️",name:"Ascendant",e:{v:10}},
+ {id:"olymp",r:14,ic:"⚡",name:"Olympus",e:{v:20}},{id:"thunder",r:14,ic:"🌩️",name:"Thunderlord",e:{g:10,r:0.5}},
+ {id:"omni",r:15,ic:"♾️",name:"Omniverse",e:{v:50,g:25,r:1}},{id:"loop",r:15,ic:"🔁",name:"Endless Loop",e:{v:40,r:1}}];
+for(const c of CARDS) if(c.e&&!c.d) c.d=l=>[c.e.v?`Values ×${mx(1+c.e.v*l)}`:"",c.e.g?`Gates ×${mx(1+c.e.g*l)}`:"",c.e.r?`Spawns ×${mx(1+c.e.r*l)}`:""].filter(Boolean).join(" · ");
+const RAR=["","Common","Rare","Epic","Legendary","Mythic","Exotic","Extraordinary","Celestial","Divine","Cosmic","Eternal","Primordial","Transcendent","Godly","Infinite"], RCOL=["","#ddd","#3fa8ff","#c06bff","#ffb020","#ff4d5e","#3fffd2","#fff6c8","#9fd8ff","#ffe98a","#b48cff","#7dffb0","#ff9a5c","#ff8af0","#ffd700","#ffffff"], RMAX_=RAR.length-1;
+const RCHANCE=[0,45.997,30,12,7,3,1,0.4,0.25,0.15,0.09,0.05,0.03,0.018,0.01,0.005]; // % chance per card draw (v74: 8 more rarities)
 const C=id=>(S.cards&&S.cards[id])||0; // level
 /* card sets: own every card of a set (level 1+) for its bonus; all cards of the set at level 10 doubles it */
 const CSETS=[{ic:"🚪",name:"Gatemaster",cards:["gm","hh","ff","gg"],k:"g",m:1.5,d:"Gates"},{ic:"⏱️",name:"Clockwork",cards:["sr","gw","td","tw","hy"],k:"r",m:1.25,d:"Spawns"},
-  {ic:"🪙",name:"Treasury",cards:["cr","wp","md","ph"],k:"v",m:1.5,d:"All values"},{ic:"🌌",name:"Cosmos",cards:["sg","inf","bb","om"],k:"v",m:2,d:"All values"}];
+  {ic:"🪙",name:"Treasury",cards:["cr","wp","md","ph"],k:"v",m:1.5,d:"All values"},{ic:"🌌",name:"Cosmos",cards:["sg","inf","bb","om"],k:"v",m:2,d:"All values"},
+  {ic:"😇",name:"Heavens",cards:["halo","comet","seraph","aurora"],k:"v",m:3,d:"All values"},{ic:"🌠",name:"Eternity",cards:["nebula","pulsar","chrono","aeon"],k:"g",m:3,d:"Gates"},
+  {ic:"🗿",name:"Pantheon",cards:["titan","genesis","zenith","ascend"],k:"v",m:5,d:"All values"},{ic:"⚡",name:"Godhood",cards:["olymp","thunder","omni","loop"],k:"v",m:10,d:"All values"}];
 let SETB={g:1,r:1,v:1};
 const setLv=st=>Math.min(...st.cards.map(id=>C(id))), setMult=st=>{ const l=setLv(st); return l>=10?st.m*st.m:l>=1?st.m:1; };
-function calcSets(){ const o={g:1,r:1,v:1}; for(const st of CSETS) o[st.k]*=setMult(st); SETB=o; }
+function calcSets(){ const o={g:1,r:1,v:1}; for(const st of CSETS) o[st.k]*=setMult(st); if(typeof CARDS!=="undefined") for(const c of CARDS){ if(!c.e) continue; const l=C(c.id); if(!l) continue; for(const k in c.e) o[k]*=1+c.e[k]*l; } SETB=o; }
 const cardNeed=l=>l; // copies needed to go from level l to l+1
 
 
@@ -1064,7 +1077,7 @@ function uiTop(){ if(typeof syncAuto==='function') syncAuto();
   { const qb=$("questB"), q=S.dq; if(q&&q.q){ const k=q.q.filter(x=>x.ok).length; qb.firstChild.textContent=q.all?"🎁✓":"📜 "+k+"/"+q.q.length; qb.classList.toggle("done",!!q.all); } $("questN").style.display=S.newQ?"block":"none"; $("questN").textContent=S.newQ; } $("troN").style.display=S.newTro?"block":"none"; $("troN").textContent=S.newTro; $("cardN").style.display=S.newCards?"block":"none"; $("cardN").textContent=S.newCards; $("perkB").style.boxShadow=S.pendPerk?"0 0 0 2px #ffd400":"none"; }
 function popup(html,acts){ const L=$("layer"); L.innerHTML=`<div class="pop">${html}</div>`; L.querySelectorAll("button[id]").forEach(b=>b.onclick=()=>{ L.innerHTML=""; (acts&&acts[b.id]||(()=>{}))(); }); return L; }
 function floatText(t,x,y){ const d=document.createElement("div"); d.className="float"; d.textContent=t; d.style.left=x+"px"; d.style.top=y+"px"; document.body.appendChild(d); setTimeout(()=>d.remove(),1000); }
-function drawCard(minR){ const r0=minR||1; let tot=0; for(let r=r0;r<=7;r++) tot+=RCHANCE[r]; let roll=Math.random()*tot, rar=r0; for(let r=7;r>=r0;r--){ if(roll<RCHANCE[r]){ rar=r; break; } roll-=RCHANCE[r]; }
+function drawCard(minR){ const r0=minR||1; let tot=0; for(let r=r0;r<=RMAX_;r++) tot+=RCHANCE[r]; let roll=Math.random()*tot, rar=r0; for(let r=RMAX_;r>=r0;r--){ if(roll<RCHANCE[r]){ rar=r; break; } roll-=RCHANCE[r]; }
   const _=0, pool=CARDS.filter(c=>c.r===rar), c=pool[Math.floor(Math.random()*pool.length)];
   S.copies[c.id]=(S.copies[c.id]||0)+1; let up=false; while(S.copies[c.id]>=cardNeed(C(c.id)+1)&&C(c.id)<10){ S.copies[c.id]-=cardNeed(C(c.id)+1); S.cards[c.id]=C(c.id)+1; up=true; } dustUp(); calcSets(); return [c,up]; }
 const DUST_COST=5;
@@ -1074,7 +1087,13 @@ function choosePerk(){ if(!S.pendPerk) return;
   const L=popup(`<h1>Level Up! ⭐</h1><p>Choose a perk (permanent)</p>${pool.map(p=>`<button class="perk" data-p="${p.id}"><span class="pi">${p.ic}</span><span><b>${p.name}</b><small>${p.d} · you have ${P(p.id)}</small></span></button>`).join("")}`);
   L.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{ S.perks[b.dataset.p]=P(b.dataset.p)+1; if(b.dataset.p==="hits") for(let i=1;i<STG.length;i++) rebuildStage(i); S.pendPerk--; L.innerHTML=""; save(true); buzz(30); uiList(true); uiTop(); if(S.pendPerk) choosePerk(); }); }
 $("perkB").onclick=()=>{ if(S.pendPerk) return choosePerk();
-  popup(`<h1>Perks ⭐</h1><p>You choose one for every stage you unlock.</p>${PERKS.map(p=>`<div class="perk"><span class="pi">${p.ic}</span><span><b>${p.name} ×${P(p.id)}</b><small>${p.d}</small></span></div>`).join("")}<button class="btn" id="ok">Close</button>`); };
+  showPerks(); };
+/* v74: ⭐ star upgrades – every perk can also be bought with money; each purchase of the same perk costs ×3 more (kept through rebirths) */
+const perkUpCost=id=>priceOf(Math.min(NST,Math.max(2,S.unlocked)))*0.4*Math.pow(3,(S.pbuy&&S.pbuy[id])||0);
+function showPerks(){ S.pbuy=S.pbuy||{};
+  const L=popup(`<h1>Perks ⭐</h1><p>You get one free perk for every new stage – and you can buy more levels here.</p>${PERKS.map(p=>{ const c=perkUpCost(p.id), ok=S.coins>=c; return `<div class="perk" style="align-items:center"><span class="pi">${p.ic}</span><span style="flex:1"><b>${p.name} ×${P(p.id)}</b><small>${p.d}${S.pbuy[p.id]?` · bought ${S.pbuy[p.id]}`:""}</small></span><button class="btn ${ok?"":"g"}" data-pu="${p.id}" style="width:auto;margin:0;padding:8px 10px;font-size:12px" ${ok?"":"disabled"}>⭐ ${money(c)}</button></div>`; }).join("")}<button class="btn" id="ok">Close</button>`);
+  L.querySelectorAll("[data-pu]").forEach(b=>b.onclick=()=>{ const id=b.dataset.pu, c=perkUpCost(id); if(S.coins<c) return; S.coins-=c; S.perks[id]=P(id)+1; S.pbuy[id]=(S.pbuy[id]||0)+1; if(id==="hits") for(let i=1;i<STG.length;i++) rebuildStage(i);
+    buzz(30); if(S.sound) [659,988].forEach((f,i)=>setTimeout(()=>tone(f,0.06,0.04),i*80)); save(true); uiList(true); uiTop(); showPerks(); }); }
 $("cardB").onclick=()=>{ S.newCards=0; uiTop(); save(true); dustUp();
   popup(`<h1>Cards 🃏</h1><p>You get a card for every stage you unlock. Duplicates level the card up.</p><div class="cards">${CARDS.map(c=>{ const l=C(c.id), cp=S.copies[c.id]||0; return `<div class="card c${c.r} ${l||cp?"":"none"}"><div class="ci">${l||cp?c.ic:"❔"}</div><b>${c.name}</b><div class="st">${"★".repeat(l)}${l<10?` ${cp}/${cardNeed(l+1)}`:""}</div><small>${l?c.d(l):RAR[c.r]}</small></div>`; }).join("")}</div><p style="margin-top:10px;text-align:left;font-weight:800;color:#fff">Card sets</p><div class="tros" style="max-height:none;margin-top:4px">${CSETS.map(st=>{ const own=st.cards.filter(id=>C(id)>=1).length, l=setLv(st); return `<div class="tro ${l>=1?"ok":""}"><span class="pi">${st.ic}</span><span><b>${st.name} · ${st.d} ×${st.m}${l>=10?" → ×"+(st.m*st.m)+" ✔":""}</b><small>${st.cards.map(id=>{ const c=CARDS.find(x=>x.id===id); return (C(id)?c.ic:"❔")+" "+c.name; }).join(" · ")}</small><small>${l>=1?(l>=10?"Mastered":"Complete! All at level 10 → bonus doubles"):own+"/"+st.cards.length+" owned"}</small></span></div>`; }).join("")}</div><div class="dust"><span>✨ Card dust <b>${S.dust||0}</b><small>Copies of maxed cards (level 10) turn into dust</small></span><button class="btn ${S.dust>=DUST_COST?"":"g"}" id="dustB" ${S.dust>=DUST_COST?"":"disabled"}>Epic+ card · ${DUST_COST}✨</button></div><p style="font-size:11px;color:#9aa0aa;margin-top:8px">Drop chances: ${RAR.slice(1).map((n,i)=>`<b style="color:${RCOL[i+1]}">${n} ${RCHANCE[i+1]}%</b>`).join(" · ")}</p><button class="btn" id="ok">Close</button>`,{dustB:()=>{ if(S.dust<DUST_COST) return; S.dust-=DUST_COST; const [c,up]=drawCard(3); save(true); buzz(40); if(S.sound) [659,880,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*80));
     $("cardB").onclick(); floatText(c.ic+" "+c.name+" ("+RAR[c.r]+")"+(up?" · level "+C(c.id)+"!":""),innerWidth/2-100,innerHeight/2-40); }}); };
