@@ -95,7 +95,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 78; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 79; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -112,9 +112,9 @@ const RMAX=25;
 const spawnTime=r=>3.2/(1+0.22*(r-1));
 /* v69: every ball type gets pricier upgrades than the one before (base ×8 per type, steeper growth per level), and value levels get harder and harder (quadratic term) */
 /* every prestige star makes that ball's upgrades ×5 pricier and grow faster */
-const bst=k=>Math.min(5,(S.bstar&&S.bstar[k])||0), valGrow=k=>1.3+0.02*k+0.03*bst(k), rateGrow=k=>1.5+0.02*k+0.03*bst(k), hardV=v=>v>100?Math.pow(1.001,(v-100)*(v-100)):1;
-const costRate=(k,r)=>8*Math.pow(7.6,k)*Math.pow(5,bst(k))*Math.pow(rateGrow(k),r-1)*perkCost("ballCost");
-const costVal=(k,v)=>10*Math.pow(7.6,k)*Math.pow(5,bst(k))*Math.pow(valGrow(k),v-1)*hardV(v)*perkCost("ballCost");
+const bst=k=>Math.min(5,(S.bstar&&S.bstar[k])||0), valGrow=k=>1.3+0.02*k+0.06*bst(k), rateGrow=k=>1.5+0.02*k+0.05*bst(k), hardV=(v,k)=>{ const h=Math.max(40,100-15*(k===undefined?0:bst(k))); return v>h?Math.pow(1.001,(v-h)*(v-h)):1; }; /* v79: every prestige star: upgrades ×1000 base, steeper growth, and the extra-hard zone starts 15 levels earlier */
+const costRate=(k,r)=>8*Math.pow(7.6,k)*Math.pow(100,bst(k))*Math.pow(rateGrow(k),r-1)*perkCost("ballCost");
+const costVal=(k,v)=>10*Math.pow(7.6,k)*Math.pow(1000,bst(k))*Math.pow(valGrow(k),v-1)*hardV(v,k)*perkCost("ballCost");
 const costUnlock=k=>60*Math.pow(9,k);
 let PRICES=[0,149,1.92e+05,5.47e+08,2.62e+10,4.59e+11,6.23e+12,7.25e+13,2.1e+15,3.07e+16,3.3e+17,3.03e+18,2.47e+19,2.01e+20,1.53e+21,2.71e+22,2.94e+23,2.56e+24,1.96e+25,1.39e+26,9.67e+26,6.7e+27,4.56e+28,3.05e+29,1.98e+30,2.74e+31,2.47e+32,1.86e+33,1.28e+34,8.29e+34,5.33e+35,3.35e+36,2.04e+37,1.25e+38,7.74e+38,4.64e+39,2.82e+40,1.73e+41,1.04e+42,6.21e+42,7.77e+43,6.36e+44,4.49e+45,2.85e+46,1.74e+47,1.02e+48,5.97e+48,3.56e+49,2.11e+50,1.21e+51,7e+51,4.08e+52,2.3e+53,1.34e+54,7.73e+54,4.49e+55,2.59e+56,1.49e+57,8.57e+57,4.94e+58,5.58e+59,4.24e+60,2.84e+61,1.76e+62,1.03e+63,5.78e+63,3.33e+64,1.88e+65,1.05e+66,5.91e+66,3.32e+67,1.88e+68,1.04e+69,5.86e+69,3.26e+70,1.84e+71,1.02e+72,5.72e+72,3.2e+73,1.78e+74,9.86e+74,5.44e+75,2.99e+76,1.67e+77,9.18e+77,9.99e+78,7.38e+79,4.8e+80,2.88e+81,1.64e+82,1.85e+83,1.36e+84,8.62e+84,5.22e+85,3e+86,3.32e+87,2.4e+88,1.54e+89,9.24e+89,5.18e+90,5.79e+91,4.23e+92,2.71e+93,1.61e+94,9.06e+94,5.09e+95,5.61e+96,4.09e+97,2.62e+98,1.53e+99,8.6e+99,4.79e+100,5.33e+101,3.82e+102,2.43e+103,1.44e+104,8.13e+104,4.49e+105,5e+106,3.58e+107,2.28e+108,1.36e+109,7.68e+109,4.25e+110,4.69e+111,3.39e+112,2.12e+113,1.25e+114,7.03e+114,3.87e+115,4.33e+116,3.09e+117,1.93e+118,1.14e+119,6.38e+119,3.53e+120,3.96e+121,2.81e+122,1.76e+123,1.03e+124,5.8e+124,3.2e+125,3.59e+126,2.54e+127,1.6e+128,9.31e+128,5.24e+129,2.89e+130,3.26e+131,2.32e+132]; // price to unlock stage L (index L-1)
 while(PRICES.length<NST) PRICES.push(PRICES[PRICES.length-1]*1.4); // stages 151-300: ×1.4 per stage
@@ -1298,7 +1298,7 @@ function showBuilder(){ const viewL=Math.max(11,Math.min(S.unlocked,stageAt(cam+
   L.querySelector("#bsave").onclick=()=>{ const rows=[...L.querySelectorAll("[data-row]")].map(x=>x.value).filter(Boolean); if(!rows.length) return; const old=S.cust&&S.cust.L; S.cust={L:viewL,rows,conn:L.querySelector("#bconn").value}; S.built=1; if(old&&old!==viewL) rebuildStage(old); rebuildStage(viewL); save(true); uiList(true); L.innerHTML=""; floatText("🏗️ Stage "+viewL+" rebuilt!",innerWidth/2-70,innerHeight/2); };
   const rb=L.querySelector("#breset"); if(rb) rb.onclick=()=>{ const old=S.cust.L; S.cust=null; rebuildStage(old); save(true); uiList(true); L.innerHTML=""; }; }
 function ballPrestige(k){ if(S.val[k]<bpNeed(k)) return; const g=bpGain(k), t=TYPES[k];
-  popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> and time level <b>${S.rate[k]}</b> go back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p><p style="margin-top:6px;font-size:12px;color:#ffb3a8">Its upgrades get ×5 pricier and climb faster after this prestige.</p>
+  popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> and time level <b>${S.rate[k]}</b> go back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p><p style="margin-top:6px;font-size:12px;color:#ffb3a8">Its upgrades get ×1000 pricier and climb much faster after this prestige.</p>
     <p style="margin-top:8px;font-size:15px">×${fmt(S.bpm[k])} → <b style="color:#c9b6ff">×${fmt(S.bpm[k]*g)}</b></p><p style="margin-top:6px;font-size:12px;color:#9aa0aa">${(S.bstar[k]||0)+1<BP_MAX?`Prestige ${(S.bstar[k]||0)+1} of ${BP_MAX} · the next one needs level ${BP_REQ[(S.bstar[k]||0)+1]}`:`This is the last prestige for this ball (${BP_MAX}/${BP_MAX})`}. Survives rebirths.</p>
     <button class="btn" id="yes">✨ Prestige</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ S.bpm[k]*=g; S.bstar[k]=(S.bstar[k]||0)+1; S.val[k]=1; S.rate[k]=1; save(true); uiList(true); uiTop(); buzz(50); if(S.sound) [659,880,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*80)); floatText("✨ "+t.name+" ×"+fmt(S.bpm[k]),innerWidth/2-60,innerHeight-260); }}); }
 function syncAuto(){ $("autoB").classList.toggle("on",!!S.auto); $("autoB").textContent=S.auto?"AUTO ✓":"AUTO"; }
