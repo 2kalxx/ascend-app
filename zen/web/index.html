@@ -92,7 +92,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 67; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 68; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -171,7 +171,8 @@ const rebGain=()=>(1+0.5*Math.max(0,S.unlocked-REB_MIN))*(SK("reb1")?1.5:1)*(SK(
 const mx=n=>n<1000?String(+n.toFixed(1)):fmt(n); // multiplier display: 17.8, not 17
 const rebAfter=()=>(S.pm||1)+rebGain();
 /* v67 fix: the old rule (need 50+25n, gain 1+level/25) could be repeated forever with MAX. Now the need grows steeply (50, 200, 450, 800 …) and every prestige gives a flat ×3 */
-const bpNeed=k=>50*Math.pow((S.bstar[k]||0)+1,2);          // value level needed for the next ball prestige
+const BP_REQ=[100,250,500,1000,2000], BP_MAX=BP_REQ.length; /* v68: at most 5 prestiges per ball – a rare, unique upgrade */
+const bpNeed=k=>(S.bstar[k]||0)<BP_MAX?BP_REQ[S.bstar[k]||0]:Infinity;          // value level needed for the next ball prestige
 const bpGain=k=>3;
 const stOf=L=>{ S.st[L]=S.st[L]||{o:0,g:0}; return S.st[L]; };
 // money is paid every time a ball passes a gate: ball value × section × stage gate level × (1.35 per unlocked stage)
@@ -941,7 +942,7 @@ function uiList(force){
   let h="";
   if(S.tab==="balls"){ h+=`<div class="hd"><span>BALLS</span><span>VALUE</span><span>TIME</span></div>`;
     for(let k=0;k<TYPES.length;k++){ const t=TYPES[k];
-      if(S.rate[k]>0){ h+=`<div class="row"><div class="dot" style="background:${t.col}"></div><div class="rt"><b>${money(ballVal(k))}</b><small>${(spawnTime(S.rate[k])/rateMult()).toFixed(2)} sec${S.bstar[k]?` · ✨${S.bstar[k]} ×${fmt(S.bpm[k])}`:""}${msN(k)?` · 🎖️×${mx(msMult(k))}`:""}</small>${S.val[k]>=bpNeed(k)?`<button class="bp" data-bp="${k}">✨ PRESTIGE ×${bpGain(k).toFixed(1)}</button>`:""}</div>${btn("v"+k,S.val[k],1e9,l=>costVal(k,l))}${btn("r"+k,S.rate[k],RMAX,l=>costRate(k,l))}</div>`; continue; }
+      if(S.rate[k]>0){ h+=`<div class="row"><div class="dot" style="background:${t.col}"></div><div class="rt"><b>${money(ballVal(k))}</b><small>${(spawnTime(S.rate[k])/rateMult()).toFixed(2)} sec${S.bstar[k]?` · ✨${Math.min(S.bstar[k],BP_MAX)}/${BP_MAX} ×${fmt(S.bpm[k])}`:""}${msN(k)?` · 🎖️×${mx(msMult(k))}`:""}</small>${S.val[k]>=bpNeed(k)?`<button class="bp" data-bp="${k}">✨ PRESTIGE ×${bpGain(k).toFixed(1)}</button>`:""}</div>${btn("v"+k,S.val[k],1e9,l=>costVal(k,l))}${btn("r"+k,S.rate[k],RMAX,l=>costRate(k,l))}</div>`; continue; }
       if(S.unlocked<GATE[k]){ h+=`<div class="row"><div class="dot" style="background:#26272c"></div><div class="rt"><b style="color:#777">${t.name} ball</b><small>🔒 Unlock stage ${GATE[k]}</small></div></div>`; break; }
       const c=costUnlock(k); h+=`<div class="row"><div class="dot" style="background:${t.col};opacity:.5"></div><div class="rt"><b>${t.name} ball</b><small>New ball · 6× value</small></div><button class="buy ${S.coins>=c?"ok":""}" data-b="u${k}" style="width:172px"><span>${money(c)}</span><em>UNLOCK</em></button></div>`; break; } }
   else if(S.tab==="shop"){ h+=`<div class="hd"><span>WORKSHOP · machine upgrades</span><span></span><span></span></div>`;
@@ -1038,7 +1039,7 @@ $("rebB").onclick=()=>{ if(S.unlocked<REB_MIN) return popup(`<h1>♻️ Rebirth<
     <button class="btn" id="yes">♻️ Rebirth → ×${mx(rebAfter())}</button><button class="btn g" id="no">Not yet</button>`,{yes:rebirth}); };
 function ballPrestige(k){ if(S.val[k]<bpNeed(k)) return; const g=bpGain(k), t=TYPES[k];
   popup(`<div style="font-size:40px">✨</div><h1>Prestige ${t.name} ball?</h1><p>Value level <b>${S.val[k]}</b> goes back to 1, but ${t.name} balls are worth <b>×${g.toFixed(1)}</b> more – forever.</p>
-    <p style="margin-top:8px;font-size:15px">×${fmt(S.bpm[k])} → <b style="color:#c9b6ff">×${fmt(S.bpm[k]*g)}</b></p><p style="margin-top:6px;font-size:12px;color:#9aa0aa">Next prestige needs level ${50*Math.pow((S.bstar[k]||0)+2,2)}. Survives rebirths.</p>
+    <p style="margin-top:8px;font-size:15px">×${fmt(S.bpm[k])} → <b style="color:#c9b6ff">×${fmt(S.bpm[k]*g)}</b></p><p style="margin-top:6px;font-size:12px;color:#9aa0aa">${(S.bstar[k]||0)+1<BP_MAX?`Prestige ${(S.bstar[k]||0)+1} of ${BP_MAX} · the next one needs level ${BP_REQ[(S.bstar[k]||0)+1]}`:`This is the last prestige for this ball (${BP_MAX}/${BP_MAX})`}. Survives rebirths.</p>
     <button class="btn" id="yes">✨ Prestige</button><button class="btn g" id="no">Cancel</button>`,{yes:()=>{ S.bpm[k]*=g; S.bstar[k]=(S.bstar[k]||0)+1; S.val[k]=1; save(true); uiList(true); uiTop(); buzz(50); if(S.sound) [659,880,1175].forEach((f,i)=>setTimeout(()=>tone(f,0.07,0.05),i*80)); floatText("✨ "+t.name+" ×"+fmt(S.bpm[k]),innerWidth/2-60,innerHeight-260); }}); }
 function syncAuto(){ $("autoB").classList.toggle("on",!!S.auto); $("autoB").textContent=S.auto?"AUTO ✓":"AUTO"; }
 $("autoB").onclick=()=>{ S.auto=!S.auto; syncAuto(); save(true); floatText(S.auto?"🤖 Auto on: buys the cheapest thing as soon as you can afford it":"Auto-buy off",innerWidth/2-110,innerHeight-260); };

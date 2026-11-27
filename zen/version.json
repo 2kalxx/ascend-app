@@ -1,7 +1,7 @@
 {
-  "web": 67,
+  "web": 68,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Ball prestige fixed (needs 50/200/450/800… levels, ×3 each); value milestones ×1.5 per 25 levels; card sets; smart AUTO; ball glow; Pachinko Tulips, Water Wheel & Trampolines; calmer cups; Abyss after stage 150; offline report; 24h income graph"
+  "notes": "Ball prestige is now a rare upgrade: max 5 per ball (Lv 100/250/500/1000/2000, ×3 each); balls that already have 5+ can't prestige again"
 }
