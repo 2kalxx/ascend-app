@@ -1,7 +1,7 @@
 {
-  "web": 70,
+  "web": 71,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "👁 Follow cam: tap the eye button (bottom right) and the camera follows the leading ball, marked with a yellow ring; drag or ⤒/⤓ to stop"
+  "notes": "Softer, rounder 'blop' sound when balls hit obstacles; lofi music stays"
 }

@@ -93,7 +93,7 @@ canvas{display:block;touch-action:none}
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 70; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 71; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -776,7 +776,10 @@ let pops=[];
 let AC=null;
 function tone(f,len,vol){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const o=AC.createOscillator(), g=AC.createGain(); o.type="sine"; o.frequency.value=f; g.gain.setValueAtTime(0.0001,AC.currentTime); g.gain.linearRampToValueAtTime(vol,AC.currentTime+0.008); g.gain.exponentialRampToValueAtTime(0.0001,AC.currentTime+len*5); o.connect(g).connect(AC.destination); o.start(); o.stop(AC.currentTime+len*5+0.05); }catch(e){} }
 const PENT=[392,440,523.25,587.33,659.25,783.99,880,1046.5];
-function tick(y){ if(!S.sound||chimeT>0) return; chimeT=0.06; tone(PENT[Math.max(0,Math.min(7,Math.floor((1-(y%SCR)/SCR)*8)))],0.06,0.02); }
+/* v71: soft, round "blop" for hits – a quick downward pitch bend through a low-pass, slightly randomised */
+function blop(f,vol){ try{ AC=AC||new (window.AudioContext||window.webkitAudioContext)(); const t=AC.currentTime, o=AC.createOscillator(), g=AC.createGain(), lp=AC.createBiquadFilter(); o.type="sine"; o.frequency.setValueAtTime(f*1.9,t); o.frequency.exponentialRampToValueAtTime(f,t+0.05); lp.type="lowpass"; lp.frequency.value=1800;
+  g.gain.setValueAtTime(0.0001,t); g.gain.linearRampToValueAtTime(vol,t+0.004); g.gain.exponentialRampToValueAtTime(0.0001,t+0.15); o.connect(lp).connect(g).connect(AC.destination); o.start(t); o.stop(t+0.17); }catch(e){} }
+function tick(y){ if(!S.sound||chimeT>0) return; chimeT=0.06; blop(PENT[Math.max(0,Math.min(7,Math.floor((1-(y%SCR)/SCR)*8)))]*0.5*(0.96+Math.random()*0.08),0.06); }
 function buzz(ms){ if(S.haptic===false) return; try{ if(NATIVE&&NATIVE.buzz) NATIVE.buzz(); else if(navigator.vibrate) navigator.vibrate(ms||25); }catch(e){} }
 const MUSIC=(()=>{ let on=false, mg=null, lp=null, timer=null, nextT=0, step=0, bar=0, noiseBuf=null, crackle=null, prog=0;
   const BPM=70, SPB=60/BPM/2; // 8th notes
