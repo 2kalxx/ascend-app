@@ -1,7 +1,7 @@
 {
-  "web": 66,
+  "web": 67,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Daily quests 📜: 3 auto-tracked goals a day (10 min income each), all 3 open a 🎁 daily chest (30 min income + Epic+ card, Legendary+ from a 3-day streak); new Questor trophies"
+  "notes": "Ball prestige fixed (needs 50/200/450/800… levels, ×3 each); value milestones ×1.5 per 25 levels; card sets; smart AUTO; ball glow; Pachinko Tulips, Water Wheel & Trampolines; calmer cups; Abyss after stage 150; offline report; 24h income graph"
 }
