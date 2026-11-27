@@ -73,6 +73,7 @@ canvas{display:block;touch-action:none}
 #mm{position:absolute;right:2px;top:40px;height:calc(100% - 140px);width:12px;border-radius:6px;z-index:3;background:rgba(20,21,24,.55);touch-action:none}
 #questB{position:absolute;left:8px;top:6px;height:30px;min-width:30px;padding:0 8px;border-radius:10px;border:0;background:rgba(20,21,24,.85);color:#fff;font-size:12px;font-weight:900;z-index:3;white-space:nowrap}#questB.done{opacity:.6}#questB .badge{position:absolute;top:-4px;right:-4px;background:#ffd400;color:#222;border-radius:9px;font-size:10px;font-weight:900;padding:1px 5px}
 #jump{position:absolute;right:8px;bottom:10px;display:flex;flex-direction:column;gap:6px;z-index:3}
+#jump button.on{background:#ffd400;color:#222}
 #jump button{width:36px;height:36px;border-radius:10px;border:0;background:rgba(20,21,24,.85);color:#ffd400;font-size:16px;font-weight:900}
 .srow2{display:flex;align-items:center;gap:6px;padding:6px 4px;border-bottom:1px solid #26272c}
 .wh{padding:7px 6px 5px;border-left:3px solid;margin:6px 0 2px;background:#202126;border-radius:6px}.wh b{font-size:12px;letter-spacing:.4px}.wh small{display:block;color:#9aa0aa;font-size:10.5px}
@@ -85,14 +86,14 @@ canvas{display:block;touch-action:none}
   <div id="top"><button class="icon" id="menuB">☰</button><div class="money"><b id="coinT">$0</b><small id="rateT">$0/s</small></div>
     <button class="icon" id="cardB">🃏<span class="badge" id="cardN" style="display:none"></span></button><button class="icon" id="perkB">⭐</button><button class="icon" id="troB">🏆<span class="badge" id="troN" style="display:none"></span></button><button class="icon" id="musB">🎵</button><button class="icon" id="sndB">🔔</button></div>
   <div id="unlockBar"><button id="unlockB"></button><button id="rebB" style="display:none">♻️</button></div>
-  <div id="wrap"><canvas id="cv"></canvas><div id="ballCount"></div><button id="questB">📜<span class="badge" id="questN" style="display:none"></span></button><button id="showB">▲ Upgrades</button><canvas id="mm"></canvas><div id="jump"><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
+  <div id="wrap"><canvas id="cv"></canvas><div id="ballCount"></div><button id="questB">📜<span class="badge" id="questN" style="display:none"></span></button><button id="showB">▲ Upgrades</button><canvas id="mm"></canvas><div id="jump"><button id="jFol" title="Follow the leading ball">👁</button><button id="jTop">⤒</button><button id="jEnd">⤓</button></div></div>
   <div id="panel"><div id="tabs"><button class="t on" data-t="balls">BALLS</button><button class="t" data-t="stage">STAGES</button><button class="t" data-t="shop">🔧 SHOP</button><div id="modes"><button data-m="1" class="on">x1</button><button data-m="10">x10</button><button data-m="max">MAX</button><button id="autoB">AUTO</button></div><button id="hideB" title="Hide upgrades">▼</button></div><div id="list"></div></div>
 </div>
 <div id="layer"></div>
 <script>
 (function(){
 "use strict";
-const ZEN_WEB_VERSION = 69; // bump on every web update (the Android app reads this)
+const ZEN_WEB_VERSION = 70; // bump on every web update (the Android app reads this)
 const NATIVE=(typeof window.AppNative!=="undefined")?window.AppNative:null;
 const UNITS=["K","M","B","T","Qa","Qi","Sx","Sp","Oc","No","Dc","Ud","Dd","Td","Qad","Qid","Sxd","Spd","Ocd","Nod","Vg"];
 function fmt(n){ if(!isFinite(n)) return "∞"; if(n>=1e66) return n.toExponential(2).replace("e+","e"); if(n<1000) return (n<10&&n%1?n.toFixed(1):String(Math.floor(n))); let i=-1; while(n>=1000&&i<UNITS.length-1){ n/=1000; i++; } if(n>=1000) return n.toExponential(2)+UNITS[i]; return (n<10?n.toFixed(2):n<100?n.toFixed(1):Math.floor(n))+UNITS[i]; }
@@ -766,7 +767,8 @@ function step(dt,sim){ tankN=tankBalls(); statTick(dt);
     else { d.closedT+=dt; if(d.pile.length>=tankCap(d)||(d.closedT>180&&d.pile.length>0)) releaseTank(d,sim); } }
   if(!sim){ const L0=stageAt(cam), L1=stageAt(cam+viewH); for(let L=L0;L<=L1;L++){ const s=STG[L]; if(!s) continue; for(const c of s.circ) if(c.lit>0) c.lit-=dt*3; for(const q of s.gates) if(q.lit>0) q.lit-=dt*3; }
     for(const p of pops){ p.t-=dt; p.y-=dt*24; } pops=pops.filter(p=>p.t>0); chimeT=Math.max(0,chimeT-dt);
-    camV*=Math.pow(0.02,dt); if(!dragging&&Math.abs(camV)>2){ cam+=camV*dt; clampCam(); } }
+    camV*=Math.pow(0.02,dt); if(!dragging&&Math.abs(camV)>2){ cam+=camV*dt; clampCam(); }
+    if(S.follow&&!dragging){ /* follow cam: always keeps the leading (lowest) ball in view */ let ly=-1, lb=null; for(const b of balls) if(b.y>ly){ ly=b.y; lb=b; } folB=lb; if(lb){ cam+=(lb.y-viewH*0.45-cam)*Math.min(1,dt*4); clampCam(); } } }
   if(gt-winStart>4){ rateNow=earnWin/(gt-winStart); earnWin=0; winStart=gt; S.avg=rateNow; }
 }
 let pops=[];
@@ -813,7 +815,7 @@ function syncMusic(){ if(S.music&&!document.hidden) MUSIC.start(); else MUSIC.st
 
 
 /* ================= camera & render ================= */
-const cv=$("cv"), ctx=cv.getContext("2d"); let sc=1, viewH=SCR, cam=+S.cam||0, camV=0, dragging=false;
+let folB=null; const cv=$("cv"), ctx=cv.getContext("2d"); let sc=1, viewH=SCR, cam=+S.cam||0, camV=0, dragging=false;
 function resize(){ const w=$("wrap").clientWidth, h=$("wrap").clientHeight; const s=w/W; const dpr=S.eco?1:Math.min(2.5,devicePixelRatio||1);
   const cw=Math.floor(W*s), ch=Math.floor(h); cv.style.width=cw+"px"; cv.style.height=ch+"px"; cv.width=Math.floor(cw*dpr); cv.height=Math.floor(ch*dpr); sc=cv.width/W; viewH=cv.height/sc; clampCam(); }
 function clampCam(){ const max=WORLD_H-viewH+(S.unlocked>=NST?70:40); cam=Math.max(-10,Math.min(max,cam)); }
@@ -926,6 +928,7 @@ function render(){
       if(lv>=300){ ctx.globalAlpha=0.9; ctx.fillStyle="#fff6c8"; ctx.beginPath(); for(const b of balls){ if(b.k!==k||b.y<y0||b.y>y1) continue; const rr=(b.r0||b.r)+4, a=gt*4+b.x*0.1; for(const o of [0,Math.PI]){ const x=b.x+Math.cos(a+o)*rr, y=b.y+Math.sin(a+o)*rr; ctx.moveTo(x+1.6,y); ctx.arc(x,y,1.6,0,Math.PI*2); } } ctx.fill(); }
       ctx.globalAlpha=1; }
     if(cam<140){ ctx.lineWidth=2; for(let k=0;k<TYPES.length;k++){ const own=S.rate[k]>0, can=!own&&S.unlocked>=GATE[k]; ctx.globalAlpha=own?0.9:can?0.55:0.18; ctx.strokeStyle=own||can?(TYPES[k].rainbow?`hsl(${(gt*120)%360},90%,65%)`:TYPES[k].col):"#9aa0aa"; ctx.beginPath(); ctx.arc(slotX(k),slotY(k),own?6:5,0,Math.PI*2); ctx.stroke(); } ctx.globalAlpha=1; }
+    if(S.follow&&folB&&folB.y>y0&&folB.y<y1){ const rr=(folB.r0||folB.r)+6+Math.sin(gt*6)*1.5; ctx.strokeStyle="#ffd400"; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(folB.x,folB.y,rr,0,Math.PI*2); ctx.stroke(); ctx.fillStyle="#ffd400"; ctx.beginPath(); ctx.moveTo(folB.x,folB.y-rr-2); ctx.lineTo(folB.x-6,folB.y-rr-12); ctx.lineTo(folB.x+6,folB.y-rr-12); ctx.fill(); }
     ctx.lineWidth=2.5; for(const b of balls){ if(!b.vip||b.y<y0||b.y>y1) continue; ctx.strokeStyle="#ffd400"; ctx.beginPath(); ctx.arc(b.x,b.y,b.r+2.5+Math.sin(gt*8)*0.8,0,Math.PI*2); ctx.stroke(); ctx.fillStyle="#ffd400"; ctx.beginPath(); ctx.moveTo(b.x-4,b.y-b.r-3); ctx.lineTo(b.x-4,b.y-b.r-8); ctx.lineTo(b.x-1.5,b.y-b.r-5); ctx.lineTo(b.x,b.y-b.r-9); ctx.lineTo(b.x+1.5,b.y-b.r-5); ctx.lineTo(b.x+4,b.y-b.r-8); ctx.lineTo(b.x+4,b.y-b.r-3); ctx.fill(); } }
   if(fever>0){ ctx.fillStyle="rgba(255,212,0,.1)"; ctx.fillRect(0,cam,W,viewH); }
   for(let i=bolts.length-1;i>=0;i--){ const q=bolts[i]; q.t-=1/60; if(q.t<=0){ bolts.splice(i,1); continue; } ctx.strokeStyle="rgba(255,245,180,"+(q.t*2.5)+")"; ctx.lineWidth=2.5; ctx.beginPath(); let x=q.x+(Math.random()-.5)*40, y=q.y-140; ctx.moveTo(x,y); for(let j=1;j<=6;j++){ x=q.x+(Math.random()-.5)*(30-j*4); y=q.y-140+j*23.3; ctx.lineTo(j===6?q.x:x,y); } ctx.stroke(); }
@@ -1071,14 +1074,17 @@ function drawMini(){ const r=mm.getBoundingClientRect(), dpr=Math.min(2,devicePi
     const cp=STAGE_CAP[L-1]*10, f=Math.min(1,cnt[L]/Math.max(30,cp*0.5)); if(f>0.02){ mmx.globalAlpha=0.15+0.8*f; mmx.fillStyle=cnt[L]>cp*0.7?"#ff3b30":"#ffffff"; mmx.fillRect(w*0.25,y,w*0.5,hh); }
     mmx.globalAlpha=1; if(L===hotL){ mmx.fillStyle="#ff7a1a"; mmx.fillRect(0,y,w*0.25,hh); } if(isBoss(L)&&L===S.unlocked&&!bossDone(L)){ mmx.fillStyle="#e8413a"; mmx.beginPath(); mmx.arc(w/2,y+hh/2,w*0.42,0,7); mmx.fill(); } if(L%15===1&&L>1){ mmx.fillStyle="#000"; mmx.fillRect(0,y,w,Math.max(1,dpr)); } }
   mmx.strokeStyle="#fff"; mmx.lineWidth=Math.max(1,dpr*1.2); mmx.strokeRect(0.5,cam*k,w-1,Math.max(3,viewH*k)); }
-function mmGo(e){ const r=mm.getBoundingClientRect(), M=Math.min(NST,S.unlocked+1), f=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height)); cam=f*OY[M+1]-viewH/2; camV=0; clampCam(); }
+function mmGo(e){ if(S.follow) setFollow(false); const r=mm.getBoundingClientRect(), M=Math.min(NST,S.unlocked+1), f=Math.max(0,Math.min(1,(e.clientY-r.top)/r.height)); cam=f*OY[M+1]-viewH/2; camV=0; clampCam(); }
 let mmDown=false; mm.addEventListener("pointerdown",e=>{ mmDown=true; try{ mm.setPointerCapture(e.pointerId); }catch(_){} mmGo(e); e.stopPropagation(); });
 mm.addEventListener("pointermove",e=>{ if(mmDown) mmGo(e); }); mm.addEventListener("pointerup",()=>{ mmDown=false; }); mm.addEventListener("pointercancel",()=>{ mmDown=false; });
-$("jTop").onclick=()=>goTo(1); $("jEnd").onclick=()=>goTo(Math.min(NST,S.unlocked));
+function setFollow(on){ S.follow=!!on; $("jFol").classList.toggle("on",S.follow); if(!S.follow) folB=null; save(true); }
+$("jFol").onclick=()=>{ setFollow(!S.follow); floatText(S.follow?"👁 Following the leading ball":"👁 Follow off",innerWidth/2-90,innerHeight/2); };
+$("jTop").onclick=()=>{ setFollow(false); goTo(1); }; $("jEnd").onclick=()=>{ setFollow(false); goTo(Math.min(NST,S.unlocked)); };
+if(S.follow) $("jFol").classList.add("on");
 // drag to scroll, tap to drop a ball / unlock
 let pd=null, lastY=0, lastTime=0;
 cv.addEventListener("pointerdown",e=>{ pd={x:e.clientX,y:e.clientY,cam,moved:false}; lastY=e.clientY; lastTime=performance.now(); dragging=true; camV=0; try{ cv.setPointerCapture(e.pointerId); }catch(_){} });
-cv.addEventListener("pointermove",e=>{ if(!pd) return; const dy=e.clientY-pd.y; if(Math.abs(dy)>8) pd.moved=true; if(pd.moved){ const k=W/cv.getBoundingClientRect().width; cam=pd.cam-dy*k; clampCam(); const now=performance.now(), dtm=Math.max(1,now-lastTime); camV=-(e.clientY-lastY)*k/dtm*1000; lastY=e.clientY; lastTime=now; } });
+cv.addEventListener("pointermove",e=>{ if(!pd) return; const dy=e.clientY-pd.y; if(Math.abs(dy)>8){ if(!pd.moved&&S.follow) setFollow(false); pd.moved=true; } if(pd.moved){ const k=W/cv.getBoundingClientRect().width; cam=pd.cam-dy*k; clampCam(); const now=performance.now(), dtm=Math.max(1,now-lastTime); camV=-(e.clientY-lastY)*k/dtm*1000; lastY=e.clientY; lastTime=now; } });
 cv.addEventListener("pointerup",e=>{ dragging=false; if(!pd) return; const was=pd; pd=null; if(was.moved) return; camV=0;
   const rc=cv.getBoundingClientRect(), k=W/rc.width, x=(e.clientX-rc.left)*k, y=cam+(e.clientY-rc.top)*k, L=stageAt(y);
   if(L>S.unlocked){ if(L===S.unlocked+1) $("unlockB").onclick(); else floatText("Unlock stage "+(S.unlocked+1)+" first",e.clientX-60,e.clientY-30); return; }

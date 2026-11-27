@@ -1,7 +1,7 @@
 {
-  "web": 69,
+  "web": 70,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Stages 6–150: static shapes replaced by spinners, belts, funnels and zig-zags; ball upgrades get pricier per ball type and much harder past level 100; prestige resets value AND time, makes upgrades ×5 pricier, needs Lv 100/150/200/250/300"
+  "notes": "👁 Follow cam: tap the eye button (bottom right) and the camera follows the leading ball, marked with a yellow ring; drag or ⤒/⤓ to stop"
 }
