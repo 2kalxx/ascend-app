@@ -1,7 +1,7 @@
 {
-  "web": 65,
+  "web": 66,
   "apk": 2,
   "minApk": 1,
   "apkPath": "apk/ZenDrop.apk",
-  "notes": "Stage mastery 🎖️: every gate pass counts, 5 tiers per stage (+10% gates each), kept through rebirth; 4 new Master trophies"
+  "notes": "Daily quests 📜: 3 auto-tracked goals a day (10 min income each), all 3 open a 🎁 daily chest (30 min income + Epic+ card, Legendary+ from a 3-day streak); new Questor trophies"
 }
